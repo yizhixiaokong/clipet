@@ -46,59 +46,6 @@ func (pv *PetView) Render() string {
 	return strings.TrimRight(frame.Frames[idx], "\n")
 }
 
-// RenderInfo returns a status summary string.
-func (pv *PetView) RenderInfo() string {
-	p := pv.pet
-	stageName := p.StageID
-	if stage := pv.registry.GetStage(p.Species, p.StageID); stage != nil {
-		stageName = stage.Name
-	}
-
-	var b strings.Builder
-	b.WriteString(p.Name)
-	b.WriteString(" — ")
-	b.WriteString(stageName)
-	b.WriteString("\n")
-	b.WriteString(moodEmoji(p.MoodName()))
-	b.WriteString(" ")
-	b.WriteString(moodChinese(p.MoodName()))
-	return b.String()
-}
-
 func (pv *PetView) fallbackArt() string {
 	return "  ?\n ?\n  ?"
-}
-
-func moodEmoji(mood string) string {
-	switch mood {
-	case "happy":
-		return "😊"
-	case "normal":
-		return "😐"
-	case "unhappy":
-		return "😕"
-	case "sad":
-		return "😢"
-	case "miserable":
-		return "😭"
-	default:
-		return "❓"
-	}
-}
-
-func moodChinese(mood string) string {
-	switch mood {
-	case "happy":
-		return "开心"
-	case "normal":
-		return "普通"
-	case "unhappy":
-		return "不太好"
-	case "sad":
-		return "难过"
-	case "miserable":
-		return "很差"
-	default:
-		return "未知"
-	}
 }

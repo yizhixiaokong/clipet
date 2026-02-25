@@ -4,6 +4,7 @@ import (
 	"clipet/internal/game"
 	"clipet/internal/tui/styles"
 	"fmt"
+	"strings"
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
@@ -66,7 +67,7 @@ func (e EvolveModel) Result() *game.EvolveCandidate {
 	return e.result
 }
 
-// Tick advances the animation by one frame. Called by the parent app on tick.
+// Tick advances the animation by one frame.
 func (e EvolveModel) Tick() EvolveModel {
 	if e.phase == EvolveAnimating {
 		e.animTick++
@@ -127,21 +128,28 @@ func (e EvolveModel) View() string {
 }
 
 func (e EvolveModel) viewChoosing() string {
-	title := e.theme.Title.Width(40).Render("  进化！")
+	w := e.width
+	if w < 40 {
+		w = 40
+	}
 
-	desc := fmt.Sprintf("%s 可以进化了！\n请选择进化方向：", e.pet.Name)
+	title := e.theme.EvolveTitle.Width(w - 2).Render("✨ 进化！")
+
+	desc := lipgloss.NewStyle().
+		Foreground(styles.TextColor()).
+		Render(fmt.Sprintf("%s 可以进化了！请选择进化方向：", e.pet.Name))
 
 	var choices []string
 	for i, c := range e.candidates {
 		label := fmt.Sprintf("%s (%s)", c.ToStage.Name, c.ToStage.Phase)
 		if i == e.choiceIdx {
-			choices = append(choices, e.theme.MenuItemSelected.Render("▸ "+label))
+			choices = append(choices, e.theme.ActionCellSelected.Width(w-6).Render("▸ "+label))
 		} else {
-			choices = append(choices, e.theme.MenuItem.Render("  "+label))
+			choices = append(choices, e.theme.ActionCell.Width(w-6).Render("  "+label))
 		}
 	}
 
-	help := e.theme.Help.Render("↑↓:选择  Enter:确认")
+	help := e.theme.HelpBar.Render("↑↓ 选择  Enter 确认")
 
 	return lipgloss.JoinVertical(lipgloss.Left,
 		title,
@@ -156,12 +164,12 @@ func (e EvolveModel) viewChoosing() string {
 
 func (e EvolveModel) viewAnimating() string {
 	frames := []string{
-		"       .       ",
-		"      .:.      ",
-		"    .:. .:     ",
-		"   .:.   .:.   ",
-		"    .:.:.:.    ",
-		"     .: :.     ",
+		"       ✦       ",
+		"      ✦ ✦      ",
+		"    ✦  ✦  ✦    ",
+		"   ✦ ✦   ✦ ✦   ",
+		"    ✦ ✦ ✦ ✦    ",
+		"      ✦ ✦      ",
 	}
 
 	idx := e.animTick % len(frames)
@@ -174,24 +182,40 @@ func (e EvolveModel) viewAnimating() string {
 		name = e.candidates[0].ToStage.Name
 	}
 
-	title := e.theme.Title.Width(40).Render("  进化中...")
+	w := e.width
+	if w < 40 {
+		w = 40
+	}
+
+	title := e.theme.EvolveTitle.Width(w - 2).Render("✨ 进化中...")
+
+	sparkle := e.theme.EvolveArt.Width(w - 4).Render(art)
+
+	info := lipgloss.NewStyle().
+		Foreground(styles.TextColor()).
+		Width(w - 4).
+		Align(lipgloss.Center).
+		Render(fmt.Sprintf("%s → %s", e.oldStageID, name))
+
+	// Progress bar
+	progress := e.animTick
+	if progress > 6 {
+		progress = 6
+	}
+	filled := strings.Repeat("█", progress)
+	empty := strings.Repeat("░", 6-progress)
+	bar := lipgloss.NewStyle().Foreground(styles.GoldColor()).Render(filled) +
+		lipgloss.NewStyle().Foreground(styles.DimColor()).Render(empty)
 
 	return lipgloss.JoinVertical(lipgloss.Center,
 		title,
 		"",
 		"",
-		lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#FFD700")).
-			Bold(true).
-			Width(40).
-			Align(lipgloss.Center).
-			Render(art),
+		sparkle,
 		"",
-		lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#FAFAFA")).
-			Width(40).
-			Align(lipgloss.Center).
-			Render(fmt.Sprintf("%s -> %s", e.oldStageID, name)),
+		info,
+		"",
+		lipgloss.NewStyle().Width(w-4).Align(lipgloss.Center).Render(bar),
 		"",
 	)
 }
@@ -201,16 +225,23 @@ func (e EvolveModel) viewDone() string {
 		return "进化完成"
 	}
 
-	title := e.theme.Title.Width(40).Render("  进化完成！")
+	w := e.width
+	if w < 40 {
+		w = 40
+	}
 
-	info := fmt.Sprintf(
-		"%s 进化为：\n\n  %s（%s）",
-		e.pet.Name,
-		e.result.ToStage.Name,
-		e.result.ToStage.Phase,
-	)
+	title := e.theme.EvolveTitle.Width(w - 2).Render("🎉 进化完成！")
 
-	help := e.theme.Help.Render("Enter:继续")
+	info := lipgloss.NewStyle().
+		Foreground(styles.TextColor()).
+		Render(fmt.Sprintf(
+			"%s 进化为：\n\n  %s（%s）",
+			e.pet.Name,
+			e.result.ToStage.Name,
+			e.result.ToStage.Phase,
+		))
+
+	help := e.theme.HelpBar.Render("Enter 继续")
 
 	return lipgloss.JoinVertical(lipgloss.Left,
 		title,
