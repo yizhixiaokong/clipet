@@ -106,10 +106,10 @@ func DefaultTheme() Theme {
 			Width(6),
 
 		StatFilled: lipgloss.NewStyle().
-			Foreground(colorGreen),
+			Background(colorGreen),
 
 		StatEmpty: lipgloss.NewStyle().
-			Foreground(colorBarEmpty),
+			Background(colorBarEmpty),
 
 		DialogueBox: lipgloss.NewStyle().
 			Border(border).

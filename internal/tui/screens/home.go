@@ -522,7 +522,7 @@ func (h HomeModel) renderStatusPanel(width int) string {
 	const contentW = 20
 	sep := lipgloss.NewStyle().
 		Foreground(styles.DimColor()).
-		Render(strings.Repeat("─", contentW))
+		Render(strings.Repeat("-", contentW))
 
 	bars := []string{
 		h.statBar("饱腹", p.Hunger),
@@ -584,8 +584,8 @@ func (h HomeModel) statBar(label string, value int) string {
 	empty := barLen - filled
 
 	lab := h.theme.StatLabel.Render(label)
-	fStr := h.theme.StatFilled.Render(strings.Repeat("━", filled))
-	eStr := h.theme.StatEmpty.Render(strings.Repeat("─", empty))
+	fStr := h.theme.StatFilled.Render(strings.Repeat(" ", filled))
+	eStr := h.theme.StatEmpty.Render(strings.Repeat(" ", empty))
 
 	return fmt.Sprintf("%s%s%s %3d", lab, fStr, eStr, value)
 }
