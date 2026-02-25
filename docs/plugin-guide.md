@@ -50,52 +50,105 @@ name = "龙之蛋"      # 显示名称
 phase = "egg"        # 生命阶段: egg | baby | child | adult | legend
 ```
 
-**要求**：
-- 至少有一个 `phase = "egg"` 的阶段
-- 所有非 egg 阶段必须通过进化路径从 egg 可达
-
-### 进化路径
-
-```toml
-[[evolutions]]
-from = "egg"           # 来源阶段 ID
-to = "baby_dragon"     # 目标阶段 ID
-
-[evolutions.condition]
-min_age_hours = 1.0              # 最低年龄（小时）
-attr_bias = "happiness"          # 属性偏好: happiness | health | playful
-min_dialogues = 10               # 最低对话次数
-min_adventures = 5               # 最低冒险完成数
-min_feed_regularity = 0.7        # 喂食规律性 (0.0-1.0)
-night_interactions_bias = true   # 夜间互动偏好
-day_interactions_bias = true     # 日间互动偏好
-min_interactions = 500           # 最低总互动次数
-
-[evolutions.condition.min_attr]  # 属性门槛
-happiness = 90
-health = 85
-```
-
-所有条件字段均为可选，未指定的条件视为已满足。
-
 ## dialogues.toml
 
+### 基本格式
+
+每个对话组包含阶段匹配、心情匹配和多条备选对话：
+
 ```toml
 [[dialogues]]
-stage = ["baby_dragon"]     # 匹配阶段 ID 列表，"*" 匹配全部
-mood = ["happy", "normal"]  # 匹配心情列表，"*" 匹配全部
-lines = [                   # 随机候选台词
-    "吼～感觉好开心！",
-    "想要飞起来！",
-]
-
-[[dialogues]]
-stage = ["*"]               # 通配符：所有阶段
-mood = ["sad"]
+stage = ["baby_dragon", "child_dragon"]  # 阶段匹配（支持通配符）
+mood = ["happy", "normal"]                # 心情匹配（支持 "*" 匹配全部）
 lines = [
-    "呜呜......肚子好饿......",
+  "你好呀！我是小龙~",
+  "今天天气不错喵~",
+  "我们一起玩吧！",
 ]
 ```
+
+### 对话设计建议
+
+**对话复杂度应与阶段匹配：**
+
+| 生命阶段 | 建议对话内容 | 示例 |
+|---------|-------------|------|
+| **egg** | 仅简单声响 | `"咔嗒..."`, `"咚..."`, `"蛋壳轻响"` |
+| **baby** | 简单音节，重复性高 | `"喵~"`, `"喵喵~"`, `"呜..."` |
+| **child** | 简单短句，语气幼稚 | `"我们一起玩吧！"`, `"我好开心~"` |
+| **adult** | 完整句子，表达自己的想法 | `"我需要一些休息时间。"`, `"感谢你的照顾。"` |
+| **legend** | 深刻，富有哲理，有格局 | `"守护众生是我的使命。"` |
+
+**对话状态反馈设计：**
+
+- **positive (happy)**: 积极、活跃、期待互动
+  ```toml
+  [[dialogues]]
+  stage = ["adult_dragon"]
+  mood = ["happy"]
+  lines = [
+    "今天的阳光真美好！",
+    "能和你在一起太开心了！",
+    "让我们来一场冒险吧！"
+  ]
+  ```
+
+- **neutral (normal)**: 平静、日常、温和表达
+  ```toml
+  [[dialogues]]
+  stage = ["child_dragon"]
+  mood = ["normal"]
+  lines = [
+    "嗯...今天还好。",
+    "想吃点东西...",
+    "要不要休息一下？"
+  ]
+  ```
+
+- **negative (unhappy/sad/miserable)**: 消极、疲惫、寻求安慰
+  ```toml
+  [[dialogues]]
+  stage = ["baby_dragon"]
+  mood = ["sad"]
+  lines = [
+    "呜...呜呜...",
+    "我好难过...",
+    "快来安慰我..."
+  ]
+  ```
+
+**阶段过渡建议：**
+
+- **egg → baby**: 对话突然变得有语义
+  ```toml
+  # egg 阶段
+  [[dialogues]]
+  stage = ["egg"]
+  mood = ["*"]
+  lines = ["咚咚...", "咔嗒..."]
+
+  # baby 阶段
+  [[dialogues]]
+  stage = ["baby_dragon"]
+  mood = ["happy"]
+  lines = ["哇！我出生了！", "这个世界真漂亮！"]
+  ```
+
+- **baby → child**: 开始表达复杂需求
+  ```toml
+  [[dialogues]]
+  stage = ["child_dragon"]
+  mood = ["normal"]
+  lines = ["我想变得更强大！", "你能教我新技能吗？"]
+  ```
+
+- **child → adult**: 开始关心照顾者
+  ```toml
+  [[dialogues]]
+  stage = ["adult_dragon"]
+  mood = ["normal"]
+  lines = ["谢谢你一直照顾我。", "我能为你做些什么呢？"]
+  ```
 
 ### 阶段匹配规则
 
@@ -243,3 +296,9 @@ egg (神秘之蛋)
            └── adult_chrome_jaguar (合金猎豹)  ← 冒险数
                 └── legend_stellar_predator (星际掠夺者)
 ```
+
+## 已知问题
+
+- 蛋阶段设计为简单的声音反馈，符合生命初期不能说话的设定
+- 幼年阶段使用简单重复的音节，模拟幼崽学习语言的过程
+- 高级阶段的对话会变得更完整、更有深度
