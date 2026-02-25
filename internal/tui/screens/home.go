@@ -6,8 +6,10 @@ import (
 	"clipet/internal/store"
 	"clipet/internal/tui/components"
 	"clipet/internal/tui/styles"
+	"math/rand"
 	"fmt"
 	"strings"
+	"time"
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
@@ -50,6 +52,7 @@ type HomeModel struct {
 	store    store.Store
 	petView  *components.PetView
 	theme    styles.Theme
+	bubble   components.DialogueBubble
 
 	catIdx    int  // selected category tab
 	actIdx    int  // selected action within category
@@ -61,6 +64,7 @@ type HomeModel struct {
 	dialogue  string // last dialogue line
 	msgIsInfo bool   // true if message is info-type
 	msgIsWarn bool   // true if message is a warning (cooldown/prereq fail)
+	lastTalkAt time.Time // for auto-dialogue trigger
 }
 
 // NewHomeModel creates a new home screen model.
@@ -76,7 +80,9 @@ func NewHomeModel(
 		registry: reg,
 		store:    st,
 		petView:  pv,
+		bubble:   components.NewDialogueBubble(),
 		theme:    theme,
+		lastTalkAt: time.Now(),
 	}
 }
 
@@ -96,6 +102,17 @@ func (h HomeModel) UpdatePet(pet *game.Pet) HomeModel {
 
 // Update handles input for the home screen.
 func (h HomeModel) Update(msg tea.Msg) (HomeModel, tea.Cmd) {
+	// Auto-dialogue: pet talks randomly when idle
+	if time.Since(h.lastTalkAt) > time.Minute*3 {
+		if rand.Float32() < 0.3 { // 30% chance every 3 minutes
+			line := h.registry.GetDialogue(h.pet.Species, h.pet.StageID, h.pet.MoodName())
+			if line != "" && line != "......" {
+				h.bubble.UpdateText(line)
+				h.lastTalkAt = time.Now()
+			}
+		}
+	}
+
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
 		key := msg.String()
@@ -204,7 +221,8 @@ func (h HomeModel) executeAction(action string) HomeModel {
 			line = "......"
 		}
 		_ = h.store.Save(h.pet)
-		h.dialogue = line
+		h.bubble.UpdateText(line)
+		h.lastTalkAt = time.Now()
 		h.message = ""
 		h.msgIsInfo = false
 		h.msgIsWarn = false
@@ -312,12 +330,12 @@ func (h HomeModel) View() string {
 	)
 }
 
-// renderPetPanel renders the left panel with centered ASCII art.
+// renderPetPanel renders the left panel with centered ASCII art + dialogue bubble.
 func (h HomeModel) renderPetPanel(width int) string {
 	art := h.petView.Render()
 
 	// Minimum height to keep layout stable
-	const minHeight = 10
+	const minHeight = 12 // Add 2 lines for dialogue bubble
 	lines := strings.Split(art, "\n")
 	for len(lines) < minHeight {
 		lines = append(lines, "")
@@ -337,6 +355,13 @@ func (h HomeModel) renderPetPanel(width int) string {
 	innerW := width - 6 // border + padding
 	if innerW < maxW {
 		innerW = maxW
+	}
+
+	// Add dialogue bubble above pet if active
+	bubbleText := h.bubble.Render()
+	if bubbleText != "" {
+		// Add some spacing for bubble
+		centered = " " + bubbleText + "\n\n" + centered
 	}
 
 	return h.theme.PetPanel.
