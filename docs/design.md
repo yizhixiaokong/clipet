@@ -32,9 +32,10 @@ Clipet 是一个运行在终端中的宠物养成程序（TUI），以 ASCII 像
 ### 1. ASCII 像素风动画
 
 - 多帧动画系统：idle、eating、sleeping、playing、happy、sad 等状态
-- 帧文件存储在物种包 `frames/` 目录
-- 支持精灵图格式：`{stageID}_{animState}.txt`（多帧用 `---` 分隔）
-- 兼容逐帧格式：`{stageID}_{animState}_{index}.txt`
+- 帧文件存储在物种包 `frames/` 目录，按阶段分级组织
+- 推荐多级目录：`frames/{phase}/{variant}/idle.txt`（路径拼接为 stageID）
+- 支持精灵图格式：`{animState}.txt`（多帧用 `---` 分隔）
+- 兼容根级格式：`{stageID}_{animState}.txt` 和逐帧 `{stageID}_{animState}_{index}.txt`
 - 帧切换采用定时器驱动
 
 ### 2. 属性系统

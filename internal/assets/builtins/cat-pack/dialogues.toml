@@ -17,7 +17,7 @@ lines = [
 # 幼年 - 小猫咪 - 简单喵喵声
 # ============================================================
 [[dialogues]]
-stage = ["baby_cat"]
+stage = ["baby"]
 mood = ["happy", "normal"]
 lines = [
   "喵~",
@@ -29,7 +29,7 @@ lines = [
 ]
 
 [[dialogues]]
-stage = ["baby_cat"]
+stage = ["baby"]
 mood = ["sad", "miserable"]
 lines = [
   "喵...",
@@ -39,7 +39,7 @@ lines = [
 ]
 
 [[dialogues]]
-stage = ["baby_cat"]
+stage = ["baby"]
 mood = ["unhappy"]
 lines = [
   "喵...",
@@ -147,7 +147,7 @@ lines = [
 # 成年 - 暗影魅猫 (Shadow Mage)
 # ============================================================
 [[dialogues]]
-stage = ["adult_shadow_mage"]
+stage = ["adult_arcane_shadow"]
 mood = ["happy", "normal"]
 lines = [
   "我已经掌握了强大的暗影魔法了喵~",
@@ -158,7 +158,7 @@ lines = [
 ]
 
 [[dialogues]]
-stage = ["adult_shadow_mage"]
+stage = ["adult_arcane_shadow"]
 mood = ["sad", "miserable"]
 lines = [
   "暗影正在消散...也许是我的错觉喵...",
@@ -167,7 +167,7 @@ lines = [
 ]
 
 [[dialogues]]
-stage = ["adult_shadow_mage"]
+stage = ["adult_arcane_shadow"]
 mood = ["unhappy"]
 lines = [
   "冥想让我更加清楚了自己的处境喵~",
@@ -179,7 +179,7 @@ lines = [
 # 成年 - 水晶预言猫 (Crystal Oracle)
 # ============================================================
 [[dialogues]]
-stage = ["adult_crystal_oracle"]
+stage = ["adult_arcane_crystal"]
 mood = ["happy", "normal"]
 lines = [
   "水晶预言的力量已经在我体内流淌喵~",
@@ -190,7 +190,7 @@ lines = [
 ]
 
 [[dialogues]]
-stage = ["adult_crystal_oracle"]
+stage = ["adult_arcane_crystal"]
 mood = ["sad", "miserable"]
 lines = [
   "预知变得模糊了喵...",
@@ -199,7 +199,7 @@ lines = [
 ]
 
 [[dialogues]]
-stage = ["adult_crystal_oracle"]
+stage = ["adult_arcane_crystal"]
 mood = ["unhappy"]
 lines = [
   "今天的预言不太准确喵~",
@@ -211,7 +211,7 @@ lines = [
 # 成年 - 烈焰狮 (Flame Lion)
 # ============================================================
 [[dialogues]]
-stage = ["adult_flame_lion"]
+stage = ["adult_feral_flame"]
 mood = ["happy", "normal"]
 lines = [
   "烈焰的力量已经完全觉醒了喵~",
@@ -222,7 +222,7 @@ lines = [
 ]
 
 [[dialogues]]
-stage = ["adult_flame_lion"]
+stage = ["adult_feral_flame"]
 mood = ["sad", "miserable"]
 lines = [
   "火焰已经微弱了...也许是我的错觉喵...",
@@ -231,7 +231,7 @@ lines = [
 ]
 
 [[dialogues]]
-stage = ["adult_flame_lion"]
+stage = ["adult_feral_flame"]
 mood = ["unhappy"]
 lines = [
   "有时候，力量也不是万能的喵~",
@@ -243,7 +243,7 @@ lines = [
 # 成年 - 霜暴豹 (Frost Panther)
 # ============================================================
 [[dialogues]]
-stage = ["adult_frost_panther"]
+stage = ["adult_feral_frost"]
 mood = ["happy", "normal"]
 lines = [
   "极寒之力已经完全控制了喵~",
@@ -254,7 +254,7 @@ lines = [
 ]
 
 [[dialogues]]
-stage = ["adult_frost_panther"]
+stage = ["adult_feral_frost"]
 mood = ["sad", "miserable"]
 lines = [
   "冰霜正在融化...是我的力量变弱了吗喵...",
@@ -263,7 +263,7 @@ lines = [
 ]
 
 [[dialogues]]
-stage = ["adult_frost_panther"]
+stage = ["adult_feral_frost"]
 mood = ["unhappy"]
 lines = [
   "今天的战斗不太顺利喵~",
@@ -275,7 +275,7 @@ lines = [
 # 成年 - 赛博猞猁 (Cyber Lynx)
 # ============================================================
 [[dialogues]]
-stage = ["adult_cyber_lynx"]
+stage = ["adult_mech_cyber"]
 mood = ["happy", "normal"]
 lines = [
   "机械完美融合！终极形态达成喵~",
@@ -286,7 +286,7 @@ lines = [
 ]
 
 [[dialogues]]
-stage = ["adult_cyber_lynx"]
+stage = ["adult_mech_cyber"]
 mood = ["sad", "miserable"]
 lines = [
   "警告：情感模块过载喵...",
@@ -295,7 +295,7 @@ lines = [
 ]
 
 [[dialogues]]
-stage = ["adult_cyber_lynx"]
+stage = ["adult_mech_cyber"]
 mood = ["unhappy"]
 lines = [
   "系统警告...冲突检测喵~",
@@ -307,7 +307,7 @@ lines = [
 # 成年 - 合金猎豹 (Chrome Jaguar)
 # ============================================================
 [[dialogues]]
-stage = ["adult_chrome_jaguar"]
+stage = ["adult_mech_chrome"]
 mood = ["happy", "normal"]
 lines = [
   "合金装甲完美组装！最终形态达成喵~",
@@ -318,7 +318,7 @@ lines = [
 ]
 
 [[dialogues]]
-stage = ["adult_chrome_jaguar"]
+stage = ["adult_mech_chrome"]
 mood = ["sad", "miserable"]
 lines = [
   "警告：性能下降喵...",
@@ -327,7 +327,7 @@ lines = [
 ]
 
 [[dialogues]]
-stage = ["adult_chrome_jaguar"]
+stage = ["adult_mech_chrome"]
 mood = ["unhappy"]
 lines = [
   "系统异常...需要诊断喵~",
@@ -339,7 +339,7 @@ lines = [
 # 传奇 - 虚空行者 (Void Walker)
 # ============================================================
 [[dialogues]]
-stage = ["legend_void_walker"]
+stage = ["legend_arcane_shadow"]
 mood = ["happy", "normal"]
 lines = [
   "我已经感受到了宇宙的奥秘喵~",
@@ -350,7 +350,7 @@ lines = [
 ]
 
 [[dialogues]]
-stage = ["legend_void_walker"]
+stage = ["legend_arcane_shadow"]
 mood = ["sad", "miserable"]
 lines = [
   "力量越大，责任越大喵...",
@@ -359,7 +359,7 @@ lines = [
 ]
 
 [[dialogues]]
-stage = ["legend_void_walker"]
+stage = ["legend_arcane_shadow"]
 mood = ["unhappy"]
 lines = [
   "宇宙的命运压在我的肩上喵~",
@@ -371,7 +371,7 @@ lines = [
 # 传奇 - 星辰贤者 (Astral Sage)
 # ============================================================
 [[dialogues]]
-stage = ["legend_astral_sage"]
+stage = ["legend_arcane_crystal"]
 mood = ["happy", "normal"]
 lines = [
   "星光的智慧已经完全传承给我了喵~",
@@ -382,7 +382,7 @@ lines = [
 ]
 
 [[dialogues]]
-stage = ["legend_astral_sage"]
+stage = ["legend_arcane_crystal"]
 mood = ["sad", "miserable"]
 lines = [
   "星辰黯淡了...是我的错觉吗喵...",
@@ -391,7 +391,7 @@ lines = [
 ]
 
 [[dialogues]]
-stage = ["legend_astral_sage"]
+stage = ["legend_arcane_crystal"]
 mood = ["unhappy"]
 lines = [
   "预知出现了偏差...",
@@ -403,7 +403,7 @@ lines = [
 # 传奇 - 不灭炎帝 (Immortal Inferno)
 # ============================================================
 [[dialogues]]
-stage = ["legend_immortal_inferno"]
+stage = ["legend_feral_flame"]
 mood = ["happy", "normal"]
 lines = [
   "永恒之火已经点燃！不灭之力觉醒喵~",
@@ -414,7 +414,7 @@ lines = [
 ]
 
 [[dialogues]]
-stage = ["legend_immortal_inferno"]
+stage = ["legend_feral_flame"]
 mood = ["sad", "miserable"]
 lines = [
   "火焰减弱了...是我的错觉吗喵...",
@@ -423,7 +423,7 @@ lines = [
 ]
 
 [[dialogues]]
-stage = ["legend_immortal_inferno"]
+stage = ["legend_feral_flame"]
 mood = ["unhappy"]
 lines = [
   "火焰需要重新点燃喵~",
@@ -435,7 +435,7 @@ lines = [
 # 传奇 - 极寒霜神 (Cryostorm Deity)
 # ============================================================
 [[dialogues]]
-stage = ["legend_cryostorm_deity"]
+stage = ["legend_feral_frost"]
 mood = ["happy", "normal"]
 lines = [
   "极寒的神力已经完全觉醒喵~",
@@ -446,7 +446,7 @@ lines = [
 ]
 
 [[dialogues]]
-stage = ["legend_cryostorm_deity"]
+stage = ["legend_feral_frost"]
 mood = ["sad", "miserable"]
 lines = [
   "冰霜融化...是我的力量在减弱吗喵...",
@@ -455,7 +455,7 @@ lines = [
 ]
 
 [[dialogues]]
-stage = ["legend_cryostorm_deity"]
+stage = ["legend_feral_frost"]
 mood = ["unhappy"]
 lines = [
   "神力需要重新凝聚喵~",
@@ -467,7 +467,7 @@ lines = [
 # 传奇 - 量子幽灵 (Quantum Phantom)
 # ============================================================
 [[dialogues]]
-stage = ["legend_quantum_phantom"]
+stage = ["legend_mech_cyber"]
 mood = ["happy", "normal"]
 lines = [
   "量子力量已经完全融合喵~",
@@ -478,7 +478,7 @@ lines = [
 ]
 
 [[dialogues]]
-stage = ["legend_quantum_phantom"]
+stage = ["legend_mech_cyber"]
 mood = ["sad", "miserable"]
 lines = [
   "量子纠缠...情感太复杂喵...",
@@ -487,7 +487,7 @@ lines = [
 ]
 
 [[dialogues]]
-stage = ["legend_quantum_phantom"]
+stage = ["legend_mech_cyber"]
 mood = ["unhappy"]
 lines = [
   "量子态不稳定...",
@@ -499,7 +499,7 @@ lines = [
 # 传奇 - 星际掠夺者 (Stellar Predator)
 # ============================================================
 [[dialogues]]
-stage = ["legend_stellar_predator"]
+stage = ["legend_mech_chrome"]
 mood = ["happy", "normal"]
 lines = [
   "恒星之力已经完全觉醒喵~",
@@ -510,7 +510,7 @@ lines = [
 ]
 
 [[dialogues]]
-stage = ["legend_stellar_predator"]
+stage = ["legend_mech_chrome"]
 mood = ["sad", "miserable"]
 lines = [
   "恒星暗淡了...是我的错觉吗喵...",
@@ -519,7 +519,7 @@ lines = [
 ]
 
 [[dialogues]]
-stage = ["legend_stellar_predator"]
+stage = ["legend_mech_chrome"]
 mood = ["unhappy"]
 lines = [
   "星辰在哭泣喵~",

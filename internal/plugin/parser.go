@@ -64,16 +64,20 @@ func ParseAdventures(fsys fs.FS, dir string) ([]Adventure, error) {
 
 // ParseFrames scans the frames/ subdirectory for ASCII art frame files.
 //
-// Two formats are supported:
+// Directory layout (highest-priority first):
 //
-//  1. Sprite sheet (preferred): {stageID}_{animState}.txt
-//     Multiple frames in a single file, separated by a line containing only "---".
+//  1. Multi-level subdirectory tree (recommended):
+//     frames/{phase}/{variant}/.../animState.txt
+//     Path components are joined with "_" to form the stageID.
+//     Example: frames/adult/arcane_shadow/idle.txt  →  stageID="adult_arcane_shadow"
+//              frames/egg/idle.txt                    →  stageID="egg"
 //
-//  2. Legacy per-frame: {stageID}_{animState}_{index}.txt
-//     Each file contains exactly one frame. Index determines ordering.
+//  2. Root sprite sheet: frames/{stageID}_{animState}.txt
 //
-// If both formats exist for the same (stageID, animState) pair, the sprite
-// sheet takes precedence.
+//  3. Root legacy per-frame: frames/{stageID}_{animState}_{index}.txt
+//
+// Within each level, sprite sheets (multi-frame files separated by "---")
+// take precedence over per-frame files for the same (stageID, animState) pair.
 //
 // Returns a map keyed by FrameKey(stageID, animState).
 func ParseFrames(fsys fs.FS, dir string) (map[string]Frame, error) {
@@ -86,7 +90,17 @@ func ParseFrames(fsys fs.FS, dir string) (map[string]Frame, error) {
 		return frames, nil
 	}
 
-	// Pass 1: load sprite sheets ({stageID}_{animState}.txt — exactly 2 parts after split)
+	// Pass 1: walk subdirectory tree — stageID derived from directory path (highest priority)
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+		if err := walkFrameTree(fsys, framesDir, entry.Name(), frames); err != nil {
+			return nil, err
+		}
+	}
+
+	// Pass 2: root-level sprite sheets ({stageID}_{animState}.txt)
 	for _, entry := range entries {
 		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".txt") {
 			continue
@@ -97,17 +111,19 @@ func ParseFrames(fsys fs.FS, dir string) (map[string]Frame, error) {
 			continue
 		}
 		stageID, animState := parts[0], parts[1]
+		key := FrameKey(stageID, animState)
+		if _, exists := frames[key]; exists {
+			continue // subdirectory takes precedence
+		}
 
 		data, err := fs.ReadFile(fsys, path.Join(framesDir, entry.Name()))
 		if err != nil {
 			return nil, fmt.Errorf("read frame %s: %w", entry.Name(), err)
 		}
-
-		frame := parseSpriteSheet(stageID, animState, string(data))
-		frames[FrameKey(stageID, animState)] = frame
+		frames[key] = parseSpriteSheet(stageID, animState, string(data))
 	}
 
-	// Pass 2: load legacy per-frame files (only for keys not already loaded)
+	// Pass 3: root-level legacy per-frame ({stageID}_{animState}_{index}.txt)
 	type legacyFile struct {
 		stageID   string
 		animState string
@@ -125,7 +141,6 @@ func ParseFrames(fsys fs.FS, dir string) (map[string]Frame, error) {
 		if parts == nil {
 			continue
 		}
-		// Skip if sprite sheet already covers this key
 		key := FrameKey(parts[0], parts[1])
 		if _, exists := frames[key]; exists {
 			continue
@@ -144,7 +159,6 @@ func ParseFrames(fsys fs.FS, dir string) (map[string]Frame, error) {
 		})
 	}
 
-	// Sort legacy files by index to ensure correct frame order
 	sort.Slice(legacy, func(i, j int) bool {
 		if legacy[i].stageID != legacy[j].stageID {
 			return legacy[i].stageID < legacy[j].stageID
@@ -155,7 +169,6 @@ func ParseFrames(fsys fs.FS, dir string) (map[string]Frame, error) {
 		return legacy[i].index < legacy[j].index
 	})
 
-	// Group legacy files into Frame objects
 	for _, f := range legacy {
 		key := FrameKey(f.stageID, f.animState)
 		frame, ok := frames[key]
@@ -175,6 +188,132 @@ func ParseFrames(fsys fs.FS, dir string) (map[string]Frame, error) {
 	}
 
 	return frames, nil
+}
+
+// walkFrameTree recursively walks a directory tree under framesDir.
+// relDir is the path relative to framesDir (e.g. "adult", "adult/shadow_mage").
+//
+// If a directory contains .txt files, they are loaded as frames for the
+// stageID derived from relDir (with "/" replaced by "_").
+// If a directory contains subdirectories, it recurses into them.
+// Both can coexist — a directory may have both .txt files and subdirectories.
+func walkFrameTree(fsys fs.FS, framesDir, relDir string, frames map[string]Frame) error {
+	absDir := path.Join(framesDir, relDir)
+	entries, err := fs.ReadDir(fsys, absDir)
+	if err != nil {
+		return nil
+	}
+
+	// Check if this directory has any .txt files (i.e. it's a leaf / frame dir)
+	hasTxtFiles := false
+	for _, entry := range entries {
+		if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".txt") {
+			hasTxtFiles = true
+			break
+		}
+	}
+
+	if hasTxtFiles {
+		// stageID = relDir with "/" → "_"
+		stageID := strings.ReplaceAll(relDir, "/", "_")
+		if err := loadStageFrames(fsys, absDir, stageID, frames); err != nil {
+			return err
+		}
+	}
+
+	// Recurse into subdirectories
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+		if err := walkFrameTree(fsys, framesDir, relDir+"/"+entry.Name(), frames); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// loadStageFrames loads all frames for a single stageID from a leaf directory.
+// Files named "{animState}.txt" (where animState is a known state) are sprite sheets (preferred).
+// Files named "{animState}_{index}.txt" are legacy per-frame.
+func loadStageFrames(fsys fs.FS, dir, stageID string, frames map[string]Frame) error {
+	entries, err := fs.ReadDir(fsys, dir)
+	if err != nil {
+		return nil
+	}
+
+	// Sprite sheets: filename is an exact known anim state
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".txt") {
+			continue
+		}
+		name := strings.TrimSuffix(entry.Name(), ".txt")
+		if !knownAnimStates[name] {
+			continue
+		}
+		data, err := fs.ReadFile(fsys, path.Join(dir, entry.Name()))
+		if err != nil {
+			return fmt.Errorf("read frame %s/%s: %w", stageID, entry.Name(), err)
+		}
+		frames[FrameKey(stageID, name)] = parseSpriteSheet(stageID, name, string(data))
+	}
+
+	// Legacy per-frame: {animState}_{index}.txt
+	type legacyFile struct {
+		animState string
+		index     string
+		content   string
+	}
+	var legacy []legacyFile
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".txt") {
+			continue
+		}
+		name := strings.TrimSuffix(entry.Name(), ".txt")
+		parts := strings.Split(name, "_")
+		if len(parts) < 2 {
+			continue
+		}
+		index := parts[len(parts)-1]
+		if !isNumeric(index) {
+			continue
+		}
+		animState := strings.Join(parts[:len(parts)-1], "_")
+		key := FrameKey(stageID, animState)
+		if _, exists := frames[key]; exists {
+			continue // sprite sheet already loaded
+		}
+		data, err := fs.ReadFile(fsys, path.Join(dir, entry.Name()))
+		if err != nil {
+			return fmt.Errorf("read frame %s/%s: %w", stageID, entry.Name(), err)
+		}
+		legacy = append(legacy, legacyFile{animState: animState, index: index, content: string(data)})
+	}
+
+	sort.Slice(legacy, func(i, j int) bool {
+		if legacy[i].animState != legacy[j].animState {
+			return legacy[i].animState < legacy[j].animState
+		}
+		return legacy[i].index < legacy[j].index
+	})
+
+	for _, f := range legacy {
+		key := FrameKey(stageID, f.animState)
+		frame, ok := frames[key]
+		if !ok {
+			frame = Frame{StageID: stageID, AnimState: f.animState}
+		}
+		frame.Frames = append(frame.Frames, f.content)
+		for _, line := range strings.Split(f.content, "\n") {
+			if len(line) > frame.Width {
+				frame.Width = len(line)
+			}
+		}
+		frames[key] = frame
+	}
+
+	return nil
 }
 
 // parseSpriteSheet splits a single file's content into multiple frames
@@ -222,7 +361,7 @@ func parseSpriteSheet(stageID, animState, content string) Frame {
 	return frame
 }
 
-// splitSpriteSheetName parses a sprite sheet filename like "baby_cat_idle"
+// splitSpriteSheetName parses a sprite sheet filename like "baby_idle"
 // into [stageID, animState]. The animState must be a known animation state.
 // Returns nil if the name doesn't match (e.g. has an index suffix → legacy format).
 func splitSpriteSheetName(name string) []string {
@@ -272,7 +411,7 @@ func isNumeric(s string) bool {
 	return true
 }
 
-// splitFrameName parses a frame filename like "baby_cat_idle_0" into
+// splitFrameName parses a frame filename like "baby_idle_0" into
 // [stageID, animState, index]. The stage ID can contain underscores,
 // so we split from the right: last part = index, second-to-last = animState,
 // everything else = stageID.

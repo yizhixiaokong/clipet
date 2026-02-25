@@ -23,7 +23,7 @@ phase = "egg"
 
 # --- Baby ---
 [[stages]]
-id = "baby_cat"
+id = "baby"
 name = "小猫咪"
 phase = "baby"
 
@@ -45,63 +45,63 @@ phase = "child"
 
 # --- Adult: 6 branches ---
 [[stages]]
-id = "adult_shadow_mage"
+id = "adult_arcane_shadow"
 name = "暗影魅猫"
 phase = "adult"
 
 [[stages]]
-id = "adult_crystal_oracle"
+id = "adult_arcane_crystal"
 name = "水晶预言猫"
 phase = "adult"
 
 [[stages]]
-id = "adult_flame_lion"
+id = "adult_feral_flame"
 name = "烈焰狮"
 phase = "adult"
 
 [[stages]]
-id = "adult_frost_panther"
+id = "adult_feral_frost"
 name = "霜暴豹"
 phase = "adult"
 
 [[stages]]
-id = "adult_cyber_lynx"
+id = "adult_mech_cyber"
 name = "赛博猞猁"
 phase = "adult"
 
 [[stages]]
-id = "adult_chrome_jaguar"
+id = "adult_mech_chrome"
 name = "合金猎豹"
 phase = "adult"
 
 # --- Legend: 6 ultimate forms ---
 [[stages]]
-id = "legend_void_walker"
+id = "legend_arcane_shadow"
 name = "虚空行者"
 phase = "legend"
 
 [[stages]]
-id = "legend_astral_sage"
+id = "legend_arcane_crystal"
 name = "星辰贤者"
 phase = "legend"
 
 [[stages]]
-id = "legend_immortal_inferno"
+id = "legend_feral_flame"
 name = "不灭炎帝"
 phase = "legend"
 
 [[stages]]
-id = "legend_cryostorm_deity"
+id = "legend_feral_frost"
 name = "极寒霜神"
 phase = "legend"
 
 [[stages]]
-id = "legend_quantum_phantom"
+id = "legend_mech_cyber"
 name = "量子幽灵"
 phase = "legend"
 
 [[stages]]
-id = "legend_stellar_predator"
+id = "legend_mech_chrome"
 name = "星际掠夺者"
 phase = "legend"
 
@@ -112,13 +112,13 @@ phase = "legend"
 # Egg -> Baby
 [[evolutions]]
 from = "egg"
-to = "baby_cat"
+to = "baby"
 [evolutions.condition]
 min_age_hours = 1.0
 
 # Baby -> Child (3 branches)
 [[evolutions]]
-from = "baby_cat"
+from = "baby"
 to = "child_arcane"
 [evolutions.condition]
 min_age_hours = 24.0
@@ -126,7 +126,7 @@ attr_bias = "happiness"
 min_dialogues = 10
 
 [[evolutions]]
-from = "baby_cat"
+from = "baby"
 to = "child_feral"
 [evolutions.condition]
 min_age_hours = 24.0
@@ -134,7 +134,7 @@ attr_bias = "health"
 min_adventures = 5
 
 [[evolutions]]
-from = "baby_cat"
+from = "baby"
 to = "child_mech"
 [evolutions.condition]
 min_age_hours = 24.0
@@ -144,14 +144,14 @@ min_feed_regularity = 0.7
 # Child Arcane -> Adult (2 branches)
 [[evolutions]]
 from = "child_arcane"
-to = "adult_shadow_mage"
+to = "adult_arcane_shadow"
 [evolutions.condition]
 min_age_hours = 72.0
 night_interactions_bias = true
 
 [[evolutions]]
 from = "child_arcane"
-to = "adult_crystal_oracle"
+to = "adult_arcane_crystal"
 [evolutions.condition]
 min_age_hours = 72.0
 day_interactions_bias = true
@@ -159,14 +159,14 @@ day_interactions_bias = true
 # Child Feral -> Adult (2 branches)
 [[evolutions]]
 from = "child_feral"
-to = "adult_flame_lion"
+to = "adult_feral_flame"
 [evolutions.condition]
 min_age_hours = 72.0
 attr_bias = "hunger"
 
 [[evolutions]]
 from = "child_feral"
-to = "adult_frost_panther"
+to = "adult_feral_frost"
 [evolutions.condition]
 min_age_hours = 72.0
 attr_bias = "energy"
@@ -174,22 +174,22 @@ attr_bias = "energy"
 # Child Mech -> Adult (2 branches)
 [[evolutions]]
 from = "child_mech"
-to = "adult_cyber_lynx"
+to = "adult_mech_cyber"
 [evolutions.condition]
 min_age_hours = 72.0
 min_dialogues = 30
 
 [[evolutions]]
 from = "child_mech"
-to = "adult_chrome_jaguar"
+to = "adult_mech_chrome"
 [evolutions.condition]
 min_age_hours = 72.0
 min_adventures = 15
 
 # Adult -> Legend (6 branches)
 [[evolutions]]
-from = "adult_shadow_mage"
-to = "legend_void_walker"
+from = "adult_arcane_shadow"
+to = "legend_arcane_shadow"
 [evolutions.condition]
 min_age_hours = 720.0
 min_interactions = 500
@@ -197,8 +197,8 @@ min_interactions = 500
 happiness = 90
 
 [[evolutions]]
-from = "adult_crystal_oracle"
-to = "legend_astral_sage"
+from = "adult_arcane_crystal"
+to = "legend_arcane_crystal"
 [evolutions.condition]
 min_age_hours = 720.0
 min_interactions = 500
@@ -206,8 +206,8 @@ min_interactions = 500
 happiness = 90
 
 [[evolutions]]
-from = "adult_flame_lion"
-to = "legend_immortal_inferno"
+from = "adult_feral_flame"
+to = "legend_feral_flame"
 [evolutions.condition]
 min_age_hours = 720.0
 min_interactions = 500
@@ -215,8 +215,8 @@ min_interactions = 500
 health = 90
 
 [[evolutions]]
-from = "adult_frost_panther"
-to = "legend_cryostorm_deity"
+from = "adult_feral_frost"
+to = "legend_feral_frost"
 [evolutions.condition]
 min_age_hours = 720.0
 min_interactions = 500
@@ -224,8 +224,8 @@ min_interactions = 500
 energy = 90
 
 [[evolutions]]
-from = "adult_cyber_lynx"
-to = "legend_quantum_phantom"
+from = "adult_mech_cyber"
+to = "legend_mech_cyber"
 [evolutions.condition]
 min_age_hours = 720.0
 min_interactions = 500
@@ -233,8 +233,8 @@ min_interactions = 500
 happiness = 85
 
 [[evolutions]]
-from = "adult_chrome_jaguar"
-to = "legend_stellar_predator"
+from = "adult_mech_chrome"
+to = "legend_mech_chrome"
 [evolutions.condition]
 min_age_hours = 720.0
 min_interactions = 500

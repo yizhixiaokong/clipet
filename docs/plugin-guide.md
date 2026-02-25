@@ -13,11 +13,20 @@ my-species-pack/
 ├── dialogues.toml      # 可选 — 对话库
 ├── adventures.toml     # 可选 — 冒险事件
 └── frames/             # 可选 — ASCII 动画帧
-    ├── egg_idle_0.txt
-    ├── egg_idle_1.txt
-    ├── baby_xxx_idle_0.txt
-    ├── baby_xxx_eating_0.txt
-    └── ...
+    ├── egg/              # 按阶段分级目录
+    │   └── idle.txt
+    ├── baby/
+    │   └── xxx/
+    │       ├── idle.txt
+    │       ├── eating.txt
+    │       └── ...
+    ├── child/
+    │   ├── variant_a/
+    │   └── variant_b/
+    ├── adult/
+    │   └── .../
+    └── legend/
+        └── .../
 ```
 
 ## species.toml
@@ -203,46 +212,55 @@ energy = 5
 
 ## 动画帧文件
 
-支持两种格式，推荐使用精灵图格式。
+支持三种目录布局，推荐使用多级子目录 + 精灵图格式。
 
-### 格式一：精灵图（推荐）
+### 目录布局
+
+**布局一：多级子目录（推荐）**
 
 ```
-{stageID}_{animState}.txt
+frames/
+  {phase}/
+    {variant}/
+      {animState}.txt     # 精灵图
+      {animState}_{index}.txt  # 逐帧（兼容）
 ```
+
+路径中各级目录名用 `_` 拼接还原为 stageID。
+例如 `frames/adult/arcane_shadow/idle.txt` → stageID = `adult_arcane_shadow`。
+单级目录也有效：`frames/egg/idle.txt` → stageID = `egg`。
+
+**布局二：根级精灵图**
+
+```
+frames/{stageID}_{animState}.txt
+```
+
+**布局三：根级逐帧文件（兼容）**
+
+```
+frames/{stageID}_{animState}_{index}.txt
+```
+
+> **优先级**：多级子目录 > 根级精灵图 > 根级逐帧。同 (stageID, animState) 内精灵图优先于逐帧。
+
+### 精灵图格式
 
 同一动作的多帧放在一个文件中，用 `---` 行分隔：
 
 ```
-  /\_/\
- ( o.o )
-  > ^ <
- /|   |\
-(_|   |_)
+ /-/\
+(' ' )
+ | \/
+U-U(_/
 ---
-  /\_/\
- ( -.- )
-  > ^ <
- /|   |\
-(_|   |_)
+ \-/\
+(' ' )
+ | \/
+U-U(_/
 ```
 
 **优势**：文件数少，同动作帧集中管理，编辑对比方便。
-
-### 格式二：逐帧文件（兼容）
-
-```
-{stageID}_{animState}_{index}.txt
-```
-
-- `index` — 帧序号（从 0 开始，按字典序排列）
-
-每个文件包含一帧画面。
-
-**解析规则**：从文件名末尾按 `_` 分割，最后一段为 index，倒数第二段为 animState，
-其余部分连接为 stageID。
-
-> **优先级**：当同一 (stageID, animState) 同时存在精灵图和逐帧文件时，精灵图优先。
 
 ### 支持的动画状态
 
@@ -273,6 +291,10 @@ energy = 5
     ├── dialogues.toml
     ├── adventures.toml
     └── frames/
+        ├── egg/
+        │   └── idle.txt
+        ├── baby/
+        │   └── dragon/
         └── ...
 ```
 
@@ -300,22 +322,22 @@ energy = 5
 
 ```
 egg (神秘之蛋)
- └── baby_cat (小猫咪)
+ └── baby (小猫咪)
       ├── child_arcane (咒术小猫)  ← happiness偏好 + 对话数
-      │    ├── adult_shadow_mage (暗影魅猫)  ← 夜间偏好
-      │    │    └── legend_void_walker (虚空行者)
-      │    └── adult_crystal_oracle (水晶预言猫)  ← 日间偏好
-      │         └── legend_astral_sage (星辰贤者)
+      │    ├── adult_arcane_shadow (暗影魅猫)  ← 夜间偏好
+      │    │    └── legend_arcane_shadow (虚空行者)
+      │    └── adult_arcane_crystal (水晶预言猫)  ← 日间偏好
+      │         └── legend_arcane_crystal (星辰贤者)
       ├── child_feral (战斗小猫)  ← health偏好 + 冒险数
-      │    ├── adult_flame_lion (烈焰狮)  ← hunger偏好
-      │    │    └── legend_immortal_inferno (不灭炎帝)
-      │    └── adult_frost_panther (霜暴豹)  ← energy偏好
-      │         └── legend_cryostorm_deity (极寒霜神)
+      │    ├── adult_feral_flame (烈焰狮)  ← hunger偏好
+      │    │    └── legend_feral_flame (不灭炎帝)
+      │    └── adult_feral_frost (霜暴豹)  ← energy偏好
+      │         └── legend_feral_frost (极寒霜神)
       └── child_mech (机甲小猫)  ← playful偏好 + 喂食规律
-           ├── adult_cyber_lynx (赛博猞猁)  ← 对话数
-           │    └── legend_quantum_phantom (量子幽灵)
-           └── adult_chrome_jaguar (合金猎豹)  ← 冒险数
-                └── legend_stellar_predator (星际掠夺者)
+           ├── adult_mech_cyber (赛博猞猁)  ← 对话数
+           │    └── legend_mech_cyber (量子幽灵)
+           └── adult_mech_chrome (合金猎豹)  ← 冒险数
+                └── legend_mech_chrome (星际掠夺者)
 ```
 
 ## 已知问题

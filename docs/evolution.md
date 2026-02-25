@@ -7,7 +7,7 @@
 ### 阶段 (Stage)
 
 每个节点有三个属性：
-- **id** — 唯一标识符，如 `baby_cat`
+- **id** — 唯一标识符，如 `baby`
 - **name** — 显示名称，如 `小猫咪`
 - **phase** — 生命阶段，五选一：
 
@@ -72,7 +72,7 @@ FeedExpectedCount 基于宠物年龄计算预期的合理喂食次数。
                         │
                  min_age ≥ 1h
                         │
-                   baby_cat (小猫咪)
+                   baby (小猫咪)
                   ╱     │      ╲
            happiness  health   playful
            +对话 ≥10  +冒险 ≥5  +喂食规律 ≥0.7

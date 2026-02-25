@@ -7,7 +7,7 @@
 [[adventures]]
 id = "cat_fish_pond"
 name = "神秘鱼塘"
-stage = ["baby_cat", "child_*"]
+stage = ["baby", "child_*"]
 description = "你的猫发现了一个闪着奇怪光芒的鱼塘..."
 
   [[adventures.choices]]
@@ -27,7 +27,7 @@ description = "你的猫发现了一个闪着奇怪光芒的鱼塘..."
 [[adventures]]
 id = "cat_cardboard_box"
 name = "mysterious_box"
-stage = ["baby_cat"]
+stage = ["baby"]
 description = "路边有一个散发着奇异气息的纸箱..."
 
   [[adventures.choices]]
@@ -48,7 +48,7 @@ description = "路边有一个散发着奇异气息的纸箱..."
 [[adventures]]
 id = "cat_butterfly"
 name = "追逐蝴蝶"
-stage = ["baby_cat", "child_*"]
+stage = ["baby", "child_*"]
 description = "一只发着微光的蝴蝶在眼前飞舞..."
 
   [[adventures.choices]]
@@ -73,7 +73,7 @@ description = "一只发着微光的蝴蝶在眼前飞舞..."
 [[adventures]]
 id = "arcane_ancient_library"
 name = "远古图书馆"
-stage = ["child_arcane", "adult_shadow_mage", "adult_crystal_oracle"]
+stage = ["child_arcane", "adult_arcane_shadow", "adult_arcane_crystal"]
 description = "在数据流的深处，发现了一座由魔法构成的虚拟图书馆..."
 
   [[adventures.choices]]
@@ -98,7 +98,7 @@ description = "在数据流的深处，发现了一座由魔法构成的虚拟�
 [[adventures]]
 id = "feral_arena"
 name = "荒野竞技场"
-stage = ["child_feral", "adult_flame_lion", "adult_frost_panther"]
+stage = ["child_feral", "adult_feral_flame", "adult_feral_frost"]
 description = "一座由元素之力构建的竞技场出现在前方..."
 
   [[adventures.choices]]
@@ -123,7 +123,7 @@ description = "一座由元素之力构建的竞技场出现在前方..."
 [[adventures]]
 id = "mech_scrapyard"
 name = "星际废料场"
-stage = ["child_mech", "adult_cyber_lynx", "adult_chrome_jaguar"]
+stage = ["child_mech", "adult_mech_cyber", "adult_mech_chrome"]
 description = "发现了一片散落着高科技残骸的废料场..."
 
   [[adventures.choices]]

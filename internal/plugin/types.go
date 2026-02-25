@@ -114,7 +114,7 @@ type AdventureOutcome struct {
 
 // Frame holds the ASCII art frames for a specific stage+animation combination.
 type Frame struct {
-	StageID   string   // e.g. "baby_cat"
+	StageID   string   // e.g. "baby"
 	AnimState string   // e.g. "idle"
 	Frames    []string // each element is one frame of ASCII art
 	Width     int      // display width (auto-calculated from content)

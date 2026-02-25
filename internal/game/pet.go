@@ -80,7 +80,7 @@ type Pet struct {
 	Name    string   `json:"name"`
 	Species string   `json:"species"`  // species pack ID, e.g. "cat"
 	Stage   PetStage `json:"stage"`    // current life phase
-	StageID string   `json:"stage_id"` // current evolution node ID, e.g. "baby_cat"
+	StageID string   `json:"stage_id"` // current evolution node ID, e.g. "baby"
 
 	Birthday time.Time `json:"birthday"`
 
