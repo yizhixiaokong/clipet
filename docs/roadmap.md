@@ -90,15 +90,18 @@
 | executeAction 重复代码提取为 failMsg/okMsg/infoMsg 辅助方法 | ✅ |
 | 添加 GamePanel 主题样式 | ✅ |
 
-### M4: 冒险系统（计划中）
+### M4: 冒险系统 ✅
 
 > 目标：随机冒险事件，选项式交互，加权结果
 
-- [ ] 冒险事件触发机制
-- [ ] 选项式交互 (Bubble Tea 状态机)
-- [ ] 加权随机结果计算
-- [ ] 冒险完成 → 属性影响
-- [ ] TUI 冒险覆盖层
+| 任务 | 状态 |
+|------|------|
+| 冒险引擎 game/adventure.go (CanAdventure, PickAdventure, ResolveOutcome) | ✅ |
+| 加权随机结果计算 + 属性影响 (ApplyAdventureOutcome) | ✅ |
+| TUI 冒险屏幕 screens/adventure.go (4阶段: 介绍→选择→动画→结果) | ✅ |
+| App 冒险屏幕切换 (screenAdventure + 完整生命周期) | ✅ |
+| Home 菜单集成冒险入口 (🗺️ 冒险) | ✅ |
+| Pet 冒险冷却字段 LastAdventureAt (10分钟冷却) | ✅ |
 
 ### M6: 高级特性（计划中）
 

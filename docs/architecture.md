@@ -4,7 +4,7 @@
 
 ```
 clipet/
-├── cmd/clipet/main.go          # 入口点（待实现）
+├── cmd/clipet/main.go          # 入口点
 ├── internal/
 │   ├── assets/
 │   │   ├── embed.go            # go:embed 嵌入内置物种包
@@ -17,7 +17,14 @@ clipet/
 │   │   ├── loader.go           # 文件系统发现与加载
 │   │   └── registry.go         # 中央注册表
 │   ├── game/
-│   │   └── pet.go              # 核心游戏逻辑（UI 无关）
+│   │   ├── pet.go              # 核心游戏逻辑（属性、衰减、死亡）
+│   │   ├── evolution.go        # 进化引擎（条件评估、候选筛选）
+│   │   ├── adventure.go        # 冒险引擎（加权抽取、属性影响）
+│   │   └── games/              # 迷你游戏
+│   │       ├── types.go        # MiniGame 接口定义
+│   │       ├── manager.go      # 游戏管理器工厂
+│   │       ├── reaction.go     # 反应速度测试
+│   │       └── guess.go        # 猜数字游戏
 │   ├── store/
 │   │   ├── store.go            # 持久化接口
 │   │   └── jsonstore.go        # JSON 文件实现
@@ -27,15 +34,18 @@ clipet/
 │   │   ├── status.go           # clipet status 命令
 │   │   ├── feed.go             # clipet feed 命令
 │   │   ├── play.go             # clipet play 命令
-│   │   └── tui_bridge.go       # TUI 启动桥接（待实现）
-│   └── tui/                    # TUI 层（待实现）
+│   │   └── tui_bridge.go       # TUI 启动桥接
+│   └── tui/
 │       ├── app.go              # 顶层 Model + 屏幕路由
 │       ├── styles/
-│       │   └── theme.go        # Lipgloss 样式常量
+│       │   └── theme.go        # Lipgloss 样式常量 + 颜色工具
 │       ├── components/
-│       │   └── petview.go      # 宠物 ASCII 渲染组件
+│       │   ├── petview.go      # 宠物 ASCII 渲染组件
+│       │   └── dialoguebubble.go # 对话气泡组件
 │       └── screens/
-│           └── home.go         # 主屏幕
+│           ├── home.go         # 主屏幕（二级菜单 + 游戏覆盖层）
+│           ├── evolve.go       # 进化屏幕（选择/动画/完成）
+│           └── adventure.go    # 冒险屏幕（介绍/选择/动画/结果）
 ├── docs/                       # 文档
 ├── go.mod
 ├── go.sum
@@ -98,10 +108,12 @@ clipet/
 宠物实体，包含：
 - 基本信息 (Name, Species, Stage, StageID)
 - 四项属性 (Hunger, Happiness, Health, Energy)
-- 时间戳 (Birthday, LastFedAt, LastPlayedAt, LastCheckedAt)
-- 统计数据 (TotalInteractions, GamesWon, etc.)
-- 进化累积分 (AccHappiness, AccHealth, AccPlayful, Night/Day counts)
-- 方法: `Feed()`, `Play()`, `Talk()`, `MoodScore()`, `MoodName()`, `UpdateAnimation()`
+- 时间戳 (Birthday, LastFedAt, LastPlayedAt, LastRestedAt, LastHealedAt, LastTalkedAt, LastAdventureAt, LastCheckedAt)
+- 统计数据 (TotalInteractions, GamesWon, AdventuresCompleted, DialogueCount, FeedCount)
+- 进化累积分 (AccHappiness, AccHealth, AccPlayful, Night/Day counts, FeedRegularity)
+- 状态 (Alive, CurrentAnimation)
+- 方法: `Feed()`, `Play()`, `Talk()`, `Rest()`, `Heal()`, `MoodScore()`, `MoodName()`,
+  `UpdateAnimation()`, `SimulateDecay()`, `ApplyOfflineDecay()`
 
 ### store.JSONStore
 
