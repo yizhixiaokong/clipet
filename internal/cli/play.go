@@ -38,9 +38,7 @@ func runPlay(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("保存失败: %w", err)
 	}
 
-	fmt.Printf("🎮 %s 玩得很开心！快乐度: %d → %d/100\n", pet.Name, oldHappiness, pet.Happiness)
-
-	// Check evolution
+	fmt.Printf("play: happiness %d -> %d, energy %d\n", oldHappiness, pet.Happiness, pet.Energy)
 	checkAndReportEvolution(pet)
 	return nil
 }

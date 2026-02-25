@@ -27,6 +27,9 @@ feed: clipet          ## 喂食
 play: clipet          ## 玩耍
 	./clipet play
 
+reset: clipet         ## 删除存档
+	./clipet reset -y
+
 # ── 开发工具 ──────────────────────────────────────────
 validate: dev         ## 校验内置猫物种包
 	./clipet-dev validate internal/assets/builtins/cat-pack

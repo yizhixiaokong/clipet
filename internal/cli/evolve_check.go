@@ -23,5 +23,5 @@ func checkAndReportEvolution(pet *game.Pet) {
 	game.DoEvolve(pet, *best)
 	_ = petStore.Save(pet)
 
-	fmt.Printf("\n✨ %s 进化了！%s → %s（%s）\n", pet.Name, oldStageID, best.ToStage.Name, best.ToStage.Phase)
+	fmt.Printf("evolve: %s -> %s (%s)\n", oldStageID, best.ToStage.ID, best.ToStage.Phase)
 }

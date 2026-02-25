@@ -38,9 +38,7 @@ func runFeed(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("保存失败: %w", err)
 	}
 
-	fmt.Printf("🍖 %s 吃得很开心！饱腹度: %d → %d/100\n", pet.Name, oldHunger, pet.Hunger)
-
-	// Check evolution
+	fmt.Printf("feed: hunger %d -> %d\n", oldHunger, pet.Hunger)
 	checkAndReportEvolution(pet)
 	return nil
 }

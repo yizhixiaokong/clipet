@@ -38,6 +38,7 @@ func NewRootCmd() *cobra.Command {
 	root.AddCommand(newStatusCmd())
 	root.AddCommand(newFeedCmd())
 	root.AddCommand(newPlayCmd())
+	root.AddCommand(newResetCmd())
 
 	return root
 }
