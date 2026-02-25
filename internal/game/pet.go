@@ -2,6 +2,9 @@
 package game
 
 import (
+	"fmt"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -204,4 +207,79 @@ func clamp(val, min, max int) int {
 		return max
 	}
 	return val
+}
+
+// SimulateDecay applies time-based attribute decay over the given duration.
+// Decay rates per hour: hunger -3, happiness -2, energy -1.
+// If hunger drops below 20, health decays at -0.5/hr.
+// If health reaches 0, the pet dies.
+func (p *Pet) SimulateDecay(elapsed time.Duration) {
+	if !p.Alive {
+		return
+	}
+	hours := elapsed.Hours()
+	p.Hunger = clamp(p.Hunger-int(3*hours), 0, 100)
+	p.Happiness = clamp(p.Happiness-int(2*hours), 0, 100)
+	p.Energy = clamp(p.Energy-int(1*hours), 0, 100)
+	if p.Hunger < 20 {
+		p.Health = clamp(p.Health-int(0.5*hours), 0, 100)
+	}
+	if p.Health <= 0 {
+		p.Alive = false
+	}
+	p.LastCheckedAt = time.Now()
+}
+
+// SetField sets a pet field by name from a raw string value.
+// Returns the previous value as a string for display purposes.
+func (p *Pet) SetField(field string, raw string) (old string, err error) {
+	switch strings.ToLower(field) {
+	case "hunger":
+		old = strconv.Itoa(p.Hunger)
+		v, e := strconv.Atoi(raw)
+		if e != nil {
+			return "", e
+		}
+		p.Hunger = clamp(v, 0, 100)
+	case "happiness":
+		old = strconv.Itoa(p.Happiness)
+		v, e := strconv.Atoi(raw)
+		if e != nil {
+			return "", e
+		}
+		p.Happiness = clamp(v, 0, 100)
+	case "health":
+		old = strconv.Itoa(p.Health)
+		v, e := strconv.Atoi(raw)
+		if e != nil {
+			return "", e
+		}
+		p.Health = clamp(v, 0, 100)
+	case "energy":
+		old = strconv.Itoa(p.Energy)
+		v, e := strconv.Atoi(raw)
+		if e != nil {
+			return "", e
+		}
+		p.Energy = clamp(v, 0, 100)
+	case "name":
+		old = p.Name
+		p.Name = raw
+	case "species":
+		old = p.Species
+		p.Species = raw
+	case "stage_id":
+		old = p.StageID
+		p.StageID = raw
+	case "alive":
+		old = strconv.FormatBool(p.Alive)
+		b, e := strconv.ParseBool(raw)
+		if e != nil {
+			return "", e
+		}
+		p.Alive = b
+	default:
+		return "", fmt.Errorf("unknown field %q; valid: hunger, happiness, health, energy, name, species, stage_id, alive", field)
+	}
+	return old, nil
 }

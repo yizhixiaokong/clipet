@@ -1,5 +1,6 @@
 # Binaries (root level only)
 /clipet
+/clipet-dev
 *.exe
 *.exe~
 *.dll
