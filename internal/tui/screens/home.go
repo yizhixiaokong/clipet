@@ -13,22 +13,35 @@ import (
 	"charm.land/lipgloss/v2"
 )
 
-// actionItem represents a single action in the 2x2 grid.
+// actionItem represents a single action.
 type actionItem struct {
 	icon   string
 	label  string
 	action string
 }
 
-// 3x2 action grid (Pokemon-style).
-var actionGrid = [3][2]actionItem{
-	{{"🍖", "喂食", "feed"}, {"🎮", "玩耍", "play"}},
-	{{"💤", "休息", "rest"}, {"💊", "治疗", "heal"}},
-	{{"💬", "对话", "talk"}, {"📋", "信息", "info"}},
+// menuCategory groups related actions under a tab.
+type menuCategory struct {
+	icon    string
+	label   string
+	actions []actionItem
 }
 
-const actionRows = 3
-const actionCols = 2
+// categories defines the two-level menu structure.
+var categories = []menuCategory{
+	{"🐾", "照顾", []actionItem{
+		{"🍖", "喂食", "feed"},
+		{"💤", "休息", "rest"},
+		{"💊", "治疗", "heal"},
+	}},
+	{"🎮", "互动", []actionItem{
+		{"🎮", "玩耍", "play"},
+		{"💬", "对话", "talk"},
+	}},
+	{"📋", "查看", []actionItem{
+		{"📋", "信息", "info"},
+	}},
+}
 
 // HomeModel is the home screen model.
 type HomeModel struct {
@@ -38,10 +51,11 @@ type HomeModel struct {
 	petView  *components.PetView
 	theme    styles.Theme
 
-	menuRow int
-	menuCol int
-	width   int
-	height  int
+	catIdx    int  // selected category tab
+	actIdx    int  // selected action within category
+	inSubmenu bool // true when navigating sub-actions
+	width     int
+	height    int
 
 	message   string // transient feedback message
 	dialogue  string // last dialogue line
@@ -84,35 +98,59 @@ func (h HomeModel) UpdatePet(pet *game.Pet) HomeModel {
 func (h HomeModel) Update(msg tea.Msg) (HomeModel, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
-		switch msg.String() {
-		case "up", "k":
-			if h.menuRow > 0 {
-				h.menuRow--
-			}
-		case "down", "j":
-			if h.menuRow < actionRows-1 {
-				h.menuRow++
-			}
-		case "left", "h":
-			if h.menuCol > 0 {
-				h.menuCol--
-			}
-		case "right", "l":
-			if h.menuCol < actionCols-1 {
-				h.menuCol++
-			}
-		case "enter", " ":
-			h = h.executeAction(actionGrid[h.menuRow][h.menuCol].action)
+		key := msg.String()
+
+		// Global shortcut keys always work
+		switch key {
 		case "f":
 			h = h.executeAction("feed")
+			return h, nil
 		case "p":
 			h = h.executeAction("play")
+			return h, nil
 		case "r":
 			h = h.executeAction("rest")
+			return h, nil
 		case "c":
 			h = h.executeAction("heal")
+			return h, nil
 		case "t":
 			h = h.executeAction("talk")
+			return h, nil
+		}
+
+		if !h.inSubmenu {
+			// Level 0: category tabs
+			switch key {
+			case "left", "h":
+				if h.catIdx > 0 {
+					h.catIdx--
+				}
+			case "right", "l":
+				if h.catIdx < len(categories)-1 {
+					h.catIdx++
+				}
+			case "down", "j", "enter", " ":
+				h.inSubmenu = true
+				h.actIdx = 0
+			}
+		} else {
+			// Level 1: sub-actions
+			cat := categories[h.catIdx]
+			switch key {
+			case "left", "h":
+				if h.actIdx > 0 {
+					h.actIdx--
+				}
+			case "right", "l":
+				if h.actIdx < len(cat.actions)-1 {
+					h.actIdx++
+				}
+			case "up", "k", "escape":
+				h.inSubmenu = false
+			case "enter", " ":
+				h = h.executeAction(cat.actions[h.actIdx].action)
+			}
 		}
 	}
 	return h, nil
@@ -252,11 +290,17 @@ func (h HomeModel) View() string {
 	// 3) Dialogue / message area
 	msgArea := h.renderMessageArea(totalInner)
 
-	// 4) Action menu (2x2 grid)
-	actionMenu := h.renderActionGrid(totalInner)
+	// 4) Action menu (category tabs + sub-actions)
+	actionMenu := h.renderActionMenu(totalInner)
 
 	// 5) Help bar
-	help := h.theme.HelpBar.Width(totalInner).Render("←→↑↓ 选择  Enter 确认  f喂食 p玩耍 r休息 c治疗 t对话  q 退出")
+	var helpText string
+	if h.inSubmenu {
+		helpText = "←→ 选择动作  Enter 确认  ↑/Esc 返回  f喂食 p玩耍 r休息 c治疗 t对话  q 退出"
+	} else {
+		helpText = "←→ 切换分类  ↓/Enter 进入  f喂食 p玩耍 r休息 c治疗 t对话  q 退出"
+	}
+	help := h.theme.HelpBar.Width(totalInner).Render(helpText)
 
 	// Compose
 	return lipgloss.JoinVertical(lipgloss.Left,
@@ -432,30 +476,42 @@ func (h HomeModel) renderMessageArea(width int) string {
 		Render("  等待指令...")
 }
 
-// renderActionGrid renders the Pokemon-style 2x2 action menu.
-func (h HomeModel) renderActionGrid(totalWidth int) string {
-	cellInner := (totalWidth - 8) / 2 // account for borders
-	if cellInner < 8 {
-		cellInner = 8
+// renderActionMenu renders the two-level category tabs + sub-action menu.
+func (h HomeModel) renderActionMenu(totalWidth int) string {
+	// --- Category tab bar ---
+	tabW := (totalWidth - 4) / len(categories)
+	if tabW < 8 {
+		tabW = 8
 	}
-
-	renderCell := func(row, col int) string {
-		item := actionGrid[row][col]
-		label := item.icon + " " + item.label
-		selected := h.menuRow == row && h.menuCol == col
-
-		if selected {
-			return h.theme.ActionCellSelected.Width(cellInner).Render("▸ " + label)
+	var tabs []string
+	for i, cat := range categories {
+		label := cat.icon + " " + cat.label
+		if i == h.catIdx && !h.inSubmenu {
+			tabs = append(tabs, h.theme.CategoryTabActive.Width(tabW).Render("▸ "+label))
+		} else if i == h.catIdx && h.inSubmenu {
+			tabs = append(tabs, h.theme.CategoryTabOpen.Width(tabW).Render("▾ "+label))
+		} else {
+			tabs = append(tabs, h.theme.CategoryTab.Width(tabW).Render("  "+label))
 		}
-		return h.theme.ActionCell.Width(cellInner).Render("  " + label)
 	}
+	tabBar := lipgloss.JoinHorizontal(lipgloss.Center, tabs...)
 
-	topRow := lipgloss.JoinHorizontal(lipgloss.Center,
-		renderCell(0, 0), renderCell(0, 1))
-	midRow := lipgloss.JoinHorizontal(lipgloss.Center,
-		renderCell(1, 0), renderCell(1, 1))
-	botRow := lipgloss.JoinHorizontal(lipgloss.Center,
-		renderCell(2, 0), renderCell(2, 1))
+	// --- Sub-action row ---
+	cat := categories[h.catIdx]
+	actW := (totalWidth - 4) / len(cat.actions)
+	if actW < 8 {
+		actW = 8
+	}
+	var acts []string
+	for i, act := range cat.actions {
+		label := act.icon + " " + act.label
+		if h.inSubmenu && i == h.actIdx {
+			acts = append(acts, h.theme.ActionCellSelected.Width(actW).Render("▸ "+label))
+		} else {
+			acts = append(acts, h.theme.ActionCell.Width(actW).Render("  "+label))
+		}
+	}
+	actRow := lipgloss.JoinHorizontal(lipgloss.Center, acts...)
 
-	return lipgloss.JoinVertical(lipgloss.Left, topRow, midRow, botRow)
+	return lipgloss.JoinVertical(lipgloss.Left, tabBar, actRow)
 }

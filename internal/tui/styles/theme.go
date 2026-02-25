@@ -31,6 +31,11 @@ type Theme struct {
 	ActionCell         lipgloss.Style
 	ActionCellSelected lipgloss.Style
 
+	// Category tabs (two-level menu)
+	CategoryTab       lipgloss.Style
+	CategoryTabActive lipgloss.Style
+	CategoryTabOpen   lipgloss.Style
+
 	// Evolve screen
 	EvolveTitle lipgloss.Style
 	EvolveArt   lipgloss.Style
@@ -127,6 +132,30 @@ func DefaultTheme() Theme {
 			BorderForeground(colorSelected).
 			Foreground(colorSelectedFg).
 			Background(colorSelected).
+			Bold(true).
+			Padding(0, 1).
+			Align(lipgloss.Center),
+
+		CategoryTab: lipgloss.NewStyle().
+			Border(border).
+			BorderForeground(colorDim).
+			Foreground(colorDim).
+			Padding(0, 1).
+			Align(lipgloss.Center),
+
+		CategoryTabActive: lipgloss.NewStyle().
+			Border(border).
+			BorderForeground(colorGold).
+			Foreground(colorGold).
+			Bold(true).
+			Padding(0, 1).
+			Align(lipgloss.Center),
+
+		CategoryTabOpen: lipgloss.NewStyle().
+			Border(border).
+			BorderForeground(colorGold).
+			Foreground(colorSelectedFg).
+			Background(colorPrimary).
 			Bold(true).
 			Padding(0, 1).
 			Align(lipgloss.Center),
