@@ -1,0 +1,249 @@
+[species]
+id = "cat"
+name = "猫"
+description = "灵动的小猫咪，拥有无限可能。从一颗神秘之蛋开始，成长为奥术、狂野或机械方向的传奇生物。"
+author = "clipet-builtin"
+version = "1.0.0"
+
+[species.base_stats]
+hunger = 50
+happiness = 60
+health = 70
+energy = 65
+
+# ============================================================
+# 进化阶段定义
+# ============================================================
+
+# --- Egg ---
+[[stages]]
+id = "egg"
+name = "神秘之蛋"
+phase = "egg"
+
+# --- Baby ---
+[[stages]]
+id = "baby_cat"
+name = "小猫咪"
+phase = "baby"
+
+# --- Child: 3 branches ---
+[[stages]]
+id = "child_arcane"
+name = "咒术小猫"
+phase = "child"
+
+[[stages]]
+id = "child_feral"
+name = "战斗小猫"
+phase = "child"
+
+[[stages]]
+id = "child_mech"
+name = "机甲小猫"
+phase = "child"
+
+# --- Adult: 6 branches ---
+[[stages]]
+id = "adult_shadow_mage"
+name = "暗影魅猫"
+phase = "adult"
+
+[[stages]]
+id = "adult_crystal_oracle"
+name = "水晶预言猫"
+phase = "adult"
+
+[[stages]]
+id = "adult_flame_lion"
+name = "烈焰狮"
+phase = "adult"
+
+[[stages]]
+id = "adult_frost_panther"
+name = "霜暴豹"
+phase = "adult"
+
+[[stages]]
+id = "adult_cyber_lynx"
+name = "赛博猞猁"
+phase = "adult"
+
+[[stages]]
+id = "adult_chrome_jaguar"
+name = "合金猎豹"
+phase = "adult"
+
+# --- Legend: 6 ultimate forms ---
+[[stages]]
+id = "legend_void_walker"
+name = "虚空行者"
+phase = "legend"
+
+[[stages]]
+id = "legend_astral_sage"
+name = "星辰贤者"
+phase = "legend"
+
+[[stages]]
+id = "legend_immortal_inferno"
+name = "不灭炎帝"
+phase = "legend"
+
+[[stages]]
+id = "legend_cryostorm_deity"
+name = "极寒霜神"
+phase = "legend"
+
+[[stages]]
+id = "legend_quantum_phantom"
+name = "量子幽灵"
+phase = "legend"
+
+[[stages]]
+id = "legend_stellar_predator"
+name = "星际掠夺者"
+phase = "legend"
+
+# ============================================================
+# 进化路径
+# ============================================================
+
+# Egg -> Baby
+[[evolutions]]
+from = "egg"
+to = "baby_cat"
+[evolutions.condition]
+min_age_hours = 1.0
+
+# Baby -> Child (3 branches)
+[[evolutions]]
+from = "baby_cat"
+to = "child_arcane"
+[evolutions.condition]
+min_age_hours = 24.0
+attr_bias = "happiness"
+min_dialogues = 10
+
+[[evolutions]]
+from = "baby_cat"
+to = "child_feral"
+[evolutions.condition]
+min_age_hours = 24.0
+attr_bias = "health"
+min_adventures = 5
+
+[[evolutions]]
+from = "baby_cat"
+to = "child_mech"
+[evolutions.condition]
+min_age_hours = 24.0
+attr_bias = "playful"
+min_feed_regularity = 0.7
+
+# Child Arcane -> Adult (2 branches)
+[[evolutions]]
+from = "child_arcane"
+to = "adult_shadow_mage"
+[evolutions.condition]
+min_age_hours = 72.0
+night_interactions_bias = true
+
+[[evolutions]]
+from = "child_arcane"
+to = "adult_crystal_oracle"
+[evolutions.condition]
+min_age_hours = 72.0
+day_interactions_bias = true
+
+# Child Feral -> Adult (2 branches)
+[[evolutions]]
+from = "child_feral"
+to = "adult_flame_lion"
+[evolutions.condition]
+min_age_hours = 72.0
+attr_bias = "hunger"
+
+[[evolutions]]
+from = "child_feral"
+to = "adult_frost_panther"
+[evolutions.condition]
+min_age_hours = 72.0
+attr_bias = "energy"
+
+# Child Mech -> Adult (2 branches)
+[[evolutions]]
+from = "child_mech"
+to = "adult_cyber_lynx"
+[evolutions.condition]
+min_age_hours = 72.0
+min_dialogues = 30
+
+[[evolutions]]
+from = "child_mech"
+to = "adult_chrome_jaguar"
+[evolutions.condition]
+min_age_hours = 72.0
+min_adventures = 15
+
+# Adult -> Legend (6 branches)
+[[evolutions]]
+from = "adult_shadow_mage"
+to = "legend_void_walker"
+[evolutions.condition]
+min_age_hours = 720.0
+min_interactions = 500
+[evolutions.condition.min_attr]
+happiness = 90
+
+[[evolutions]]
+from = "adult_crystal_oracle"
+to = "legend_astral_sage"
+[evolutions.condition]
+min_age_hours = 720.0
+min_interactions = 500
+[evolutions.condition.min_attr]
+happiness = 90
+
+[[evolutions]]
+from = "adult_flame_lion"
+to = "legend_immortal_inferno"
+[evolutions.condition]
+min_age_hours = 720.0
+min_interactions = 500
+[evolutions.condition.min_attr]
+health = 90
+
+[[evolutions]]
+from = "adult_frost_panther"
+to = "legend_cryostorm_deity"
+[evolutions.condition]
+min_age_hours = 720.0
+min_interactions = 500
+[evolutions.condition.min_attr]
+energy = 90
+
+[[evolutions]]
+from = "adult_cyber_lynx"
+to = "legend_quantum_phantom"
+[evolutions.condition]
+min_age_hours = 720.0
+min_interactions = 500
+[evolutions.condition.min_attr]
+happiness = 85
+
+[[evolutions]]
+from = "adult_chrome_jaguar"
+to = "legend_stellar_predator"
+[evolutions.condition]
+min_age_hours = 720.0
+min_interactions = 500
+[evolutions.condition.min_attr]
+health = 85
+
+# ============================================================
+# Scripts (reserved for future extension)
+# ============================================================
+[scripts]
+# on_evolve = "scripts/on_evolve.lua"
+# on_adventure = "scripts/on_adventure.lua"

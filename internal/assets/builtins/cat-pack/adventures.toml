@@ -1,0 +1,142 @@
+# 猫咪专属冒险事件
+
+# ============================================================
+# 幼年冒险
+# ============================================================
+
+[[adventures]]
+id = "cat_fish_pond"
+name = "神秘鱼塘"
+stage = ["baby_cat", "child_*"]
+description = "你的猫发现了一个闪着奇怪光芒的鱼塘..."
+
+  [[adventures.choices]]
+  text = "让它去抓鱼"
+  outcomes = [
+    { weight = 60, text = "抓到了一条闪光鱼！看起来精神抖擞。", effects = { happiness = 15, hunger = 20 } },
+    { weight = 40, text = "扑了个空，溅了一身水，但玩得很开心。", effects = { happiness = 10, energy = -5 } },
+  ]
+
+  [[adventures.choices]]
+  text = "小心观察"
+  outcomes = [
+    { weight = 70, text = "在水底发现了一块古老的符文石！", effects = { happiness = 5 } },
+    { weight = 30, text = "等了半天什么都没发现... 不过晒了个太阳。", effects = { energy = 5 } },
+  ]
+
+[[adventures]]
+id = "cat_cardboard_box"
+name = "mysterious_box"
+stage = ["baby_cat"]
+description = "路边有一个散发着奇异气息的纸箱..."
+
+  [[adventures.choices]]
+  text = "钻进去探索"
+  outcomes = [
+    { weight = 50, text = "里面有一颗发光的珠子！猫咪开心地叼了出来。", effects = { happiness = 20 } },
+    { weight = 30, text = "箱子里温暖又舒适，美美地睡了一觉。", effects = { energy = 30, happiness = 5 } },
+    { weight = 20, text = "箱子突然塌了... 不过没有受伤。", effects = { happiness = -5 } },
+  ]
+
+  [[adventures.choices]]
+  text = "绕着箱子走一圈"
+  outcomes = [
+    { weight = 60, text = "发现箱子上写着神秘的文字... 虽然看不懂。", effects = { happiness = 5 } },
+    { weight = 40, text = "踢了踢箱子，没什么特别的。", effects = {} },
+  ]
+
+[[adventures]]
+id = "cat_butterfly"
+name = "追逐蝴蝶"
+stage = ["baby_cat", "child_*"]
+description = "一只发着微光的蝴蝶在眼前飞舞..."
+
+  [[adventures.choices]]
+  text = "奋力追逐！"
+  outcomes = [
+    { weight = 40, text = "抓到了！蝴蝶化成了一团暖光融入了身体。", effects = { happiness = 15, energy = -10 } },
+    { weight = 40, text = "追了半天没追上，又累又开心。", effects = { happiness = 5, energy = -15 } },
+    { weight = 20, text = "追到了一朵花旁边，闻到了甜蜜的花香。", effects = { happiness = 10, health = 5 } },
+  ]
+
+  [[adventures.choices]]
+  text = "安静观察"
+  outcomes = [
+    { weight = 50, text = "蝴蝶停在了头上，被一股宁静的力量包围。", effects = { happiness = 10, energy = 10 } },
+    { weight = 50, text = "蝴蝶飞走了，但心情很平静。", effects = { happiness = 5 } },
+  ]
+
+# ============================================================
+# 少年冒险 - 奥术路线
+# ============================================================
+
+[[adventures]]
+id = "arcane_ancient_library"
+name = "远古图书馆"
+stage = ["child_arcane", "adult_shadow_mage", "adult_crystal_oracle"]
+description = "在数据流的深处，发现了一座由魔法构成的虚拟图书馆..."
+
+  [[adventures.choices]]
+  text = "翻阅禁忌魔法书"
+  outcomes = [
+    { weight = 50, text = "领悟了一道新的咒术！魔力大增。", effects = { happiness = 20 } },
+    { weight = 30, text = "书中的文字太晦涩，头晕了一阵。", effects = { energy = -10 } },
+    { weight = 20, text = "触发了书上的陷阱！受到了轻微反噬。", effects = { health = -10, happiness = -5 } },
+  ]
+
+  [[adventures.choices]]
+  text = "安静冥想"
+  outcomes = [
+    { weight = 70, text = "在图书馆的宁静中恢复了精力。", effects = { energy = 15, happiness = 10 } },
+    { weight = 30, text = "冥想中看到了未来的碎片...", effects = { happiness = 15 } },
+  ]
+
+# ============================================================
+# 少年冒险 - 狂野路线
+# ============================================================
+
+[[adventures]]
+id = "feral_arena"
+name = "荒野竞技场"
+stage = ["child_feral", "adult_flame_lion", "adult_frost_panther"]
+description = "一座由元素之力构建的竞技场出现在前方..."
+
+  [[adventures.choices]]
+  text = "接受挑战！"
+  outcomes = [
+    { weight = 40, text = "在激烈的战斗中获胜了！实力大增。", effects = { health = 10, happiness = 20 } },
+    { weight = 40, text = "勉强打成平手，但获得了宝贵的战斗经验。", effects = { health = 5, energy = -10 } },
+    { weight = 20, text = "对手太强了... 下次一定！", effects = { health = -5, energy = -15 } },
+  ]
+
+  [[adventures.choices]]
+  text = "先观战学习"
+  outcomes = [
+    { weight = 60, text = "观察到了对手的弱点模式！", effects = { happiness = 10 } },
+    { weight = 40, text = "看了一场精彩的对决，热血沸腾！", effects = { happiness = 15, energy = 5 } },
+  ]
+
+# ============================================================
+# 少年冒险 - 机械路线
+# ============================================================
+
+[[adventures]]
+id = "mech_scrapyard"
+name = "星际废料场"
+stage = ["child_mech", "adult_cyber_lynx", "adult_chrome_jaguar"]
+description = "发现了一片散落着高科技残骸的废料场..."
+
+  [[adventures.choices]]
+  text = "搜索可用零件"
+  outcomes = [
+    { weight = 50, text = "找到了一块高级处理器！系统性能提升。", effects = { happiness = 15 } },
+    { weight = 30, text = "捡到一些普通零件，聊胜于无。", effects = { happiness = 5 } },
+    { weight = 20, text = "不小心碰到了漏电的线路！", effects = { health = -10, energy = -5 } },
+  ]
+
+  [[adventures.choices]]
+  text = "扫描分析废料场"
+  outcomes = [
+    { weight = 60, text = "扫描到了一份加密的星际航图数据！", effects = { happiness = 20 } },
+    { weight = 40, text = "数据都已损坏... 不过扫描系统得到了校准。", effects = { happiness = 5, energy = 5 } },
+  ]
