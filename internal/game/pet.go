@@ -31,6 +31,49 @@ const (
 	AnimHappy    AnimState = "happy"
 )
 
+// Action cooldown durations.
+const (
+	CooldownFeed = 10 * time.Minute
+	CooldownPlay = 5 * time.Minute
+	CooldownRest = 15 * time.Minute
+	CooldownHeal = 20 * time.Minute
+	CooldownTalk = 2 * time.Minute
+)
+
+// ActionResult holds the outcome of a pet action.
+type ActionResult struct {
+	OK      bool              // whether the action succeeded
+	Message string            // human-readable feedback
+	Changes map[string][2]int // attr name -> {old, new}
+}
+
+// diminish calculates a diminishing-return gain.
+// As 'current' approaches 100 the effective gain shrinks toward 1.
+func diminish(base, current int) int {
+	gain := base * (100 - current) / 100
+	if gain < 1 {
+		gain = 1
+	}
+	return gain
+}
+
+// failResult is a convenience helper for failed actions.
+func failResult(msg string) ActionResult {
+	return ActionResult{OK: false, Message: msg}
+}
+
+// cooldownLeft returns a human-readable remaining cooldown string.
+func cooldownLeft(last time.Time, cd time.Duration) string {
+	remaining := cd - time.Since(last)
+	if remaining <= 0 {
+		return ""
+	}
+	if remaining < time.Minute {
+		return fmt.Sprintf("%d秒", int(remaining.Seconds()))
+	}
+	return fmt.Sprintf("%d分%d秒", int(remaining.Minutes()), int(remaining.Seconds())%60)
+}
+
 // Pet is the central game entity representing the player's virtual pet.
 type Pet struct {
 	// Basic info
@@ -50,6 +93,9 @@ type Pet struct {
 	// Timestamps
 	LastFedAt     time.Time `json:"last_fed_at"`
 	LastPlayedAt  time.Time `json:"last_played_at"`
+	LastRestedAt  time.Time `json:"last_rested_at"`
+	LastHealedAt  time.Time `json:"last_healed_at"`
+	LastTalkedAt  time.Time `json:"last_talked_at"`
 	LastCheckedAt time.Time `json:"last_checked_at"`
 
 	// Statistics
@@ -96,41 +142,130 @@ func NewPet(name, species, eggStageID string, hunger, happiness, health, energy 
 }
 
 // Feed increases the pet's hunger (fullness) level.
-func (p *Pet) Feed() {
+// Cooldown: 10min. Prerequisite: hunger < 95. Diminishing returns on gain.
+func (p *Pet) Feed() ActionResult {
 	if !p.Alive {
-		return
+		return failResult("宠物已经不在了...")
 	}
-	p.Hunger = clamp(p.Hunger+25, 0, 100)
-	p.Happiness = clamp(p.Happiness+5, 0, 100)
+	if left := cooldownLeft(p.LastFedAt, CooldownFeed); left != "" {
+		return failResult(fmt.Sprintf("宠物还不饿，%s后可以再喂", left))
+	}
+	if p.Hunger >= 95 {
+		return failResult("宠物已经很饱了！")
+	}
+	ch := make(map[string][2]int)
+	oldH := p.Hunger
+	oldHp := p.Happiness
+	p.Hunger = clamp(p.Hunger+diminish(25, p.Hunger), 0, 100)
+	p.Happiness = clamp(p.Happiness+diminish(5, p.Happiness), 0, 100)
+	ch["hunger"] = [2]int{oldH, p.Hunger}
+	ch["happiness"] = [2]int{oldHp, p.Happiness}
 	p.LastFedAt = time.Now()
 	p.TotalInteractions++
 	p.FeedCount++
 	p.trackTimeOfDay()
+	return ActionResult{OK: true, Message: "喂食成功！", Changes: ch}
 }
 
 // Play increases the pet's happiness and decreases energy.
-func (p *Pet) Play() {
+// Cooldown: 5min. Prerequisite: energy >= 10. Diminishing returns on happiness gain.
+func (p *Pet) Play() ActionResult {
 	if !p.Alive {
-		return
+		return failResult("宠物已经不在了...")
 	}
-	p.Happiness = clamp(p.Happiness+20, 0, 100)
+	if left := cooldownLeft(p.LastPlayedAt, CooldownPlay); left != "" {
+		return failResult(fmt.Sprintf("宠物还在喘气，%s后可以再玩", left))
+	}
+	if p.Energy < 10 {
+		return failResult("宠物太累了，先休息一下吧！")
+	}
+	ch := make(map[string][2]int)
+	oldHp := p.Happiness
+	oldE := p.Energy
+	p.Happiness = clamp(p.Happiness+diminish(20, p.Happiness), 0, 100)
 	p.Energy = clamp(p.Energy-10, 0, 100)
+	ch["happiness"] = [2]int{oldHp, p.Happiness}
+	ch["energy"] = [2]int{oldE, p.Energy}
 	p.AccPlayful++
 	p.LastPlayedAt = time.Now()
 	p.TotalInteractions++
 	p.trackTimeOfDay()
+	return ActionResult{OK: true, Message: "玩耍愉快！", Changes: ch}
 }
 
 // Talk records a dialogue interaction.
-func (p *Pet) Talk() {
+// Cooldown: 2min. Diminishing returns on happiness gain.
+func (p *Pet) Talk() ActionResult {
 	if !p.Alive {
-		return
+		return failResult("宠物已经不在了...")
 	}
-	p.Happiness = clamp(p.Happiness+5, 0, 100)
+	if left := cooldownLeft(p.LastTalkedAt, CooldownTalk); left != "" {
+		return failResult(fmt.Sprintf("宠物需要消化一下，%s后可以再聊", left))
+	}
+	ch := make(map[string][2]int)
+	oldHp := p.Happiness
+	p.Happiness = clamp(p.Happiness+diminish(5, p.Happiness), 0, 100)
+	ch["happiness"] = [2]int{oldHp, p.Happiness}
 	p.DialogueCount++
 	p.TotalInteractions++
 	p.AccHappiness++
+	p.LastTalkedAt = time.Now()
 	p.trackTimeOfDay()
+	return ActionResult{OK: true, Message: "聊天愉快！", Changes: ch}
+}
+
+// Rest lets the pet sleep/rest, recovering energy and a small amount of health.
+// Cooldown: 15min. Prerequisite: energy < 90. Diminishing returns on energy gain.
+func (p *Pet) Rest() ActionResult {
+	if !p.Alive {
+		return failResult("宠物已经不在了...")
+	}
+	if left := cooldownLeft(p.LastRestedAt, CooldownRest); left != "" {
+		return failResult(fmt.Sprintf("宠物还不困，%s后可以再休息", left))
+	}
+	if p.Energy >= 90 {
+		return failResult("宠物精力充沛，不需要休息！")
+	}
+	ch := make(map[string][2]int)
+	oldE := p.Energy
+	oldH := p.Health
+	oldHp := p.Happiness
+	p.Energy = clamp(p.Energy+diminish(30, p.Energy), 0, 100)
+	p.Health = clamp(p.Health+diminish(5, p.Health), 0, 100)
+	p.Happiness = clamp(p.Happiness-5, 0, 100)
+	ch["energy"] = [2]int{oldE, p.Energy}
+	ch["health"] = [2]int{oldH, p.Health}
+	ch["happiness"] = [2]int{oldHp, p.Happiness}
+	p.LastRestedAt = time.Now()
+	p.TotalInteractions++
+	p.trackTimeOfDay()
+	return ActionResult{OK: true, Message: "休息一下～", Changes: ch}
+}
+
+// Heal treats the pet, recovering health but costing energy.
+// Cooldown: 20min. Prerequisite: energy >= 10. Diminishing returns on health gain.
+func (p *Pet) Heal() ActionResult {
+	if !p.Alive {
+		return failResult("宠物已经不在了...")
+	}
+	if left := cooldownLeft(p.LastHealedAt, CooldownHeal); left != "" {
+		return failResult(fmt.Sprintf("刚治疗过，%s后可以再治疗", left))
+	}
+	if p.Energy < 10 {
+		return failResult("宠物精力不足，需要先休息！")
+	}
+	ch := make(map[string][2]int)
+	oldH := p.Health
+	oldE := p.Energy
+	p.Health = clamp(p.Health+diminish(25, p.Health), 0, 100)
+	p.Energy = clamp(p.Energy-15, 0, 100)
+	ch["health"] = [2]int{oldH, p.Health}
+	ch["energy"] = [2]int{oldE, p.Energy}
+	p.AccHealth++
+	p.LastHealedAt = time.Now()
+	p.TotalInteractions++
+	p.trackTimeOfDay()
+	return ActionResult{OK: true, Message: "治疗完成！", Changes: ch}
 }
 
 // MoodScore calculates the composite mood score (0-100).

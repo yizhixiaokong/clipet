@@ -1,6 +1,7 @@
 package main
 
 import (
+	"clipet/internal/game"
 	"fmt"
 	"time"
 
@@ -52,6 +53,18 @@ func newTimeskipCmd() *cobra.Command {
 			fmt.Printf("  energy:  %d -> %d\n", oldEnergy, pet.Energy)
 			if !pet.Alive {
 				fmt.Println("  WARNING: pet died during timeskip!")
+			}
+
+			// Check evolution after timeskip
+			candidates := game.CheckEvolution(pet, registry)
+			if len(candidates) > 0 {
+				best := game.BestCandidate(candidates)
+				if best != nil {
+					oldID := pet.StageID
+					game.DoEvolve(pet, *best)
+					_ = petStore.Save(pet)
+					fmt.Printf("evolve: %s -> %s (%s)\n", oldID, best.ToStage.ID, best.ToStage.Phase)
+				}
 			}
 			return nil
 		},

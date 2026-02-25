@@ -1,6 +1,7 @@
 package main
 
 import (
+	"clipet/internal/game"
 	"fmt"
 
 	"github.com/spf13/cobra"
@@ -40,6 +41,18 @@ Settable attributes:
 			}
 
 			fmt.Printf("set %s: %s -> %s\n", field, old, value)
+
+			// Check evolution after set
+			candidates := game.CheckEvolution(pet, registry)
+			if len(candidates) > 0 {
+				best := game.BestCandidate(candidates)
+				if best != nil {
+					oldID := pet.StageID
+					game.DoEvolve(pet, *best)
+					_ = petStore.Save(pet)
+					fmt.Printf("evolve: %s -> %s (%s)\n", oldID, best.ToStage.ID, best.ToStage.Phase)
+				}
+			}
 			return nil
 		},
 	}

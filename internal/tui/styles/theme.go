@@ -88,14 +88,14 @@ func DefaultTheme() Theme {
 
 		StatusLabel: lipgloss.NewStyle().
 			Foreground(colorDim).
-			Width(4),
+			Width(6),
 
 		StatusValue: lipgloss.NewStyle().
 			Foreground(colorText),
 
 		StatLabel: lipgloss.NewStyle().
 			Foreground(colorText).
-			Width(4),
+			Width(6),
 
 		StatFilled: lipgloss.NewStyle().
 			Foreground(colorGreen),

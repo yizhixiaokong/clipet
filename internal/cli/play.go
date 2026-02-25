@@ -31,14 +31,18 @@ func runPlay(cmd *cobra.Command, args []string) error {
 	// Apply offline decay first
 	pet.ApplyOfflineDecay()
 
-	oldHappiness := pet.Happiness
-	pet.Play()
+	res := pet.Play()
+	if !res.OK {
+		fmt.Printf("play: %s\n", res.Message)
+		return nil
+	}
 
 	if err := petStore.Save(pet); err != nil {
 		return fmt.Errorf("保存失败: %w", err)
 	}
 
-	fmt.Printf("play: happiness %d -> %d, energy %d\n", oldHappiness, pet.Happiness, pet.Energy)
+	chH := res.Changes["happiness"]
+	fmt.Printf("play: happiness %d -> %d, energy %d\n", chH[0], chH[1], pet.Energy)
 	checkAndReportEvolution(pet)
 	return nil
 }

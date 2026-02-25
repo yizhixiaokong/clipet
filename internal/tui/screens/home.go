@@ -20,13 +20,14 @@ type actionItem struct {
 	action string
 }
 
-// 2x2 action grid (Pokemon-style).
-var actionGrid = [2][2]actionItem{
+// 3x2 action grid (Pokemon-style).
+var actionGrid = [3][2]actionItem{
 	{{"🍖", "喂食", "feed"}, {"🎮", "玩耍", "play"}},
+	{{"💤", "休息", "rest"}, {"💊", "治疗", "heal"}},
 	{{"💬", "对话", "talk"}, {"📋", "信息", "info"}},
 }
 
-const actionRows = 2
+const actionRows = 3
 const actionCols = 2
 
 // HomeModel is the home screen model.
@@ -45,6 +46,7 @@ type HomeModel struct {
 	message   string // transient feedback message
 	dialogue  string // last dialogue line
 	msgIsInfo bool   // true if message is info-type
+	msgIsWarn bool   // true if message is a warning (cooldown/prereq fail)
 }
 
 // NewHomeModel creates a new home screen model.
@@ -105,6 +107,10 @@ func (h HomeModel) Update(msg tea.Msg) (HomeModel, tea.Cmd) {
 			h = h.executeAction("feed")
 		case "p":
 			h = h.executeAction("play")
+		case "r":
+			h = h.executeAction("rest")
+		case "c":
+			h = h.executeAction("heal")
 		case "t":
 			h = h.executeAction("talk")
 		}
@@ -115,23 +121,46 @@ func (h HomeModel) Update(msg tea.Msg) (HomeModel, tea.Cmd) {
 func (h HomeModel) executeAction(action string) HomeModel {
 	switch action {
 	case "feed":
-		old := h.pet.Hunger
-		h.pet.Feed()
+		res := h.pet.Feed()
+		if !res.OK {
+			h.message = res.Message
+			h.dialogue = ""
+			h.msgIsInfo = false
+			h.msgIsWarn = true
+			return h
+		}
 		_ = h.store.Save(h.pet)
-		h.message = fmt.Sprintf("喂食成功！饱腹度 %d → %d", old, h.pet.Hunger)
+		ch := res.Changes["hunger"]
+		h.message = fmt.Sprintf("喂食成功！饱腹度 %d → %d", ch[0], ch[1])
 		h.dialogue = ""
 		h.msgIsInfo = false
+		h.msgIsWarn = false
 
 	case "play":
-		old := h.pet.Happiness
-		h.pet.Play()
+		res := h.pet.Play()
+		if !res.OK {
+			h.message = res.Message
+			h.dialogue = ""
+			h.msgIsInfo = false
+			h.msgIsWarn = true
+			return h
+		}
 		_ = h.store.Save(h.pet)
-		h.message = fmt.Sprintf("玩耍愉快！快乐度 %d → %d", old, h.pet.Happiness)
+		ch := res.Changes["happiness"]
+		h.message = fmt.Sprintf("玩耍愉快！快乐度 %d → %d", ch[0], ch[1])
 		h.dialogue = ""
 		h.msgIsInfo = false
+		h.msgIsWarn = false
 
 	case "talk":
-		h.pet.Talk()
+		res := h.pet.Talk()
+		if !res.OK {
+			h.message = res.Message
+			h.dialogue = ""
+			h.msgIsInfo = false
+			h.msgIsWarn = true
+			return h
+		}
 		line := h.registry.GetDialogue(h.pet.Species, h.pet.StageID, h.pet.MoodName())
 		if line == "" {
 			line = "......"
@@ -140,6 +169,41 @@ func (h HomeModel) executeAction(action string) HomeModel {
 		h.dialogue = line
 		h.message = ""
 		h.msgIsInfo = false
+		h.msgIsWarn = false
+
+	case "rest":
+		res := h.pet.Rest()
+		if !res.OK {
+			h.message = res.Message
+			h.dialogue = ""
+			h.msgIsInfo = false
+			h.msgIsWarn = true
+			return h
+		}
+		_ = h.store.Save(h.pet)
+		chE := res.Changes["energy"]
+		chH := res.Changes["health"]
+		h.message = fmt.Sprintf("休息一下～精力 %d→%d  健康 %d→%d", chE[0], chE[1], chH[0], chH[1])
+		h.dialogue = ""
+		h.msgIsInfo = false
+		h.msgIsWarn = false
+
+	case "heal":
+		res := h.pet.Heal()
+		if !res.OK {
+			h.message = res.Message
+			h.dialogue = ""
+			h.msgIsInfo = false
+			h.msgIsWarn = true
+			return h
+		}
+		_ = h.store.Save(h.pet)
+		chH := res.Changes["health"]
+		chE := res.Changes["energy"]
+		h.message = fmt.Sprintf("治疗完成！健康 %d→%d  精力 %d→%d", chH[0], chH[1], chE[0], chE[1])
+		h.dialogue = ""
+		h.msgIsInfo = false
+		h.msgIsWarn = false
 
 	case "info":
 		h.message = fmt.Sprintf(
@@ -152,6 +216,7 @@ func (h HomeModel) executeAction(action string) HomeModel {
 		)
 		h.dialogue = ""
 		h.msgIsInfo = true
+		h.msgIsWarn = false
 	}
 	return h
 }
@@ -163,12 +228,17 @@ func (h HomeModel) View() string {
 		return "正在加载..."
 	}
 
-	// Calculate panel widths
-	totalInner := h.width - 2 // outer margin
-	if totalInner < 40 {
-		totalInner = 40
+	// Calculate panel widths — use fixed right panel, left gets remainder
+	totalInner := h.width - 2
+	if totalInner < 50 {
+		totalInner = 50
 	}
-	leftW := totalInner * 55 / 100
+	// Right panel: label(6) + bar(10) + num(4) + padding/border(6) = ~26
+	const rightPanelW = 30
+	leftW := totalInner - rightPanelW
+	if leftW < 20 {
+		leftW = 20
+	}
 	rightW := totalInner - leftW
 
 	// 1) Title bar
@@ -186,7 +256,7 @@ func (h HomeModel) View() string {
 	actionMenu := h.renderActionGrid(totalInner)
 
 	// 5) Help bar
-	help := h.theme.HelpBar.Width(totalInner).Render("←→↑↓ 选择  Enter 确认  q 退出")
+	help := h.theme.HelpBar.Width(totalInner).Render("←→↑↓ 选择  Enter 确认  f喂食 p玩耍 r休息 c治疗 t对话  q 退出")
 
 	// Compose
 	return lipgloss.JoinVertical(lipgloss.Left,
@@ -255,21 +325,18 @@ func (h HomeModel) renderStatusPanel(width int) string {
 	ageLine := h.theme.StatusLabel.Render("年龄") + " " +
 		h.theme.StatusValue.Render(fmt.Sprintf("%.1f 小时", p.AgeHours()))
 
-	// Separator
-	innerW := width - 6
-	if innerW < 10 {
-		innerW = 10
-	}
+	// Content width: label(6) + bar(10) + space+num(4) = 20
+	const contentW = 20
 	sep := lipgloss.NewStyle().
 		Foreground(styles.DimColor()).
-		Render(strings.Repeat("─", innerW))
+		Render(strings.Repeat("─", contentW))
 
 	// Stats bars
 	bars := []string{
-		h.statBar("饱腹", p.Hunger, innerW),
-		h.statBar("快乐", p.Happiness, innerW),
-		h.statBar("健康", p.Health, innerW),
-		h.statBar("精力", p.Energy, innerW),
+		h.statBar("饱腹", p.Hunger),
+		h.statBar("快乐", p.Happiness),
+		h.statBar("健康", p.Health),
+		h.statBar("精力", p.Energy),
 	}
 	statsBlock := strings.Join(bars, "\n")
 
@@ -289,6 +356,10 @@ func (h HomeModel) renderStatusPanel(width int) string {
 	)
 
 	const minHeight = 10
+	innerW := width - 6
+	if innerW < contentW {
+		innerW = contentW
+	}
 	return h.theme.StatusPanel.
 		Width(innerW).
 		Height(minHeight).
@@ -313,8 +384,8 @@ func (h HomeModel) moodDisplay() (string, lipgloss.Style) {
 	}
 }
 
-func (h HomeModel) statBar(label string, value int, maxWidth int) string {
-	barLen := 10
+func (h HomeModel) statBar(label string, value int) string {
+	const barLen = 10
 	filled := value / 10
 	if filled > barLen {
 		filled = barLen
@@ -322,11 +393,10 @@ func (h HomeModel) statBar(label string, value int, maxWidth int) string {
 	empty := barLen - filled
 
 	lab := h.theme.StatLabel.Render(label)
-	fStr := h.theme.StatFilled.Render(strings.Repeat("█", filled))
-	eStr := h.theme.StatEmpty.Render(strings.Repeat("░", empty))
-	num := lipgloss.NewStyle().Foreground(lipgloss.Color("#EAEAEA")).Width(4).Align(lipgloss.Right).Render(fmt.Sprintf("%d", value))
+	fStr := h.theme.StatFilled.Render(strings.Repeat("━", filled))
+	eStr := h.theme.StatEmpty.Render(strings.Repeat("─", empty))
 
-	return lab + " " + fStr + eStr + " " + num
+	return fmt.Sprintf("%s%s%s %3d", lab, fStr, eStr, value)
 }
 
 // renderMessageArea renders the dialogue or action feedback.
@@ -340,6 +410,12 @@ func (h HomeModel) renderMessageArea(width int) string {
 		return h.theme.DialogueBox.Width(innerW).Render("💬 " + h.dialogue)
 	}
 	if h.message != "" {
+		if h.msgIsWarn {
+			return h.theme.MessageBox.Width(innerW).
+				Copy().BorderForeground(lipgloss.Color("#AA5555")).
+				Foreground(lipgloss.Color("#FF8888")).
+				Render("⚠ " + h.message)
+		}
 		if h.msgIsInfo {
 			return h.theme.MessageBox.Width(innerW).
 				Copy().BorderForeground(lipgloss.Color("#555570")).
@@ -376,8 +452,10 @@ func (h HomeModel) renderActionGrid(totalWidth int) string {
 
 	topRow := lipgloss.JoinHorizontal(lipgloss.Center,
 		renderCell(0, 0), renderCell(0, 1))
-	botRow := lipgloss.JoinHorizontal(lipgloss.Center,
+	midRow := lipgloss.JoinHorizontal(lipgloss.Center,
 		renderCell(1, 0), renderCell(1, 1))
+	botRow := lipgloss.JoinHorizontal(lipgloss.Center,
+		renderCell(2, 0), renderCell(2, 1))
 
-	return lipgloss.JoinVertical(lipgloss.Left, topRow, botRow)
+	return lipgloss.JoinVertical(lipgloss.Left, topRow, midRow, botRow)
 }

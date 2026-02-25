@@ -31,14 +31,18 @@ func runFeed(cmd *cobra.Command, args []string) error {
 	// Apply offline decay first
 	pet.ApplyOfflineDecay()
 
-	oldHunger := pet.Hunger
-	pet.Feed()
+	res := pet.Feed()
+	if !res.OK {
+		fmt.Printf("feed: %s\n", res.Message)
+		return nil
+	}
 
 	if err := petStore.Save(pet); err != nil {
 		return fmt.Errorf("保存失败: %w", err)
 	}
 
-	fmt.Printf("feed: hunger %d -> %d\n", oldHunger, pet.Hunger)
+	ch := res.Changes["hunger"]
+	fmt.Printf("feed: hunger %d -> %d\n", ch[0], ch[1])
 	checkAndReportEvolution(pet)
 	return nil
 }

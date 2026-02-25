@@ -32,6 +32,9 @@ func runStatus(cmd *cobra.Command, args []string) error {
 	pet.ApplyOfflineDecay()
 	_ = petStore.Save(pet)
 
+	// Check and trigger evolution
+	checkAndReportEvolution(pet)
+
 	jsonFlag, _ := cmd.Flags().GetBool("json")
 	if jsonFlag {
 		data, err := json.MarshalIndent(pet, "", "  ")
