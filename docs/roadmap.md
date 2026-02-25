@@ -2,7 +2,7 @@
 
 ## 里程碑计划
 
-### M1: 核心骨架 ✅ / 🔧 进行中
+### M1: 核心骨架 ✅
 
 > 目标：可编译运行，CLI 快捷命令可用，TUI 基础交互
 
@@ -16,23 +16,25 @@
 | 持久化 store/                  | ✅    |
 | CLI 命令 (init, status, feed, play) | ✅ |
 | CLI root.go                    | ✅    |
-| TUI 桥接 tui_bridge.go        | 🔧   |
-| TUI 样式 styles/theme.go      | 🔧   |
-| TUI 组件 petview.go           | 🔧   |
-| TUI 主屏幕 home.go            | 🔧   |
-| TUI 应用 app.go               | 🔧   |
-| 入口 main.go                  | 🔧   |
-| 编译测试                       | 🔧   |
+| TUI (app, home, petview, theme, bridge) | ✅ |
+| 入口 main.go                  | ✅    |
+| clipet-dev 开发者工具         | ✅    |
 | 文档                           | ✅    |
-| Git 提交                       | 🔧   |
 
-### M2: 属性衰减与进化引擎（计划中）
+### M2: 属性衰减与进化引擎 ✅
 
-- 属性随时间自然衰减
-- 离线时间补偿计算
-- 进化条件判定引擎
-- 自动/手动确认进化
-- 进化时的特殊动画
+> 目标：属性随时间衰减，离线补偿计算，进化条件引擎，TUI 进化界面
+
+| 任务                          | 状态 |
+|-------------------------------|------|
+| 进化引擎 game/evolution.go     | ✅    |
+| 离线衰减 ApplyOfflineDecay     | ✅    |
+| 辅助方法 GetAttr, UpdateFeedRegularity | ✅ |
+| TUI 进化屏幕 screens/evolve.go | ✅   |
+| TUI app.go 屏幕切换与集成      | ✅    |
+| CLI 命令集成衰减+进化检查       | ✅    |
+| CLI evolve_check.go 辅助       | ✅    |
+| Makefile                       | ✅    |
 
 ### M3: 迷你游戏（计划中）
 

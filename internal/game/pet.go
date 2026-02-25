@@ -283,3 +283,52 @@ func (p *Pet) SetField(field string, raw string) (old string, err error) {
 	}
 	return old, nil
 }
+
+// GetAttr returns a named attribute value (hunger, happiness, health, energy).
+func (p *Pet) GetAttr(name string) int {
+	switch strings.ToLower(name) {
+	case "hunger":
+		return p.Hunger
+	case "happiness":
+		return p.Happiness
+	case "health":
+		return p.Health
+	case "energy":
+		return p.Energy
+	default:
+		return 0
+	}
+}
+
+// UpdateFeedRegularity recalculates the feed regularity based on age.
+// Expected feed count: ~3 feeds per 24 hours of age.
+func (p *Pet) UpdateFeedRegularity() {
+	ageHours := p.AgeHours()
+	if ageHours < 1 {
+		p.FeedExpectedCount = 1
+	} else {
+		p.FeedExpectedCount = int(ageHours / 8) // ~3 per day
+		if p.FeedExpectedCount < 1 {
+			p.FeedExpectedCount = 1
+		}
+	}
+	if p.FeedCount >= p.FeedExpectedCount {
+		p.FeedRegularity = 1.0
+	} else {
+		p.FeedRegularity = float64(p.FeedCount) / float64(p.FeedExpectedCount)
+	}
+}
+
+// ApplyOfflineDecay calculates the time elapsed since LastCheckedAt
+// and applies the corresponding attribute decay. Should be called
+// when loading a pet from a save file.
+func (p *Pet) ApplyOfflineDecay() {
+	if !p.Alive {
+		return
+	}
+	elapsed := time.Since(p.LastCheckedAt)
+	if elapsed < time.Minute {
+		return
+	}
+	p.SimulateDecay(elapsed)
+}

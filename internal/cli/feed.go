@@ -28,6 +28,9 @@ func runFeed(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("你的宠物已经不在了... 😢")
 	}
 
+	// Apply offline decay first
+	pet.ApplyOfflineDecay()
+
 	oldHunger := pet.Hunger
 	pet.Feed()
 
@@ -36,5 +39,8 @@ func runFeed(cmd *cobra.Command, args []string) error {
 	}
 
 	fmt.Printf("🍖 %s 吃得很开心！饱腹度: %d → %d/100\n", pet.Name, oldHunger, pet.Hunger)
+
+	// Check evolution
+	checkAndReportEvolution(pet)
 	return nil
 }

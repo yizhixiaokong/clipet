@@ -29,6 +29,10 @@ func runStatus(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("加载存档失败: %w", err)
 	}
 
+	// Apply offline decay
+	pet.ApplyOfflineDecay()
+	_ = petStore.Save(pet)
+
 	jsonFlag, _ := cmd.Flags().GetBool("json")
 	if jsonFlag {
 		data, err := json.MarshalIndent(pet, "", "  ")

@@ -28,6 +28,9 @@ func runPlay(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("你的宠物已经不在了... 😢")
 	}
 
+	// Apply offline decay first
+	pet.ApplyOfflineDecay()
+
 	oldHappiness := pet.Happiness
 	pet.Play()
 
@@ -36,5 +39,8 @@ func runPlay(cmd *cobra.Command, args []string) error {
 	}
 
 	fmt.Printf("🎮 %s 玩得很开心！快乐度: %d → %d/100\n", pet.Name, oldHappiness, pet.Happiness)
+
+	// Check evolution
+	checkAndReportEvolution(pet)
 	return nil
 }
