@@ -334,7 +334,9 @@ func (p *Pet) trackTimeOfDay() {
 	}
 }
 
-func clamp(val, min, max int) int {
+// Clamp constrains val to the range [min, max].
+// Exported for use by sub-packages (e.g. games).
+func Clamp(val, min, max int) int {
 	if val < min {
 		return min
 	}
@@ -343,6 +345,9 @@ func clamp(val, min, max int) int {
 	}
 	return val
 }
+
+// clamp is the internal shorthand.
+func clamp(val, min, max int) int { return Clamp(val, min, max) }
 
 // SimulateDecay applies time-based attribute decay over the given duration.
 // Decay rates per hour: hunger -3, happiness -2, energy -1.

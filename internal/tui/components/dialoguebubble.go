@@ -41,38 +41,7 @@ func (d DialogueBubble) Render() string {
 	return d.style.Render(wrapped)
 }
 
-// RenderAligned positions the bubble relative to anchor points.
-// position: "above" | "below" | "left" | "right"
-//        offset pixels from anchor
-func (d DialogueBubble) RenderAligned(position string, offset int) string {
-	content := d.Render()
-	if content == "" {
-		return ""
-	}
 
-	// Position the bubble relative to the content
-	var positioned string
-	switch position {
-	case "above":
-		// Add some vertical spacing for floating above
-		// Since we're in terminal, we'll just render the bubble normally
-		// and render() will handle alignment via parent container
-		positioned = content
-	case "below":
-		// Same as above - alignment handled by parent
-		positioned = content
-	case "left":
-		// In terminal layout, horizontal positioning is done by parent container
-		positioned = content
-	case "right":
-		// Same as left
-		positioned = content
-	default:
-		positioned = content
-	}
-
-	return positioned
-}
 
 // wordWrap wraps text to max width, preserving lines.
 func (d DialogueBubble) wordWrap(text string, max int) string {

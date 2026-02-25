@@ -1,97 +1,48 @@
 package games
 
-import (
-	"clipet/internal/game"
-	"math/rand"
-)
+import "math/rand"
 
-// GameManager manages and runs mini-games.
+// randIntn 是 rand.Intn 的包内别名，方便测试时替换。
+var randIntn = rand.Intn
+
+// GameManager 管理和创建迷你游戏实例。
 type GameManager struct {
-	games []MiniGame
+	registry map[GameType]func() MiniGame
 }
 
-// NewGameManager creates a new game manager.
+// NewGameManager 创建游戏管理器，注册所有可用游戏。
 func NewGameManager() *GameManager {
 	return &GameManager{
-		games: []MiniGame{
-			newReactionSpeedGame(),
-			newGuessNumberGame(),
+		registry: map[GameType]func() MiniGame{
+			GameReactionSpeed: func() MiniGame { return newReactionSpeedGame() },
+			GameGuessNumber:   func() MiniGame { return newGuessNumberGame() },
 		},
 	}
 }
 
-// GetAvailableGames returns games that match the pet's state.
-func (gm *GameManager) GetAvailableGames(pet *game.Pet) []MiniGame {
-	var available []MiniGame
-	
-	for _, game := range gm.games {
-		config := game.GetConfig()
-		if pet.Energy >= config.MinEnergy {
-			available = append(available, game)
-		}
-	}
-	
-	return available
-}
-
-// GetGame returns a game by type, or nil if not found.
-func (gm *GameManager) GetGame(gameType GameType) MiniGame {
-	for _, game := range gm.games {
-		if game.GetConfig().Type == gameType {
-			return game
-		}
-	}
-	return nil
-}
-
-// PlayGame runs a mini-game with the given pet.
-func (gm *GameManager) PlayGame(pet *game.Pet, gameType GameType) (*GameResult, bool) {
-	game := gm.GetGame(gameType)
-	if game == nil {
-		return nil, false
-	}
-	
-	config := game.GetConfig()
-	
-	// Deduct energy cost upfront
-	cost := config.MaxEnergyCost
-	if config.MaxEnergyCost > 0 {
-		pet.Energy = clamp(pet.Energy-cost, 0, 100)
-	}
-	
-	// Play the game
-	result, shouldContinue := game.Play(pet)
-	
-	// Apply attribute changes if result has them
-	if result != nil && result.AttrChange != nil {
-		for attr, change := range result.AttrChange {
-			switch attr {
-			case "happiness":
-				pet.Happiness = clamp(change[1], 0, 100)
-			case "energy":
-				pet.Energy = clamp(change[1], 0, 100)
-			}
-		}
-	}
-	
-	return result, shouldContinue
-}
-
-// GetRandomGame returns a random available game for the pet.
-func (gm *GameManager) GetRandomGame(pet *game.Pet) MiniGame {
-	games := gm.GetAvailableGames(pet)
-	if len(games) == 0 {
+// NewGame 创建指定类型的新游戏实例（每次返回全新实例）。
+func (gm *GameManager) NewGame(gt GameType) MiniGame {
+	factory, ok := gm.registry[gt]
+	if !ok {
 		return nil
 	}
-	return games[rand.Intn(len(games))]
+	return factory()
 }
 
-func clamp(val, min, max int) int {
-	if val < min {
-		return min
+// GetConfig 返回指定游戏类型的配置。
+func (gm *GameManager) GetConfig(gt GameType) (GameConfig, bool) {
+	g := gm.NewGame(gt)
+	if g == nil {
+		return GameConfig{}, false
 	}
-	if val > max {
-		return max
+	return g.GetConfig(), true
+}
+
+// AvailableGames 返回所有已注册的游戏类型。
+func (gm *GameManager) AvailableGames() []GameType {
+	types := make([]GameType, 0, len(gm.registry))
+	for gt := range gm.registry {
+		types = append(types, gt)
 	}
-	return val
+	return types
 }

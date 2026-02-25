@@ -115,9 +115,10 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return a, doTick()
 		}
 
-		// On home screen: check evolution periodically
+		// On home screen: update pet, tick game/dialogue
 		a.home = a.home.UpdatePet(a.pet)
-		a.checkEvolution()
+		a.home = a.home.TickGame()
+		a.home = a.home.TickAutoDialogue()
 		return a, doTick()
 	}
 
@@ -126,8 +127,10 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case screenHome:
 		var cmd tea.Cmd
 		a.home, cmd = a.home.Update(msg)
-		// After any home interaction, check evolution
-		a.checkEvolution()
+		// Check evolution after user actions (not during games)
+		if !a.home.IsPlayingGame() {
+			a.checkEvolution()
+		}
 		return a, cmd
 
 	case screenEvolve:

@@ -36,6 +36,9 @@ type Theme struct {
 	CategoryTabActive lipgloss.Style
 	CategoryTabOpen   lipgloss.Style
 
+	// Game overlay
+	GamePanel lipgloss.Style
+
 	// Evolve screen
 	EvolveTitle lipgloss.Style
 	EvolveArt   lipgloss.Style
@@ -159,6 +162,12 @@ func DefaultTheme() Theme {
 			Bold(true).
 			Padding(0, 1).
 			Align(lipgloss.Center),
+
+		GamePanel: lipgloss.NewStyle().
+			Border(border).
+			BorderForeground(colorGold).
+			Foreground(colorText).
+			Padding(1, 3),
 
 		EvolveTitle: lipgloss.NewStyle().
 			Bold(true).

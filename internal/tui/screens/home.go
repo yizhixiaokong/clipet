@@ -7,8 +7,8 @@ import (
 	"clipet/internal/store"
 	"clipet/internal/tui/components"
 	"clipet/internal/tui/styles"
-	"math/rand"
 	"fmt"
+	"math/rand"
 	"strings"
 	"time"
 
@@ -52,25 +52,26 @@ var categories = []menuCategory{
 
 // HomeModel is the home screen model.
 type HomeModel struct {
-	pet        *game.Pet
-	registry   *plugin.Registry
-	store      store.Store
-	petView    *components.PetView
-	theme      styles.Theme
-	bubble     components.DialogueBubble
-	gameMgr    *games.GameManager
+	pet      *game.Pet
+	registry *plugin.Registry
+	store    store.Store
+	petView  *components.PetView
+	theme    styles.Theme
+	bubble   components.DialogueBubble
+	gameMgr  *games.GameManager
 
-	catIdx     int  // selected category tab
-	actIdx     int  // selected action within category
-	inSubmenu  bool // true when navigating sub-actions
-	width      int
-	height     int
+	catIdx    int  // selected category tab
+	actIdx    int  // selected action within category
+	inSubmenu bool // true when navigating sub-actions
+	width     int
+	height    int
 
-	message   string // transient feedback message
-	dialogue  string // last dialogue line
-	msgIsInfo bool   // true if message is info-type
-	msgIsWarn bool   // true if message is a warning (cooldown/prereq fail)
-	lastTalkAt time.Time // for auto-dialogue trigger
+	message    string // transient feedback message
+	msgIsInfo  bool   // true if message is info-type
+	msgIsWarn  bool   // true if message is a warning
+	lastTalkAt time.Time
+
+	activeGame games.MiniGame // non-nil when a game is in progress
 }
 
 // NewHomeModel creates a new home screen model.
@@ -107,17 +108,45 @@ func (h HomeModel) UpdatePet(pet *game.Pet) HomeModel {
 	return h
 }
 
+// TickAutoDialogue handles periodic auto-dialogue (called from app tick).
+func (h HomeModel) TickAutoDialogue() HomeModel {
+	if h.activeGame != nil {
+		return h
+	}
+	if time.Since(h.lastTalkAt) < 3*time.Minute {
+		return h
+	}
+	if rand.Float32() >= 0.3 {
+		// 失败，1分钟后重试
+		h.lastTalkAt = h.lastTalkAt.Add(time.Minute)
+		return h
+	}
+	line := h.registry.GetDialogue(h.pet.Species, h.pet.StageID, h.pet.MoodName())
+	if line != "" && line != "......" {
+		h.bubble.UpdateText(line)
+	}
+	h.lastTalkAt = time.Now()
+	return h
+}
+
+// TickGame advances the active mini-game by one tick.
+func (h HomeModel) TickGame() HomeModel {
+	if h.activeGame != nil {
+		h.activeGame.Tick()
+	}
+	return h
+}
+
+// IsPlayingGame returns true if a mini-game is in progress.
+func (h HomeModel) IsPlayingGame() bool {
+	return h.activeGame != nil
+}
+
 // Update handles input for the home screen.
 func (h HomeModel) Update(msg tea.Msg) (HomeModel, tea.Cmd) {
-	// Auto-dialogue: pet talks randomly when idle
-	if time.Since(h.lastTalkAt) > time.Minute*3 {
-		if rand.Float32() < 0.3 { // 30% chance every 3 minutes
-			line := h.registry.GetDialogue(h.pet.Species, h.pet.StageID, h.pet.MoodName())
-			if line != "" && line != "......" {
-				h.bubble.UpdateText(line)
-				h.lastTalkAt = time.Now()
-			}
-		}
+	// If a game is active, delegate all input to the game
+	if h.activeGame != nil {
+		return h.updateGame(msg)
 	}
 
 	switch msg := msg.(type) {
@@ -127,23 +156,19 @@ func (h HomeModel) Update(msg tea.Msg) (HomeModel, tea.Cmd) {
 		// Global shortcut keys always work
 		switch key {
 		case "f":
-			h = h.executeAction("feed")
-			return h, nil
+			return h.executeAction("feed"), nil
 		case "p":
-			h = h.executeAction("play")
-			return h, nil
+			return h.executeAction("play"), nil
 		case "r":
-			h = h.executeAction("rest")
-			return h, nil
+			return h.executeAction("rest"), nil
 		case "c":
-			h = h.executeAction("heal")
-			return h, nil
+			return h.executeAction("heal"), nil
 		case "t":
-			h = h.executeAction("talk")
+			return h.executeAction("talk"), nil
 		case "g":
 			if h.inSubmenu && h.catIdx == 2 { // Games category
 				act := categories[h.catIdx].actions[h.actIdx]
-				h = h.executeAction(act.action)
+				return h.executeAction(act.action), nil
 			}
 			return h, nil
 		}
@@ -178,11 +203,66 @@ func (h HomeModel) Update(msg tea.Msg) (HomeModel, tea.Cmd) {
 			case "up", "k", "escape":
 				h.inSubmenu = false
 			case "enter", " ":
-				h = h.executeAction(cat.actions[h.actIdx].action)
+				return h.executeAction(cat.actions[h.actIdx].action), nil
 			}
 		}
 	}
 	return h, nil
+}
+
+// updateGame handles input while a game is active.
+func (h HomeModel) updateGame(msg tea.Msg) (HomeModel, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyPressMsg:
+		key := msg.String()
+
+		// Escape cancels an unfinished game
+		if key == "escape" && !h.activeGame.IsFinished() {
+			h.activeGame = nil
+			h.message = "游戏已取消"
+			h.msgIsWarn = false
+			h.msgIsInfo = false
+			return h, nil
+		}
+
+		h.activeGame.HandleKey(key)
+
+		// If game is finished and confirmed, process result
+		if h.activeGame.IsConfirmed() {
+			h = h.processGameResult()
+			h.activeGame = nil
+		}
+	}
+	return h, nil
+}
+
+// ----- Action dispatch -----
+
+// failMsg sets a warning message.
+func (h HomeModel) failMsg(msg string) HomeModel {
+	h.message = msg
+	h.msgIsInfo = false
+	h.msgIsWarn = true
+	return h
+}
+
+// okMsg sets a success message and saves pet state.
+func (h HomeModel) okMsg(msg string) HomeModel {
+	h.message = msg
+	h.msgIsInfo = false
+	h.msgIsWarn = false
+	if err := h.store.Save(h.pet); err != nil {
+		h.message += " ⚠保存失败"
+	}
+	return h
+}
+
+// infoMsg sets an informational message.
+func (h HomeModel) infoMsg(msg string) HomeModel {
+	h.message = msg
+	h.msgIsInfo = true
+	h.msgIsWarn = false
+	return h
 }
 
 func (h HomeModel) executeAction(action string) HomeModel {
@@ -190,129 +270,112 @@ func (h HomeModel) executeAction(action string) HomeModel {
 	case "feed":
 		res := h.pet.Feed()
 		if !res.OK {
-			h.message = res.Message
-			h.dialogue = ""
-			h.msgIsInfo = false
-			h.msgIsWarn = true
-			return h
+			return h.failMsg(res.Message)
 		}
-		_ = h.store.Save(h.pet)
 		ch := res.Changes["hunger"]
-		h.message = fmt.Sprintf("喂食成功！饱腹度 %d → %d", ch[0], ch[1])
-		h.dialogue = ""
-		h.msgIsInfo = false
-		h.msgIsWarn = false
+		return h.okMsg(fmt.Sprintf("喂食成功！饱腹度 %d → %d", ch[0], ch[1]))
 
 	case "play":
 		res := h.pet.Play()
 		if !res.OK {
-			h.message = res.Message
-			h.dialogue = ""
-			h.msgIsInfo = false
-			h.msgIsWarn = true
-			return h
+			return h.failMsg(res.Message)
 		}
-		_ = h.store.Save(h.pet)
 		ch := res.Changes["happiness"]
-		h.message = fmt.Sprintf("玩耍愉快！快乐度 %d → %d", ch[0], ch[1])
-		h.dialogue = ""
-		h.msgIsInfo = false
-		h.msgIsWarn = false
+		return h.okMsg(fmt.Sprintf("玩耍愉快！快乐度 %d → %d", ch[0], ch[1]))
 
 	case "talk":
 		res := h.pet.Talk()
 		if !res.OK {
-			h.message = res.Message
-			h.dialogue = ""
-			h.msgIsInfo = false
-			h.msgIsWarn = true
-			return h
+			return h.failMsg(res.Message)
 		}
 		line := h.registry.GetDialogue(h.pet.Species, h.pet.StageID, h.pet.MoodName())
 		if line == "" {
 			line = "......"
 		}
-		_ = h.store.Save(h.pet)
 		h.bubble.UpdateText(line)
 		h.lastTalkAt = time.Now()
-		h.message = ""
-		h.msgIsInfo = false
-		h.msgIsWarn = false
+		return h.okMsg("聊天愉快！")
 
 	case "rest":
 		res := h.pet.Rest()
 		if !res.OK {
-			h.message = res.Message
-			h.dialogue = ""
-			h.msgIsInfo = false
-			h.msgIsWarn = true
-			return h
+			return h.failMsg(res.Message)
 		}
-		_ = h.store.Save(h.pet)
 		chE := res.Changes["energy"]
 		chH := res.Changes["health"]
-		h.message = fmt.Sprintf("休息一下～精力 %d→%d  健康 %d→%d", chE[0], chE[1], chH[0], chH[1])
-		h.dialogue = ""
-		h.msgIsInfo = false
-		h.msgIsWarn = false
+		return h.okMsg(fmt.Sprintf("休息一下～精力 %d→%d  健康 %d→%d",
+			chE[0], chE[1], chH[0], chH[1]))
 
 	case "heal":
 		res := h.pet.Heal()
 		if !res.OK {
-			h.message = res.Message
-			h.dialogue = ""
-			h.msgIsInfo = false
-			h.msgIsWarn = true
-			return h
+			return h.failMsg(res.Message)
 		}
-		_ = h.store.Save(h.pet)
 		chH := res.Changes["health"]
 		chE := res.Changes["energy"]
-		h.message = fmt.Sprintf("治疗完成！健康 %d→%d  精力 %d→%d", chH[0], chH[1], chE[0], chE[1])
-		h.dialogue = ""
-		h.msgIsInfo = false
-		h.msgIsWarn = false
+		return h.okMsg(fmt.Sprintf("治疗完成！健康 %d→%d  精力 %d→%d",
+			chH[0], chH[1], chE[0], chE[1]))
 
 	case "info":
-		h.message = fmt.Sprintf(
+		return h.infoMsg(fmt.Sprintf(
 			"互动 %d  喂食 %d  玩耍 %d  对话 %d  冒险 %d",
 			h.pet.TotalInteractions,
 			h.pet.FeedCount,
 			h.pet.AccPlayful,
 			h.pet.DialogueCount,
 			h.pet.AdventuresCompleted,
-		)
-		h.dialogue = ""
-		h.msgIsInfo = true
-		h.msgIsWarn = false
+		))
 
 	case "game_reaction":
-		res, _ := h.gameMgr.PlayGame(h.pet, games.GameReactionSpeed)
-		h.gameResultHandler(res)
+		return h.startGame(games.GameReactionSpeed)
 
 	case "game_guess":
-		res, _ := h.gameMgr.PlayGame(h.pet, games.GameGuessNumber)
-		h.gameResultHandler(res)
+		return h.startGame(games.GameGuessNumber)
 	}
 	return h
 }
 
-// gameResultHandler processes the result of a mini-game.
-func (h HomeModel) gameResultHandler(res *games.GameResult) {
-	if res == nil {
-		h.message = "游戏执行失败..."
-		h.msgIsWarn = true
-		return
+// startGame initiates a mini-game session.
+func (h HomeModel) startGame(gt games.GameType) HomeModel {
+	config, ok := h.gameMgr.GetConfig(gt)
+	if !ok {
+		return h.failMsg("游戏不可用")
+	}
+	if h.pet.Energy < config.MinEnergy {
+		return h.failMsg(fmt.Sprintf("精力不足！需要 %d 精力", config.MinEnergy))
 	}
 
-	if res.Won {
-		h.message = fmt.Sprintf("游戏胜利！%s 快乐度 +%d", res.PetName, res.AttrChange["happiness"][1]-res.AttrChange["happiness"][0])
+	// Deduct energy upfront
+	h.pet.Energy = game.Clamp(h.pet.Energy-config.EnergyCost, 0, 100)
+
+	g := h.gameMgr.NewGame(gt)
+	g.Start()
+	h.activeGame = g
+	h.message = ""
+	return h
+}
+
+// processGameResult applies the game outcome to pet attributes.
+func (h HomeModel) processGameResult() HomeModel {
+	result := h.activeGame.GetResult()
+	config := h.activeGame.GetConfig()
+
+	if result.Won {
+		h.pet.Happiness = game.Clamp(h.pet.Happiness+config.WinHappiness, 0, 100)
+		h.pet.GamesWon++
+		h.message = fmt.Sprintf("🎉 胜利！%s 快乐度 +%d", result.Message, config.WinHappiness)
 	} else {
-		h.message = fmt.Sprintf("游戏失败...%s 快乐度 %d", res.PetName, res.AttrChange["happiness"][1]-res.AttrChange["happiness"][0])
+		h.pet.Happiness = game.Clamp(h.pet.Happiness+config.LoseHappiness, 0, 100)
+		h.message = fmt.Sprintf("💔 失败... %s 快乐度 %d", result.Message, config.LoseHappiness)
 	}
+	h.pet.TotalInteractions++
 	h.msgIsWarn = false
+	h.msgIsInfo = false
 
-	_ = h.store.Save(h.pet)
+	if err := h.store.Save(h.pet); err != nil {
+		h.message += " ⚠保存失败"
+	}
+	return h
 }
 
 // ----- View rendering -----
@@ -322,12 +385,16 @@ func (h HomeModel) View() string {
 		return "正在加载..."
 	}
 
-	// Calculate panel widths — use fixed right panel, left gets remainder
+	// If playing a game, render game overlay
+	if h.activeGame != nil {
+		return h.renderGameView()
+	}
+
 	totalInner := h.width - 2
 	if totalInner < 50 {
 		totalInner = 50
 	}
-	// Right panel: label(6) + bar(10) + num(4) + padding/border(6) = ~26
+
 	const rightPanelW = 30
 	leftW := totalInner - rightPanelW
 	if leftW < 20 {
@@ -343,7 +410,7 @@ func (h HomeModel) View() string {
 	statusPanel := h.renderStatusPanel(rightW)
 	mainArea := lipgloss.JoinHorizontal(lipgloss.Top, petArt, statusPanel)
 
-	// 3) Dialogue / message area
+	// 3) Message area
 	msgArea := h.renderMessageArea(totalInner)
 
 	// 4) Action menu (category tabs + sub-actions)
@@ -352,13 +419,12 @@ func (h HomeModel) View() string {
 	// 5) Help bar
 	var helpText string
 	if h.inSubmenu {
-		helpText = "←→ 选择动作  Enter 确认  ↑/Esc 返回  f喂食 p玩耍 r休息 c治疗 t对话  q 退出"
+		helpText = "←→ 选择  Enter 确认  ↑/Esc 返回  f喂食 p玩耍 r休息 c治疗 t对话  q退出"
 	} else {
-		helpText = "←→ 切换分类  ↓/Enter 进入  f喂食 p玩耍 r休息 c治疗 t对话  q 退出"
+		helpText = "←→ 切换分类  ↓/Enter 进入  f喂食 p玩耍 r休息 c治疗 t对话  q退出"
 	}
 	help := h.theme.HelpBar.Width(totalInner).Render(helpText)
 
-	// Compose
 	return lipgloss.JoinVertical(lipgloss.Left,
 		title,
 		mainArea,
@@ -368,18 +434,45 @@ func (h HomeModel) View() string {
 	)
 }
 
+// renderGameView renders a full-screen game overlay.
+func (h HomeModel) renderGameView() string {
+	totalInner := h.width - 2
+	if totalInner < 50 {
+		totalInner = 50
+	}
+
+	title := h.theme.TitleBar.Width(totalInner).Render("🐾 Clipet — " + h.activeGame.GetConfig().Name)
+
+	gameContent := h.activeGame.View()
+	gameBox := h.theme.GamePanel.
+		Width(totalInner - 4).
+		Render(gameContent)
+
+	helpText := "Esc 退出游戏"
+	if h.activeGame.IsFinished() {
+		helpText = "Enter 继续  Esc 退出"
+	}
+	help := h.theme.HelpBar.Width(totalInner).Render(helpText)
+
+	return lipgloss.JoinVertical(lipgloss.Left,
+		title,
+		"",
+		gameBox,
+		"",
+		help,
+	)
+}
+
 // renderPetPanel renders the left panel with centered ASCII art + dialogue bubble.
 func (h HomeModel) renderPetPanel(width int) string {
 	art := h.petView.Render()
 
-	// Minimum height to keep layout stable
-	const minHeight = 12 // Add 2 lines for dialogue bubble
+	const minHeight = 12
 	lines := strings.Split(art, "\n")
 	for len(lines) < minHeight {
 		lines = append(lines, "")
 	}
 
-	// Find max line width for centering
 	maxW := 0
 	for _, l := range lines {
 		if len(l) > maxW {
@@ -387,10 +480,9 @@ func (h HomeModel) renderPetPanel(width int) string {
 		}
 	}
 
-	// Center art within panel
 	centered := strings.Join(lines, "\n")
 
-	innerW := width - 6 // border + padding
+	innerW := width - 6
 	if innerW < maxW {
 		innerW = maxW
 	}
@@ -398,7 +490,6 @@ func (h HomeModel) renderPetPanel(width int) string {
 	// Add dialogue bubble above pet if active
 	bubbleText := h.bubble.Render()
 	if bubbleText != "" {
-		// Add some spacing for bubble
 		centered = " " + bubbleText + "\n\n" + centered
 	}
 
@@ -413,10 +504,8 @@ func (h HomeModel) renderPetPanel(width int) string {
 func (h HomeModel) renderStatusPanel(width int) string {
 	p := h.pet
 
-	// Pet name
 	name := h.theme.StatusName.Render(p.Name)
 
-	// Stage info
 	stageName := p.StageID
 	if stage := h.registry.GetStage(p.Species, p.StageID); stage != nil {
 		stageName = stage.Name
@@ -424,21 +513,17 @@ func (h HomeModel) renderStatusPanel(width int) string {
 	stageLine := h.theme.StatusLabel.Render("阶段") + " " +
 		h.theme.StatusValue.Render(fmt.Sprintf("%s (%s)", stageName, p.Stage))
 
-	// Mood
 	moodStr, moodStyle := h.moodDisplay()
 	moodLine := h.theme.StatusLabel.Render("心情") + " " + moodStyle.Render(moodStr)
 
-	// Age
 	ageLine := h.theme.StatusLabel.Render("年龄") + " " +
 		h.theme.StatusValue.Render(fmt.Sprintf("%.1f 小时", p.AgeHours()))
 
-	// Content width: label(6) + bar(10) + space+num(4) = 20
 	const contentW = 20
 	sep := lipgloss.NewStyle().
 		Foreground(styles.DimColor()).
 		Render(strings.Repeat("─", contentW))
 
-	// Stats bars
 	bars := []string{
 		h.statBar("饱腹", p.Hunger),
 		h.statBar("快乐", p.Happiness),
@@ -447,7 +532,6 @@ func (h HomeModel) renderStatusPanel(width int) string {
 	}
 	statsBlock := strings.Join(bars, "\n")
 
-	// Summary
 	summary := lipgloss.NewStyle().Foreground(styles.DimColor()).Render(
 		fmt.Sprintf("互动 %d", p.TotalInteractions))
 
@@ -506,42 +590,41 @@ func (h HomeModel) statBar(label string, value int) string {
 	return fmt.Sprintf("%s%s%s %3d", lab, fStr, eStr, value)
 }
 
-// renderMessageArea renders the dialogue or action feedback.
+// renderMessageArea renders the action feedback area.
 func (h HomeModel) renderMessageArea(width int) string {
 	innerW := width - 6
 	if innerW < 10 {
 		innerW = 10
 	}
 
-	if h.dialogue != "" {
-		return h.theme.DialogueBox.Width(innerW).Render("💬 " + h.dialogue)
-	}
 	if h.message != "" {
 		if h.msgIsWarn {
 			return h.theme.MessageBox.Width(innerW).
-				Copy().BorderForeground(lipgloss.Color("#AA5555")).
+				BorderForeground(lipgloss.Color("#AA5555")).
 				Foreground(lipgloss.Color("#FF8888")).
 				Render("⚠ " + h.message)
 		}
 		if h.msgIsInfo {
 			return h.theme.MessageBox.Width(innerW).
-				Copy().BorderForeground(lipgloss.Color("#555570")).
+				BorderForeground(lipgloss.Color("#555570")).
 				Foreground(lipgloss.Color("#EAEAEA")).
 				Render("📋 " + h.message)
 		}
 		return h.theme.MessageBox.Width(innerW).Render("✨ " + h.message)
 	}
 
-	// Empty placeholder to keep layout stable
-	return h.theme.DialogueBox.Width(innerW).
-		Copy().BorderForeground(styles.DimColor()).
+	// Empty placeholder
+	return lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(styles.DimColor()).
 		Foreground(styles.DimColor()).
+		Width(innerW).
+		Padding(0, 2).
 		Render("  等待指令...")
 }
 
 // renderActionMenu renders the two-level category tabs + sub-action menu.
 func (h HomeModel) renderActionMenu(totalWidth int) string {
-	// --- Category tab bar ---
 	tabW := (totalWidth - 4) / len(categories)
 	if tabW < 8 {
 		tabW = 8
@@ -559,7 +642,6 @@ func (h HomeModel) renderActionMenu(totalWidth int) string {
 	}
 	tabBar := lipgloss.JoinHorizontal(lipgloss.Center, tabs...)
 
-	// --- Sub-action row ---
 	cat := categories[h.catIdx]
 	actW := (totalWidth - 4) / len(cat.actions)
 	if actW < 8 {

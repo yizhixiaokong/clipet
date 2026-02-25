@@ -103,6 +103,8 @@ func (e EvolveModel) Update(msg tea.Msg) (EvolveModel, tea.Cmd) {
 				e.result = &e.candidates[e.choiceIdx]
 				e.phase = EvolveAnimating
 				e.animTick = 0
+			case "escape":
+				e.done = true // 取消进化，返回主屏幕
 			}
 
 		case EvolveDone:
@@ -149,7 +151,7 @@ func (e EvolveModel) viewChoosing() string {
 		}
 	}
 
-	help := e.theme.HelpBar.Render("↑↓ 选择  Enter 确认")
+	help := e.theme.HelpBar.Render("↑↓ 选择  Enter 确认  Esc 取消")
 
 	return lipgloss.JoinVertical(lipgloss.Left,
 		title,

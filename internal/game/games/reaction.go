@@ -1,206 +1,168 @@
 package games
 
 import (
-	"clipet/internal/game"
 	"fmt"
 	"math/rand"
 	"time"
 )
 
-// reactionSpeedGame implements a reaction time test game.
+// reactionSpeedGame 实现反应速度测试游戏（纯状态机）。
 type reactionSpeedGame struct {
-	state      GameState
-	targetTime time.Time
-	startTime  time.Time
-	result     *GameResult
-	inputChan  chan string
+	state     GameState
+	startedAt time.Time     // 游戏开始时间
+	readyAt   time.Time     // GO! 出现时间
+	delay     time.Duration // 随机等待时长
+	score     int           // 反应时间（ms）
+	won       bool
+	confirmed bool
 }
 
-// GameState defines the states for the reaction game.
-type GameState int
-
-const (
-	StateWaiting GameState = iota
-	StateReady
-	StateRunning
-	StateFinished
-)
-
-// newReactionSpeedGame creates a new reaction speed game.
 func newReactionSpeedGame() MiniGame {
-	return &reactionSpeedGame{
-		state:     StateWaiting,
-		inputChan: make(chan string, 1),
-	}
+	return &reactionSpeedGame{}
 }
 
-// GetConfig returns the game's configuration.
 func (g *reactionSpeedGame) GetConfig() GameConfig {
 	return GameConfig{
 		Type:          GameReactionSpeed,
 		Name:          "反应速度测试",
-		Description:   "当出现 GO! 时，尽快按键！测试你的反应速度。",
-		Duration:      10 * time.Second,
+		Description:   "当出现 GO! 时，尽快按键！",
 		MinEnergy:     5,
-		MaxEnergyCost: 8,
-		WinnerEnergy:  -3, // less energy cost on win
-		WinnerHappiness: 15,
-		LoserHappiness:  -5,
+		EnergyCost:    8,
+		WinHappiness:  15,
+		LoseHappiness: -5,
 	}
 }
 
-// Play executes the game logic.
-func (g *reactionSpeedGame) Play(pet *game.Pet) (*GameResult, bool) {
+func (g *reactionSpeedGame) Start() {
 	g.state = StateWaiting
-	g.result = &GameResult{
-		GameType:   GameReactionSpeed,
-		PlayerName: "你",
-		PetName:    pet.Name,
-		Timestamp:  time.Now(),
-		AttrChange: make(map[string][2]int),
-	}
-
-	// Random delay before showing "GO!"
-	delay := time.Duration(rand.Intn(4000)+2000) * time.Millisecond // 2-6 seconds
-	
-	for {
-		select {
-		case <-time.After(100 * time.Millisecond):
-			if g.state == StateWaiting {
-				// Show waiting message
-				fmt.Println(g.Render())
-				time.Sleep(delay)
-				g.state = StateReady
-				g.targetTime = time.Now()
-			} else if g.state == StateReady {
-				g.startTime = time.Now()
-				g.state = StateRunning
-			} else if g.state == StateRunning {
-				// Timeout
-				g.finishGame(false, 0, pet)
-				return g.result, false
-			}
-		case _ = <-g.inputChan: // Unused input variable
-			if g.state == StateRunning {
-				reactionTime := time.Since(g.targetTime).Milliseconds()
-				g.finishGame(true, int(reactionTime), pet)
-				return g.result, false
-			}
-		}
-		
-		// Check if game should continue based on state
-		if g.state == StateFinished {
-			return g.result, false
-		}
-	}
+	g.startedAt = time.Now()
+	g.delay = time.Duration(rand.Intn(4000)+2000) * time.Millisecond // 2-6秒
+	g.readyAt = time.Time{}
+	g.score = 0
+	g.won = false
+	g.confirmed = false
 }
 
-// finishGame ends the game and calculates results.
-func (g *reactionSpeedGame) finishGame(won bool, score int, pet *game.Pet) {
-	g.state = StateFinished
-	g.result.Won = won
-	g.result.Score = score
-	
-	oldH := pet.Happiness
-	oldE := pet.Energy
-	
-	config := g.GetConfig()
-	
-	if won {
-		// Win: less energy cost, more happiness
-		pet.Energy = clamp(pet.Energy+config.WinnerEnergy, 0, 100)
-		pet.Happiness = clamp(pet.Happiness+config.WinnerHappiness, 0, 100)
-	} else {
-		// Loss: base energy cost, less happiness
-		pet.Happiness = clamp(pet.Happiness+config.LoserHappiness, 0, 100)
-	}
-	
-	g.result.AttrChange["happiness"] = [2]int{oldH, pet.Happiness}
-	g.result.AttrChange["energy"] = [2]int{oldE, pet.Energy}
-	
-	// Show final result
-	fmt.Printf("\n%s\n", g.Render())
-	if won {
-		fmt.Printf("反应时间: %d 毫秒 (%s)\n", score, getReactionRating(score))
-	}
-	fmt.Printf("按 Enter 继续...\n")
-	
-	// Wait for enter to continue
-	for {
-		select {
-		case input := <-g.inputChan:
-			if input == "enter" {
-				return
-			}
-		}
-	}
-}
-
-// Render displays the game UI.
-func (g *reactionSpeedGame) Render() string {
+func (g *reactionSpeedGame) HandleKey(key string) {
 	switch g.state {
 	case StateWaiting:
-		return `🎮 反应速度测试 🎮
+		// 还没出现 GO! 就按了 → 失败
+		g.state = StateFinished
+		g.won = false
+		g.score = 0
 
-准备... 看到下面出现 GO! 时尽快按 Enter！
-
-当前状态: 等待中...`
-		
-	case StateReady:
-		return `🎮 反应速度测试 🎮
-         ^
-         |
-         GO! ⚡
-         |
-         v
-当前状态: 快速按 Enter！`
-		
 	case StateRunning:
-		elapsed := time.Since(g.targetTime).Milliseconds()
-		return fmt.Sprintf(`🎮 反应速度测试 🎮
-正在计时... %d 毫秒`, elapsed)
-		
+		// GO! 出现后按键 → 计算反应时间
+		g.score = int(time.Since(g.readyAt).Milliseconds())
+		g.won = g.score < 1000 // 1秒内算赢
+		g.state = StateFinished
+
 	case StateFinished:
-		if g.result.Won {
-			return fmt.Sprintf(`🎮 游戏结束 🎮
-✅ 恭喜获胜！
-反应时间: %d 毫秒 (%s)
-属性变化:
-  快乐度: %d → %d
-  精力: %d → %d`,
-				g.result.Score, getReactionRating(g.result.Score),
-				g.result.AttrChange["happiness"][0],
-				g.result.AttrChange["happiness"][1],
-				g.result.AttrChange["energy"][0],
-				g.result.AttrChange["energy"][1])
-		} else {
-			return fmt.Sprintf(`🎮 游戏结束 🎮
-❌ 超时失败！
-属性变化:
-  快乐度: %d → %d
-  精力: %d → %d`,
-				g.result.AttrChange["happiness"][0],
-				g.result.AttrChange["happiness"][1],
-				g.result.AttrChange["energy"][0],
-				g.result.AttrChange["energy"][1])
+		if key == "enter" || key == " " {
+			g.confirmed = true
 		}
-		
-	default:
-		return "游戏状态未知"
 	}
 }
 
-// getReactionRating returns a rating based on reaction time.
-func getReactionRating(ms int) string {
-	if ms < 200 {
-		return "超快！🚀"
-	} else if ms < 300 {
-		return "很快！⚡"
-	} else if ms < 400 {
-		return "不错！👍"
-	} else if ms < 500 {
-		return "一般😐"
+func (g *reactionSpeedGame) Tick() {
+	switch g.state {
+	case StateWaiting:
+		if time.Since(g.startedAt) >= g.delay {
+			g.state = StateRunning
+			g.readyAt = time.Now()
+		}
+	case StateRunning:
+		// 3秒超时
+		if time.Since(g.readyAt) > 3*time.Second {
+			g.state = StateFinished
+			g.won = false
+			g.score = 3000
+		}
+	}
+}
+
+func (g *reactionSpeedGame) View() string {
+	switch g.state {
+	case StateWaiting:
+		elapsed := time.Since(g.startedAt)
+		dots := ""
+		n := int(elapsed.Seconds()) % 4
+		for i := 0; i < n; i++ {
+			dots += "."
+		}
+		return fmt.Sprintf(
+			"⚡ 反应速度测试\n\n"+
+				"  准备%s\n\n"+
+				"  看到 GO! 时按任意键！\n\n"+
+				"  ⚠ 别按太早哦！",
+			dots)
+
+	case StateRunning:
+		return "⚡ 反应速度测试\n\n" +
+			"  ┌──────────────┐\n" +
+			"  │   ⚡ GO! ⚡   │\n" +
+			"  └──────────────┘\n\n" +
+			"  快！按任意键！"
+
+	case StateFinished:
+		return g.finishedView()
+
+	default:
+		return ""
+	}
+}
+
+func (g *reactionSpeedGame) finishedView() string {
+	if g.won {
+		return fmt.Sprintf(
+			"⚡ 反应速度测试 — 结果\n\n"+
+				"  ✅ 反应时间: %d 毫秒 (%s)\n\n"+
+				"  按 Enter 继续",
+			g.score, reactionRating(g.score))
+	}
+	if g.score == 0 {
+		return "⚡ 反应速度测试 — 结果\n\n" +
+			"  ❌ 太早了！还没出现 GO! 就按了\n\n" +
+			"  按 Enter 继续"
+	}
+	return fmt.Sprintf(
+		"⚡ 反应速度测试 — 结果\n\n"+
+			"  ❌ 超时了！(%d 毫秒)\n\n"+
+			"  按 Enter 继续",
+		g.score)
+}
+
+func (g *reactionSpeedGame) IsFinished() bool  { return g.state == StateFinished }
+func (g *reactionSpeedGame) IsConfirmed() bool { return g.confirmed }
+
+func (g *reactionSpeedGame) GetResult() *GameResult {
+	msg := ""
+	if g.won {
+		msg = fmt.Sprintf("反应时间 %dms (%s)", g.score, reactionRating(g.score))
+	} else if g.score == 0 {
+		msg = "按太早了！"
 	} else {
-		return "需要练习🐌"
+		msg = "超时了！"
+	}
+	return &GameResult{
+		GameType: GameReactionSpeed,
+		Won:      g.won,
+		Score:    g.score,
+		Message:  msg,
+	}
+}
+
+func reactionRating(ms int) string {
+	switch {
+	case ms < 200:
+		return "超快！🚀"
+	case ms < 300:
+		return "很快！⚡"
+	case ms < 400:
+		return "不错！👍"
+	case ms < 500:
+		return "一般 😐"
+	default:
+		return "慢了 🐌"
 	}
 }
