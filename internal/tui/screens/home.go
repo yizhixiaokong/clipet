@@ -465,6 +465,7 @@ func (h HomeModel) renderGameView() string {
 
 // renderPetPanel renders the left panel with centered ASCII art + dialogue bubble.
 func (h HomeModel) renderPetPanel(width int) string {
+	// art is already a normalized rectangular block (all lines same width)
 	art := h.petView.Render()
 
 	const minHeight = 12
@@ -472,32 +473,24 @@ func (h HomeModel) renderPetPanel(width int) string {
 	for len(lines) < minHeight {
 		lines = append(lines, "")
 	}
-
-	maxW := 0
-	for _, l := range lines {
-		if len(l) > maxW {
-			maxW = len(l)
-		}
-	}
-
-	centered := strings.Join(lines, "\n")
+	art = strings.Join(lines, "\n")
 
 	innerW := width - 6
-	if innerW < maxW {
-		innerW = maxW
+	if innerW < 20 {
+		innerW = 20
 	}
 
 	// Add dialogue bubble above pet if active
 	bubbleText := h.bubble.Render()
 	if bubbleText != "" {
-		centered = " " + bubbleText + "\n\n" + centered
+		art = " " + bubbleText + "\n\n" + art
 	}
 
 	return h.theme.PetPanel.
 		Width(innerW).
 		Height(minHeight).
 		Align(lipgloss.Center, lipgloss.Center).
-		Render(centered)
+		Render(art)
 }
 
 // renderStatusPanel renders the right panel with pet info and stats.

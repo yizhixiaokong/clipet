@@ -130,6 +130,12 @@ func ParseFrames(fsys fs.FS, dir string) (map[string]Frame, error) {
 			}
 		}
 		frame.Frames = append(frame.Frames, f.content)
+		// Auto-calculate width from frame content
+		for _, line := range strings.Split(f.content, "\n") {
+			if len(line) > frame.Width {
+				frame.Width = len(line)
+			}
+		}
 		frames[key] = frame
 	}
 

@@ -117,6 +117,7 @@ type Frame struct {
 	StageID   string   // e.g. "baby_cat"
 	AnimState string   // e.g. "idle"
 	Frames    []string // each element is one frame of ASCII art
+	Width     int      // display width (auto-calculated from content)
 }
 
 // FrameKey returns the lookup key for a frame set: "{stageID}_{animState}".

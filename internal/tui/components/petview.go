@@ -33,7 +33,7 @@ func (pv *PetView) SetPet(pet *game.Pet) {
 	pv.pet = pet
 }
 
-// Render returns the current ASCII art frame as a string.
+// Render returns the current ASCII art frame as a normalized rectangular block.
 func (pv *PetView) Render() string {
 	animState := string(pv.pet.CurrentAnimation)
 
@@ -43,9 +43,37 @@ func (pv *PetView) Render() string {
 	}
 
 	idx := pv.frameIndex % len(frame.Frames)
-	return strings.TrimRight(frame.Frames[idx], "\n")
+	raw := strings.TrimRight(frame.Frames[idx], "\n")
+	return normalizeArt(raw, frame.Width)
 }
 
 func (pv *PetView) fallbackArt() string {
 	return "  ?\n ?\n  ?"
+}
+
+// normalizeArt pads every line to the same display width so the art forms
+// a rectangular block that won't be skewed by per-line centering.
+func normalizeArt(art string, minWidth int) string {
+	lines := strings.Split(art, "\n")
+	maxW := minWidth
+	for _, l := range lines {
+		w := displayWidth(l)
+		if w > maxW {
+			maxW = w
+		}
+	}
+	for i, l := range lines {
+		w := displayWidth(l)
+		if w < maxW {
+			lines[i] = l + strings.Repeat(" ", maxW-w)
+		}
+	}
+	return strings.Join(lines, "\n")
+}
+
+// displayWidth returns the visible column width of a string.
+// For pure ASCII this equals len(s). Uses a simple approach that
+// counts bytes — upgrade to uniseg/runewidth if Unicode art is needed.
+func displayWidth(s string) int {
+	return len(s)
 }
