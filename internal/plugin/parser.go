@@ -63,7 +63,18 @@ func ParseAdventures(fsys fs.FS, dir string) ([]Adventure, error) {
 }
 
 // ParseFrames scans the frames/ subdirectory for ASCII art frame files.
-// Frame files must follow the naming convention: {stageID}_{animState}_{index}.txt
+//
+// Two formats are supported:
+//
+//  1. Sprite sheet (preferred): {stageID}_{animState}.txt
+//     Multiple frames in a single file, separated by a line containing only "---".
+//
+//  2. Legacy per-frame: {stageID}_{animState}_{index}.txt
+//     Each file contains exactly one frame. Index determines ordering.
+//
+// If both formats exist for the same (stageID, animState) pair, the sprite
+// sheet takes precedence.
+//
 // Returns a map keyed by FrameKey(stageID, animState).
 func ParseFrames(fsys fs.FS, dir string) (map[string]Frame, error) {
 	framesDir := path.Join(dir, "frames")
@@ -75,24 +86,49 @@ func ParseFrames(fsys fs.FS, dir string) (map[string]Frame, error) {
 		return frames, nil
 	}
 
-	// Collect all .txt files
-	type frameFile struct {
+	// Pass 1: load sprite sheets ({stageID}_{animState}.txt — exactly 2 parts after split)
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".txt") {
+			continue
+		}
+		name := strings.TrimSuffix(entry.Name(), ".txt")
+		parts := splitSpriteSheetName(name)
+		if parts == nil {
+			continue
+		}
+		stageID, animState := parts[0], parts[1]
+
+		data, err := fs.ReadFile(fsys, path.Join(framesDir, entry.Name()))
+		if err != nil {
+			return nil, fmt.Errorf("read frame %s: %w", entry.Name(), err)
+		}
+
+		frame := parseSpriteSheet(stageID, animState, string(data))
+		frames[FrameKey(stageID, animState)] = frame
+	}
+
+	// Pass 2: load legacy per-frame files (only for keys not already loaded)
+	type legacyFile struct {
 		stageID   string
 		animState string
 		index     string
 		content   string
 	}
 
-	var files []frameFile
+	var legacy []legacyFile
 	for _, entry := range entries {
 		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".txt") {
 			continue
 		}
-
 		name := strings.TrimSuffix(entry.Name(), ".txt")
 		parts := splitFrameName(name)
 		if parts == nil {
-			continue // skip files that don't match the naming convention
+			continue
+		}
+		// Skip if sprite sheet already covers this key
+		key := FrameKey(parts[0], parts[1])
+		if _, exists := frames[key]; exists {
+			continue
 		}
 
 		data, err := fs.ReadFile(fsys, path.Join(framesDir, entry.Name()))
@@ -100,7 +136,7 @@ func ParseFrames(fsys fs.FS, dir string) (map[string]Frame, error) {
 			return nil, fmt.Errorf("read frame %s: %w", entry.Name(), err)
 		}
 
-		files = append(files, frameFile{
+		legacy = append(legacy, legacyFile{
 			stageID:   parts[0],
 			animState: parts[1],
 			index:     parts[2],
@@ -108,19 +144,19 @@ func ParseFrames(fsys fs.FS, dir string) (map[string]Frame, error) {
 		})
 	}
 
-	// Sort by index to ensure correct frame order
-	sort.Slice(files, func(i, j int) bool {
-		if files[i].stageID != files[j].stageID {
-			return files[i].stageID < files[j].stageID
+	// Sort legacy files by index to ensure correct frame order
+	sort.Slice(legacy, func(i, j int) bool {
+		if legacy[i].stageID != legacy[j].stageID {
+			return legacy[i].stageID < legacy[j].stageID
 		}
-		if files[i].animState != files[j].animState {
-			return files[i].animState < files[j].animState
+		if legacy[i].animState != legacy[j].animState {
+			return legacy[i].animState < legacy[j].animState
 		}
-		return files[i].index < files[j].index
+		return legacy[i].index < legacy[j].index
 	})
 
-	// Group into Frame objects
-	for _, f := range files {
+	// Group legacy files into Frame objects
+	for _, f := range legacy {
 		key := FrameKey(f.stageID, f.animState)
 		frame, ok := frames[key]
 		if !ok {
@@ -130,7 +166,6 @@ func ParseFrames(fsys fs.FS, dir string) (map[string]Frame, error) {
 			}
 		}
 		frame.Frames = append(frame.Frames, f.content)
-		// Auto-calculate width from frame content
 		for _, line := range strings.Split(f.content, "\n") {
 			if len(line) > frame.Width {
 				frame.Width = len(line)
@@ -140,6 +175,101 @@ func ParseFrames(fsys fs.FS, dir string) (map[string]Frame, error) {
 	}
 
 	return frames, nil
+}
+
+// parseSpriteSheet splits a single file's content into multiple frames
+// using "---" as the separator line, and builds a Frame struct.
+func parseSpriteSheet(stageID, animState, content string) Frame {
+	frame := Frame{
+		StageID:   stageID,
+		AnimState: animState,
+	}
+
+	// Split on lines that are exactly "---" (trimmed)
+	var current []string
+	for _, line := range strings.Split(content, "\n") {
+		if strings.TrimSpace(line) == "---" {
+			if len(current) > 0 {
+				art := strings.Join(current, "\n")
+				frame.Frames = append(frame.Frames, art)
+				current = nil
+			}
+			continue
+		}
+		current = append(current, line)
+	}
+	// Last frame (no trailing ---)
+	if len(current) > 0 {
+		// Trim trailing empty lines
+		for len(current) > 0 && strings.TrimSpace(current[len(current)-1]) == "" {
+			current = current[:len(current)-1]
+		}
+		if len(current) > 0 {
+			art := strings.Join(current, "\n")
+			frame.Frames = append(frame.Frames, art)
+		}
+	}
+
+	// Calculate max width across all frames
+	for _, art := range frame.Frames {
+		for _, line := range strings.Split(art, "\n") {
+			if len(line) > frame.Width {
+				frame.Width = len(line)
+			}
+		}
+	}
+
+	return frame
+}
+
+// splitSpriteSheetName parses a sprite sheet filename like "baby_cat_idle"
+// into [stageID, animState]. The animState must be a known animation state.
+// Returns nil if the name doesn't match (e.g. has an index suffix → legacy format).
+func splitSpriteSheetName(name string) []string {
+	parts := strings.Split(name, "_")
+	if len(parts) < 2 {
+		return nil
+	}
+
+	// The last segment is the animState candidate.
+	// For sprite sheets the last part must be a known anim state name,
+	// NOT a numeric index (which would indicate legacy per-frame format).
+	animState := parts[len(parts)-1]
+	if !knownAnimStates[animState] {
+		return nil
+	}
+	// If it looks like a number, it's a legacy index, not an anim state
+	if isNumeric(animState) {
+		return nil
+	}
+	stageID := strings.Join(parts[:len(parts)-1], "_")
+	if stageID == "" {
+		return nil
+	}
+	return []string{stageID, animState}
+}
+
+// knownAnimStates is the set of recognized animation state names.
+var knownAnimStates = map[string]bool{
+	"idle":     true,
+	"eating":   true,
+	"sleeping": true,
+	"playing":  true,
+	"happy":    true,
+	"sad":      true,
+}
+
+// isNumeric returns true if s consists entirely of digits.
+func isNumeric(s string) bool {
+	if s == "" {
+		return false
+	}
+	for _, c := range s {
+		if c < '0' || c > '9' {
+			return false
+		}
+	}
+	return true
 }
 
 // splitFrameName parses a frame filename like "baby_cat_idle_0" into
