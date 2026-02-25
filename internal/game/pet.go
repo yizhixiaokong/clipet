@@ -95,8 +95,9 @@ type Pet struct {
 	LastPlayedAt  time.Time `json:"last_played_at"`
 	LastRestedAt  time.Time `json:"last_rested_at"`
 	LastHealedAt  time.Time `json:"last_healed_at"`
-	LastTalkedAt  time.Time `json:"last_talked_at"`
-	LastCheckedAt time.Time `json:"last_checked_at"`
+	LastTalkedAt     time.Time `json:"last_talked_at"`
+	LastCheckedAt    time.Time `json:"last_checked_at"`
+	LastAdventureAt  time.Time `json:"last_adventure_at"`
 
 	// Statistics
 	TotalInteractions   int `json:"total_interactions"`

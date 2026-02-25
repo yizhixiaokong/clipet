@@ -40,6 +40,7 @@ var categories = []menuCategory{
 	{"🎮", "互动", []actionItem{
 		{"🎮", "玩耍", "play"},
 		{"💬", "对话", "talk"},
+		{"🗺️", "冒险", "adventure"},
 	}},
 	{"🎯", "游戏", []actionItem{
 		{"⚡", "反应速度", "game_reaction"},
@@ -72,6 +73,8 @@ type HomeModel struct {
 	lastTalkAt time.Time
 
 	activeGame games.MiniGame // non-nil when a game is in progress
+
+	pendingAdventure *plugin.Adventure // set when user triggers adventure
 }
 
 // NewHomeModel creates a new home screen model.
@@ -140,6 +143,17 @@ func (h HomeModel) TickGame() HomeModel {
 // IsPlayingGame returns true if a mini-game is in progress.
 func (h HomeModel) IsPlayingGame() bool {
 	return h.activeGame != nil
+}
+
+// PendingAdventure returns the adventure to start, if any.
+func (h HomeModel) PendingAdventure() *plugin.Adventure {
+	return h.pendingAdventure
+}
+
+// ClearPendingAdventure clears the pending adventure request.
+func (h HomeModel) ClearPendingAdventure() HomeModel {
+	h.pendingAdventure = nil
+	return h
 }
 
 // Update handles input for the home screen.
@@ -331,6 +345,22 @@ func (h HomeModel) executeAction(action string) HomeModel {
 
 	case "game_guess":
 		return h.startGame(games.GameGuessNumber)
+
+	case "adventure":
+		ok, reason := game.CanAdventure(h.pet)
+		if !ok {
+			return h.failMsg(reason)
+		}
+		if time.Since(h.pet.LastAdventureAt) < game.CooldownAdventure {
+			remain := game.CooldownAdventure - time.Since(h.pet.LastAdventureAt)
+			return h.failMsg(fmt.Sprintf("冒险需要休整，还需等待 %d 分钟", int(remain.Minutes())+1))
+		}
+		adv := game.PickAdventure(h.pet, h.registry)
+		if adv == nil {
+			return h.failMsg("当前阶段没有可用的冒险事件")
+		}
+		h.pendingAdventure = adv
+		return h
 	}
 	return h
 }

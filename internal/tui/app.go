@@ -18,6 +18,7 @@ type screen int
 const (
 	screenHome screen = iota
 	screenEvolve
+	screenAdventure
 )
 
 // tickMsg is sent on each animation/update tick.
@@ -37,9 +38,10 @@ type App struct {
 	petView  *components.PetView
 	theme    styles.Theme
 
-	home   screens.HomeModel
-	evolve screens.EvolveModel
-	active screen
+	home      screens.HomeModel
+	evolve    screens.EvolveModel
+	adventure screens.AdventureModel
+	active    screen
 
 	width        int
 	height       int
@@ -77,6 +79,7 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		a.height = msg.Height
 		a.home = a.home.SetSize(msg.Width, msg.Height)
 		a.evolve = a.evolve.SetSize(msg.Width, msg.Height)
+		a.adventure = a.adventure.SetSize(msg.Width, msg.Height)
 		return a, nil
 
 	case tea.KeyPressMsg:
@@ -115,6 +118,16 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return a, doTick()
 		}
 
+		if a.active == screenAdventure {
+			a.adventure = a.adventure.Tick()
+			if a.adventure.IsDone() {
+				_ = a.store.Save(a.pet)
+				a.active = screenHome
+				a.home = a.home.UpdatePet(a.pet)
+			}
+			return a, doTick()
+		}
+
 		// On home screen: update pet, tick game/dialogue
 		a.home = a.home.UpdatePet(a.pet)
 		a.home = a.home.TickGame()
@@ -127,6 +140,14 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case screenHome:
 		var cmd tea.Cmd
 		a.home, cmd = a.home.Update(msg)
+		// Check if home wants to start an adventure
+		if adv := a.home.PendingAdventure(); adv != nil {
+			a.home = a.home.ClearPendingAdventure()
+			a.adventure = screens.NewAdventureModel(a.pet, *adv, a.theme)
+			a.adventure = a.adventure.SetSize(a.width, a.height)
+			a.active = screenAdventure
+			return a, cmd
+		}
 		// Check evolution after user actions (not during games)
 		if !a.home.IsPlayingGame() {
 			a.checkEvolution()
@@ -137,6 +158,16 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		var cmd tea.Cmd
 		a.evolve, cmd = a.evolve.Update(msg)
 		if a.evolve.IsDone() {
+			_ = a.store.Save(a.pet)
+			a.active = screenHome
+			a.home = a.home.UpdatePet(a.pet)
+		}
+		return a, cmd
+
+	case screenAdventure:
+		var cmd tea.Cmd
+		a.adventure, cmd = a.adventure.Update(msg)
+		if a.adventure.IsDone() {
 			_ = a.store.Save(a.pet)
 			a.active = screenHome
 			a.home = a.home.UpdatePet(a.pet)
@@ -170,6 +201,8 @@ func (a App) View() tea.View {
 		content = a.home.View()
 	case screenEvolve:
 		content = a.evolve.View()
+	case screenAdventure:
+		content = a.adventure.View()
 	}
 
 	v := tea.NewView(content)
