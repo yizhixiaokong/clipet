@@ -2,6 +2,7 @@ package screens
 
 import (
 	"clipet/internal/game"
+	"clipet/internal/game/games"
 	"clipet/internal/plugin"
 	"clipet/internal/store"
 	"clipet/internal/tui/components"
@@ -40,6 +41,10 @@ var categories = []menuCategory{
 		{"🎮", "玩耍", "play"},
 		{"💬", "对话", "talk"},
 	}},
+	{"🎯", "游戏", []actionItem{
+		{"⚡", "反应速度", "game_reaction"},
+		{"🎲", "猜数字", "game_guess"},
+	}},
 	{"📋", "查看", []actionItem{
 		{"📋", "信息", "info"},
 	}},
@@ -47,18 +52,19 @@ var categories = []menuCategory{
 
 // HomeModel is the home screen model.
 type HomeModel struct {
-	pet      *game.Pet
-	registry *plugin.Registry
-	store    store.Store
-	petView  *components.PetView
-	theme    styles.Theme
-	bubble   components.DialogueBubble
+	pet        *game.Pet
+	registry   *plugin.Registry
+	store      store.Store
+	petView    *components.PetView
+	theme      styles.Theme
+	bubble     components.DialogueBubble
+	gameMgr    *games.GameManager
 
-	catIdx    int  // selected category tab
-	actIdx    int  // selected action within category
-	inSubmenu bool // true when navigating sub-actions
-	width     int
-	height    int
+	catIdx     int  // selected category tab
+	actIdx     int  // selected action within category
+	inSubmenu  bool // true when navigating sub-actions
+	width      int
+	height     int
 
 	message   string // transient feedback message
 	dialogue  string // last dialogue line
@@ -76,12 +82,13 @@ func NewHomeModel(
 	theme styles.Theme,
 ) HomeModel {
 	return HomeModel{
-		pet:      pet,
-		registry: reg,
-		store:    st,
-		petView:  pv,
-		bubble:   components.NewDialogueBubble(),
-		theme:    theme,
+		pet:        pet,
+		registry:   reg,
+		store:      st,
+		petView:    pv,
+		bubble:     components.NewDialogueBubble(),
+		gameMgr:    games.NewGameManager(),
+		theme:      theme,
 		lastTalkAt: time.Now(),
 	}
 }
@@ -133,6 +140,11 @@ func (h HomeModel) Update(msg tea.Msg) (HomeModel, tea.Cmd) {
 			return h, nil
 		case "t":
 			h = h.executeAction("talk")
+		case "g":
+			if h.inSubmenu && h.catIdx == 2 { // Games category
+				act := categories[h.catIdx].actions[h.actIdx]
+				h = h.executeAction(act.action)
+			}
 			return h, nil
 		}
 
@@ -273,8 +285,34 @@ func (h HomeModel) executeAction(action string) HomeModel {
 		h.dialogue = ""
 		h.msgIsInfo = true
 		h.msgIsWarn = false
+
+	case "game_reaction":
+		res, _ := h.gameMgr.PlayGame(h.pet, games.GameReactionSpeed)
+		h.gameResultHandler(res)
+
+	case "game_guess":
+		res, _ := h.gameMgr.PlayGame(h.pet, games.GameGuessNumber)
+		h.gameResultHandler(res)
 	}
 	return h
+}
+
+// gameResultHandler processes the result of a mini-game.
+func (h HomeModel) gameResultHandler(res *games.GameResult) {
+	if res == nil {
+		h.message = "游戏执行失败..."
+		h.msgIsWarn = true
+		return
+	}
+
+	if res.Won {
+		h.message = fmt.Sprintf("游戏胜利！%s 快乐度 +%d", res.PetName, res.AttrChange["happiness"][1]-res.AttrChange["happiness"][0])
+	} else {
+		h.message = fmt.Sprintf("游戏失败...%s 快乐度 %d", res.PetName, res.AttrChange["happiness"][1]-res.AttrChange["happiness"][0])
+	}
+	h.msgIsWarn = false
+
+	_ = h.store.Save(h.pet)
 }
 
 // ----- View rendering -----
