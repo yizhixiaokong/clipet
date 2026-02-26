@@ -9,28 +9,58 @@ import (
 	"fmt"
 
 	tea "charm.land/bubbletea/v2"
+	"charm.land/bubbles/v2/key"
 	"charm.land/lipgloss/v2"
 )
 
+// EvolveKeyMap defines keybindings for evolve command
+type EvolveKeyMap struct {
+	Quit key.Binding
+}
+
+// DefaultEvolveKeyMap returns default keybindings for evolve command
+var DefaultEvolveKeyMap = EvolveKeyMap{
+	Quit: key.NewBinding(
+		key.WithKeys("q", "ctrl+c", "esc"),
+		key.WithHelp("q/Esc", "退出"),
+	),
+}
+
+// ShortHelp returns keybindings to be shown in the mini help view
+func (k EvolveKeyMap) ShortHelp() []key.Binding {
+	return []key.Binding{k.Quit}
+}
+
+// FullHelp returns keybindings for the expanded help view
+func (k EvolveKeyMap) FullHelp() [][]key.Binding {
+	return [][]key.Binding{
+		{k.Quit},
+	}
+}
+
 // EvolveModel is the TUI model for evolve command
 type EvolveModel struct {
-	Pet         *game.Pet
-	Species     string
-	Registry    *plugin.Registry
-	Tree        components.TreeList
-	Width       int
-	Height      int
-	Quitting    bool
+	Pet      *game.Pet
+	Species   string
+	Registry  *plugin.Registry
+	Tree      components.TreeList
+	Width     int
+	Height    int
+	Quitting  bool
+	KeyMap    EvolveKeyMap
 
 	// Callback when user selects a stage to evolve to
 	OnEvolve func(toStageID string) error
+
+	// Result stored for output after TUI exits
+	EvolveResult string
 }
 
 // NewEvolveModel creates a new evolve TUI model
 func NewEvolveModel(pet *game.Pet, species string, registry *plugin.Registry) *EvolveModel {
 	pack := registry.GetSpecies(species)
 	if pack == nil {
-		return &EvolveModel{Pet: pet, Species: species, Registry: registry}
+		return &EvolveModel{Pet: pet, Species: species, Registry: registry, KeyMap: DefaultEvolveKeyMap}
 	}
 
 	roots := buildEvoTreeFromPack(pack)
@@ -46,6 +76,7 @@ func NewEvolveModel(pet *game.Pet, species string, registry *plugin.Registry) *E
 		Species:  species,
 		Registry: registry,
 		Tree:     tree,
+		KeyMap:   DefaultEvolveKeyMap,
 	}
 }
 
@@ -70,8 +101,8 @@ func (m *EvolveModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyPressMsg:
 		// Handle global keys
-		switch msg.String() {
-		case "q", "ctrl+c", "escape":
+		switch {
+		case key.Matches(msg, m.KeyMap.Quit):
 			m.Quitting = true
 			return m, tea.Quit
 		}
@@ -86,17 +117,18 @@ func (m *EvolveModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.OnEvolve != nil {
 			selected := m.Tree.Selected()
 			if selected != nil && selected.ID != m.Pet.StageID {
-				// Verify evolution is possible
-				candidates := game.CheckEvolution(m.Pet, m.Registry)
-				for _, c := range candidates {
-					if c.ToStage.ID == selected.ID {
-						// Found valid evolution
-						if err := m.OnEvolve(selected.ID); err == nil {
-							m.Quitting = true
-							return m, tea.Quit
-						}
-						break
+				// Dev command: force evolution without checking conditions
+				oldStageID := m.Pet.StageID
+				if err := m.OnEvolve(selected.ID); err == nil {
+					// Store result for output after TUI exits
+					stage := m.Registry.GetStage(m.Species, selected.ID)
+					if stage != nil {
+						m.EvolveResult = fmt.Sprintf("evolve: %s -> %s (%s)", oldStageID, selected.ID, stage.Phase)
+					} else {
+						m.EvolveResult = fmt.Sprintf("evolve: %s -> %s", oldStageID, selected.ID)
 					}
+					m.Quitting = true
+					return m, tea.Quit
 				}
 			}
 		}

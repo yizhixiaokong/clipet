@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
+	"charm.land/bubbles/v2/key"
 	"charm.land/lipgloss/v2"
 )
 
@@ -18,6 +19,52 @@ type SetField struct {
 	Key   string
 	Label string
 	Kind  string // "int" or "string" or "bool"
+}
+
+// SetKeyMap defines keybindings for set command
+type SetKeyMap struct {
+	Up     key.Binding
+	Down   key.Binding
+	Enter  key.Binding
+	Quit   key.Binding
+	Cancel key.Binding
+}
+
+// DefaultSetKeyMap returns default keybindings for set command
+var DefaultSetKeyMap = SetKeyMap{
+	Up: key.NewBinding(
+		key.WithKeys("up", "k"),
+		key.WithHelp("↑/k", "上移"),
+	),
+	Down: key.NewBinding(
+		key.WithKeys("down", "j"),
+		key.WithHelp("↓/j", "下移"),
+	),
+	Enter: key.NewBinding(
+		key.WithKeys("enter"),
+		key.WithHelp("Enter", "编辑"),
+	),
+	Quit: key.NewBinding(
+		key.WithKeys("q", "ctrl+c"),
+		key.WithHelp("q/Ctrl+C", "退出"),
+	),
+	Cancel: key.NewBinding(
+		key.WithKeys("esc", "q"),
+		key.WithHelp("Esc/q", "取消"),
+	),
+}
+
+// ShortHelp returns keybindings to be shown in the mini help view
+func (k SetKeyMap) ShortHelp() []key.Binding {
+	return []key.Binding{k.Enter, k.Quit}
+}
+
+// FullHelp returns keybindings for the expanded help view
+func (k SetKeyMap) FullHelp() [][]key.Binding {
+	return [][]key.Binding{
+		{k.Up, k.Down, k.Enter},
+		{k.Cancel, k.Quit},
+	}
 }
 
 // SetModel is the TUI model for set command
@@ -31,6 +78,7 @@ type SetModel struct {
 	Height   int
 	Quitting bool
 	Message  string
+	KeyMap   SetKeyMap
 
 	// Callbacks for business logic
 	GetCurrentValue func(field SetField) string
@@ -51,6 +99,7 @@ func NewSetModel(pet *game.Pet, fields []SetField) *SetModel {
 		Pet:    pet,
 		Fields: fields,
 		Phase:  setPhaseSelect,
+		KeyMap: DefaultSetKeyMap,
 	}
 }
 
@@ -108,7 +157,7 @@ func (m *SetModel) View() tea.View {
 		f := m.Fields[m.Cursor]
 		inputArea = "\n" + setInputLabelStyle.Render(fmt.Sprintf("编辑 %s:", f.Label)) +
 			"\n> " + m.Input.View() +
-			"\n" + setInfoStyle.Render("Enter确认  Esc取消")
+			"\n" + setInfoStyle.Render("Enter确认  Esc/q取消")
 	}
 
 	// Message
@@ -138,19 +187,19 @@ func (m *SetModel) View() tea.View {
 }
 
 func (m *SetModel) updateSelect(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
-	switch msg.String() {
-	case "q", "ctrl+c", "escape":
+	switch {
+	case key.Matches(msg, m.KeyMap.Quit):
 		m.Quitting = true
 		return m, tea.Quit
-	case "up", "k":
+	case key.Matches(msg, m.KeyMap.Up):
 		if m.Cursor > 0 {
 			m.Cursor--
 		}
-	case "down", "j":
+	case key.Matches(msg, m.KeyMap.Down):
 		if m.Cursor < len(m.Fields)-1 {
 			m.Cursor++
 		}
-	case "enter":
+	case key.Matches(msg, m.KeyMap.Enter):
 		m.Phase = setPhaseInput
 		currentValue := ""
 		if m.GetCurrentValue != nil {
@@ -163,19 +212,20 @@ func (m *SetModel) updateSelect(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m *SetModel) updateInput(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
-	switch msg.String() {
-	case "escape":
+	switch {
+	case key.Matches(msg, m.KeyMap.Cancel):
+		// Allow both esc and 'q' to cancel
 		m.Phase = setPhaseSelect
 		m.Input = nil
 		m.Message = ""
-	case "enter":
+	case key.Matches(msg, m.KeyMap.Enter):
 		field := m.Fields[m.Cursor]
 		if m.SetFieldValue != nil {
-			old, err := m.SetFieldValue(field, m.Input.Value)
+			old, err := m.SetFieldValue(field, m.Input.Value())
 			if err != nil {
 				m.Message = fmt.Sprintf("❌ %v", err)
 			} else {
-				m.Message = fmt.Sprintf("✓ %s: %s → %s", field.Label, old, m.Input.Value)
+				m.Message = fmt.Sprintf("✓ %s: %s → %s", field.Label, old, m.Input.Value())
 				if m.OnFieldChanged != nil {
 					m.OnFieldChanged()
 				}

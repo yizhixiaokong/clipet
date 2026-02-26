@@ -27,7 +27,7 @@ var settableFields = []settableField{
 func newSetCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "set [attribute] [value]",
-		Short: "[dev] Set pet attribute directly",
+		Short: "[开发] 直接修改宠物属性",
 		Long: `直接修改宠物属性。
 
 不带参数进入交互式界面，显示所有属性及当前值，选择后输入新值。

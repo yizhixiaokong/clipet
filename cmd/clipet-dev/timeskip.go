@@ -16,7 +16,7 @@ func newTimeskipCmd() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "timeskip",
-		Short: "[dev] Time skip - simulate aging and attribute decay",
+		Short: "[开发] 时间跳跃 - 模拟时间流逝和属性衰减",
 		Long: `时间跳跃：模拟时间流逝对宠物的影响。
 
 带参数直接执行: timeskip --hours 24 或 --days 7

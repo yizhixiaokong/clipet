@@ -88,8 +88,17 @@ func runEvoTUI(pet *game.Pet, registry *plugin.Registry) error {
 	}
 
 	p := tea.NewProgram(m)
-	_, err := p.Run()
-	return err
+	finalModel, err := p.Run()
+	if err != nil {
+		return err
+	}
+
+	// Output evolution result after TUI exits
+	if fm, ok := finalModel.(*dev.EvolveModel); ok && fm.EvolveResult != "" {
+		fmt.Println(fm.EvolveResult)
+	}
+
+	return nil
 }
 
 // newEvoInfoCmd creates the "evo info" subcommand for viewing evolution info.

@@ -1,47 +1,24 @@
 package components
 
 import (
-	"strings"
-
 	tea "charm.land/bubbletea/v2"
+	"charm.land/bubbles/v2/textinput"
 	"charm.land/lipgloss/v2"
 )
 
-// InputField is a reusable text input component
+// InputField is a wrapper around bubbles/textinput for simplified usage
 type InputField struct {
-	Value       string
-	Placeholder string
-	CursorChar  string
-	Width       int
-	Styles      InputStyles
-	Filter      func(rune) bool // Filter function for allowed characters
-}
-
-// InputStyles holds styles for input field
-type InputStyles struct {
-	Text       lipgloss.Style
-	Placeholder lipgloss.Style
-	Cursor     lipgloss.Style
-}
-
-// DefaultInputStyles returns default styling
-func DefaultInputStyles() InputStyles {
-	return InputStyles{
-		Text:        lipgloss.NewStyle(),
-		Placeholder: lipgloss.NewStyle().Foreground(lipgloss.Color("#888888")),
-		Cursor:      lipgloss.NewStyle(),
-	}
+	ti     textinput.Model
+	Filter func(rune) bool // Custom filter function
 }
 
 // NewInputField creates a new input field with defaults
 func NewInputField() *InputField {
+	ti := textinput.New()
+	ti.Focus()
+
 	return &InputField{
-		Value:       "",
-		Placeholder: "",
-		CursorChar:  "█",
-		Width:       0, // 0 = auto
-		Styles:      DefaultInputStyles(),
-		Filter:      nil, // nil = allow all
+		ti: ti,
 	}
 }
 
@@ -52,70 +29,49 @@ func (i *InputField) Init() tea.Cmd {
 
 // Update implements tea.Model
 func (i *InputField) Update(msg tea.Msg) (*InputField, tea.Cmd) {
-	switch msg := msg.(type) {
-	case tea.KeyPressMsg:
-		return i.handleKeyPress(msg)
+	var cmd tea.Cmd
+
+	// Handle character input with custom filter
+	if keyMsg, ok := msg.(tea.KeyPressMsg); ok {
+		if len(keyMsg.String()) == 1 {
+			ch := rune(keyMsg.String()[0])
+			if i.Filter != nil && !i.Filter(ch) {
+				// Reject this character by not passing it to textinput
+				return i, nil
+			}
+		}
 	}
-	return i, nil
+
+	i.ti, cmd = i.ti.Update(msg)
+	return i, cmd
 }
 
 // View implements tea.Model
 func (i *InputField) View() string {
-	if i.Value == "" && i.Placeholder != "" {
-		return i.Styles.Placeholder.Render(i.Placeholder) + i.Styles.Cursor.Render(i.CursorChar)
-	}
-
-	text := i.Value
-	if i.Width > 0 && len(text) > i.Width {
-		text = text[len(text)-i.Width:]
-	}
-
-	return i.Styles.Text.Render(text) + i.Styles.Cursor.Render(i.CursorChar)
-}
-
-// handleKeyPress processes keyboard input
-func (i *InputField) handleKeyPress(msg tea.KeyPressMsg) (*InputField, tea.Cmd) {
-	switch msg.String() {
-	case "backspace":
-		if len(i.Value) > 0 {
-			// Convert to []rune to properly handle UTF-8
-			runes := []rune(i.Value)
-			i.Value = string(runes[:len(runes)-1])
-		}
-	default:
-		// Handle character input
-		if len(msg.String()) == 1 {
-			ch := rune(msg.String()[0])
-			// Apply filter if set
-			if i.Filter == nil || i.Filter(ch) {
-				i.Value += string(ch)
-			}
-		}
-	}
-	return i, nil
+	return i.ti.View()
 }
 
 // SetValue sets the input value
 func (i *InputField) SetValue(value string) *InputField {
-	i.Value = value
+	i.ti.SetValue(value)
 	return i
 }
 
 // SetPlaceholder sets the placeholder text
 func (i *InputField) SetPlaceholder(placeholder string) *InputField {
-	i.Placeholder = placeholder
+	i.ti.Placeholder = placeholder
 	return i
 }
 
 // SetWidth sets the maximum visible width (0 = unlimited)
 func (i *InputField) SetWidth(width int) *InputField {
-	i.Width = width
+	i.ti.SetWidth(width)
 	return i
 }
 
-// SetCursorChar sets the cursor character
+// SetCursorChar sets the cursor character (note: bubbles uses built-in cursor)
 func (i *InputField) SetCursorChar(char string) *InputField {
-	i.CursorChar = char
+	// bubbles/textinput uses a built-in cursor, this is kept for API compatibility
 	return i
 }
 
@@ -125,26 +81,49 @@ func (i *InputField) SetFilter(filter func(rune) bool) *InputField {
 	return i
 }
 
-// SetStyles sets the input field styles
+// SetStyles sets the input field styles (note: limited support)
 func (i *InputField) SetStyles(styles InputStyles) *InputField {
-	i.Styles = styles
+	// bubbles/textinput has its own styling system
+	// For simplicity, we keep default styles
+	// Full customization would require converting InputStyles to textinput.Styles
 	return i
 }
 
 // Clear clears the input value
 func (i *InputField) Clear() *InputField {
-	i.Value = ""
+	i.ti.SetValue("")
 	return i
 }
 
 // String returns the current value as string
 func (i InputField) String() string {
-	return i.Value
+	return i.ti.Value()
+}
+
+// Value returns the current value
+func (i *InputField) Value() string {
+	return i.ti.Value()
 }
 
 // NumericFilter returns a filter that only allows digits and specific extra chars
 func NumericFilter(extraChars string) func(rune) bool {
 	return func(r rune) bool {
-		return (r >= '0' && r <= '9') || strings.ContainsRune(extraChars, r)
+		return (r >= '0' && r <= '9') || containsRune(extraChars, r)
 	}
+}
+
+func containsRune(s string, r rune) bool {
+	for _, ch := range s {
+		if ch == r {
+			return true
+		}
+	}
+	return false
+}
+
+// InputStyles is kept for API compatibility (not used with bubbles/textinput)
+type InputStyles struct {
+	Text        lipgloss.Style
+	Placeholder lipgloss.Style
+	Cursor      lipgloss.Style
 }

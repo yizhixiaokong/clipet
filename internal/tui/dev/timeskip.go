@@ -10,8 +10,55 @@ import (
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
+	"charm.land/bubbles/v2/key"
 	"charm.land/lipgloss/v2"
 )
+
+// TimeskipKeyMap defines keybindings for timeskip command
+type TimeskipKeyMap struct {
+	Quit   key.Binding
+	Enter  key.Binding
+	Yes    key.Binding
+	No     key.Binding
+	Cancel key.Binding
+}
+
+// DefaultTimeskipKeyMap returns default keybindings for timeskip command
+var DefaultTimeskipKeyMap = TimeskipKeyMap{
+	Quit: key.NewBinding(
+		key.WithKeys("q", "ctrl+c"),
+		key.WithHelp("q/Ctrl+C", "退出"),
+	),
+	Enter: key.NewBinding(
+		key.WithKeys("enter"),
+		key.WithHelp("Enter", "预览"),
+	),
+	Yes: key.NewBinding(
+		key.WithKeys("enter", "y"),
+		key.WithHelp("Enter/y", "确认"),
+	),
+	No: key.NewBinding(
+		key.WithKeys("n", "q"),
+		key.WithHelp("n/q", "返回"),
+	),
+	Cancel: key.NewBinding(
+		key.WithKeys("esc", "n", "q"),
+		key.WithHelp("Esc/n/q", "返回"),
+	),
+}
+
+// ShortHelp returns keybindings to be shown in the mini help view
+func (k TimeskipKeyMap) ShortHelp() []key.Binding {
+	return []key.Binding{k.Enter, k.Quit}
+}
+
+// FullHelp returns keybindings for the expanded help view
+func (k TimeskipKeyMap) FullHelp() [][]key.Binding {
+	return [][]key.Binding{
+		{k.Enter, k.Quit},
+		{k.Yes, k.No, k.Cancel},
+	}
+}
 
 // TimeskipModel is the TUI model for timeskip command
 type TimeskipModel struct {
@@ -22,6 +69,7 @@ type TimeskipModel struct {
 	Phase    timeskipPhase
 	Input    *components.InputField
 	InputErr string
+	KeyMap   TimeskipKeyMap
 
 	// Preview data (computed from input)
 	PreviewHours float64
@@ -49,7 +97,8 @@ func NewTimeskipModel(pet *game.Pet) *TimeskipModel {
 		Input: components.NewInputField().
 			SetValue("24").
 			SetFilter(components.NumericFilter(".")),
-		Phase: timeskipPhaseInput,
+		Phase:  timeskipPhaseInput,
+		KeyMap: DefaultTimeskipKeyMap,
 	}
 }
 
@@ -104,12 +153,12 @@ func (m *TimeskipModel) View() tea.View {
 }
 
 func (m *TimeskipModel) updateInput(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
-	switch msg.String() {
-	case "q", "ctrl+c", "escape":
+	switch {
+	case key.Matches(msg, m.KeyMap.Quit):
 		m.Quitting = true
 		return m, tea.Quit
-	case "enter":
-		h, err := strconv.ParseFloat(m.Input.Value, 64)
+	case key.Matches(msg, m.KeyMap.Enter):
+		h, err := strconv.ParseFloat(m.Input.Value(), 64)
 		if err != nil || h <= 0 {
 			m.InputErr = "请输入正数"
 			return m, nil
@@ -127,11 +176,11 @@ func (m *TimeskipModel) updateInput(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m *TimeskipModel) updatePreview(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
-	switch msg.String() {
-	case "enter", "y":
+	switch {
+	case key.Matches(msg, m.KeyMap.Yes):
 		m.Done = true
 		return m, tea.Quit
-	case "escape", "n", "q":
+	case key.Matches(msg, m.KeyMap.Cancel):
 		m.Phase = timeskipPhaseInput
 	}
 	return m, nil
@@ -225,7 +274,7 @@ func (m *TimeskipModel) viewPreview() string {
 	}
 
 	lines = append(lines, "")
-	lines = append(lines, tsInputLabelStyle.Render("确认执行? (Enter/y 确认, Esc/n 返回)"))
+	lines = append(lines, tsInputLabelStyle.Render("确认执行? (Enter/y 确认, Esc/n/q 返回)"))
 
 	return strings.Join(lines, "\n")
 }
