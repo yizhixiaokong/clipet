@@ -6,7 +6,7 @@ import (
 	"clipet/internal/plugin"
 	"strings"
 
-	"github.com/mattn/go-runewidth"
+	"github.com/charmbracelet/x/ansi"
 )
 
 // PetView manages the animated ASCII display of a pet.
@@ -73,8 +73,9 @@ func normalizeArt(art string, minWidth int) string {
 	return strings.Join(lines, "\n")
 }
 
-// displayWidth returns the visible column width of a string,
-// accounting for multi-byte UTF-8 characters and wide glyphs.
+// displayWidth returns the visible column width of a string.
+// Uses the same width calculation as lipgloss (charmbracelet/x/ansi)
+// to ensure normalizeArt padding is consistent with lipgloss centering.
 func displayWidth(s string) int {
-	return runewidth.StringWidth(s)
+	return ansi.StringWidth(s)
 }
