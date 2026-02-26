@@ -46,26 +46,26 @@ func (pv *PetView) Render() string {
 
 	idx := pv.frameIndex % len(frame.Frames)
 	raw := strings.TrimRight(frame.Frames[idx], "\n")
-	return normalizeArt(raw, frame.Width)
+	return NormalizeArt(raw, frame.Width)
 }
 
 func (pv *PetView) fallbackArt() string {
 	return "  ?\n ?\n  ?"
 }
 
-// normalizeArt pads every line to the same display width so the art forms
+// NormalizeArt pads every line to the same display width so the art forms
 // a rectangular block that won't be skewed by per-line centering.
-func normalizeArt(art string, minWidth int) string {
+func NormalizeArt(art string, minWidth int) string {
 	lines := strings.Split(art, "\n")
 	maxW := minWidth
 	for _, l := range lines {
-		w := displayWidth(l)
+		w := DisplayWidth(l)
 		if w > maxW {
 			maxW = w
 		}
 	}
 	for i, l := range lines {
-		w := displayWidth(l)
+		w := DisplayWidth(l)
 		if w < maxW {
 			lines[i] = l + strings.Repeat(" ", maxW-w)
 		}
@@ -73,9 +73,9 @@ func normalizeArt(art string, minWidth int) string {
 	return strings.Join(lines, "\n")
 }
 
-// displayWidth returns the visible column width of a string.
+// DisplayWidth returns the visible column width of a string.
 // Uses the same width calculation as lipgloss (charmbracelet/x/ansi)
-// to ensure normalizeArt padding is consistent with lipgloss centering.
-func displayWidth(s string) int {
+// to ensure NormalizeArt padding is consistent with lipgloss centering.
+func DisplayWidth(s string) int {
 	return ansi.StringWidth(s)
 }

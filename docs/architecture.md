@@ -41,7 +41,8 @@ clipet/
 │       │   └── theme.go        # Lipgloss 样式常量 + 颜色工具
 │       ├── components/
 │       │   ├── petview.go      # 宠物 ASCII 渲染组件
-│       │   └── dialoguebubble.go # 对话气泡组件
+│       │   ├── dialoguebubble.go # 对话气泡组件
+│       │   └── treelist.go     # 可复用的树形列表组件
 │       └── screens/
 │           ├── home.go         # 主屏幕（二级菜单 + 游戏覆盖层）
 │           ├── evolve.go       # 进化屏幕（选择/动画/完成）

@@ -1,0 +1,250 @@
+// Package dev provides TUI models for clipet-dev commands
+package dev
+
+import (
+	"clipet/internal/game"
+	"clipet/internal/tui/components"
+	"clipet/internal/tui/styles"
+	"fmt"
+	"strconv"
+	"strings"
+
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
+)
+
+// TimeskipModel is the TUI model for timeskip command
+type TimeskipModel struct {
+	Pet    *game.Pet
+	Width  int
+	Height int
+
+	Phase    timeskipPhase
+	Input    *components.InputField
+	InputErr string
+
+	// Preview data (computed from input)
+	PreviewHours float64
+	OldAge       float64
+	NewAge       float64
+	OldStats     [4]int // hunger, happiness, health, energy
+	NewStats     [4]int
+	WouldDie     bool
+
+	Quitting bool
+	Done     bool
+}
+
+type timeskipPhase int
+
+const (
+	timeskipPhaseInput   timeskipPhase = iota // typing hours
+	timeskipPhasePreview                      // showing preview, confirm or cancel
+)
+
+// NewTimeskipModel creates a new timeskip TUI model
+func NewTimeskipModel(pet *game.Pet) *TimeskipModel {
+	return &TimeskipModel{
+		Pet: pet,
+		Input: components.NewInputField().
+			SetValue("24").
+			SetFilter(components.NumericFilter(".")),
+		Phase: timeskipPhaseInput,
+	}
+}
+
+// Init implements tea.Model
+func (m *TimeskipModel) Init() tea.Cmd {
+	return nil
+}
+
+// Update implements tea.Model
+func (m *TimeskipModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.Width = msg.Width
+		m.Height = msg.Height
+	case tea.KeyPressMsg:
+		if m.Phase == timeskipPhaseInput {
+			return m.updateInput(msg)
+		}
+		return m.updatePreview(msg)
+	}
+	return m, nil
+}
+
+// View implements tea.Model
+func (m *TimeskipModel) View() tea.View {
+	if m.Quitting || m.Done {
+		return tea.NewView("")
+	}
+	if m.Width == 0 {
+		v := tea.NewView("加载中...")
+		v.AltScreen = true
+		return v
+	}
+
+	title := tsHeaderStyle.Render(fmt.Sprintf(" ⏩ 时间跳跃 — %s [%s] ", m.Pet.Name, m.Pet.StageID))
+
+	var content string
+	if m.Phase == timeskipPhaseInput {
+		content = m.viewInput()
+	} else {
+		content = m.viewPreview()
+	}
+
+	panel := tsPanelStyle.
+		Width(m.Width - 2).
+		Height(m.Height - 1).
+		Render(lipgloss.JoinVertical(lipgloss.Left, title, "", content))
+
+	v := tea.NewView(panel)
+	v.AltScreen = true
+	return v
+}
+
+func (m *TimeskipModel) updateInput(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "q", "ctrl+c", "escape":
+		m.Quitting = true
+		return m, tea.Quit
+	case "enter":
+		h, err := strconv.ParseFloat(m.Input.Value, 64)
+		if err != nil || h <= 0 {
+			m.InputErr = "请输入正数"
+			return m, nil
+		}
+		m.InputErr = ""
+		m.PreviewHours = h
+		m.computePreview()
+		m.Phase = timeskipPhasePreview
+	default:
+		// Delegate to InputField component
+		m.Input, _ = m.Input.Update(msg)
+		m.InputErr = ""
+	}
+	return m, nil
+}
+
+func (m *TimeskipModel) updatePreview(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "enter", "y":
+		m.Done = true
+		return m, tea.Quit
+	case "escape", "n", "q":
+		m.Phase = timeskipPhaseInput
+	}
+	return m, nil
+}
+
+func (m *TimeskipModel) computePreview() {
+	m.OldAge = m.Pet.AgeHours()
+	m.NewAge = m.OldAge + m.PreviewHours
+	m.OldStats = [4]int{m.Pet.Hunger, m.Pet.Happiness, m.Pet.Health, m.Pet.Energy}
+
+	// Simulate decay on a copy
+	hours := m.PreviewHours
+	hunger := clamp(m.Pet.Hunger-int(3*hours), 0, 100)
+	happiness := clamp(m.Pet.Happiness-int(2*hours), 0, 100)
+	energy := clamp(m.Pet.Energy-int(1*hours), 0, 100)
+	health := m.Pet.Health
+	if hunger < 20 {
+		health = clamp(health-int(0.5*hours), 0, 100)
+	}
+	m.NewStats = [4]int{hunger, happiness, health, energy}
+	m.WouldDie = health <= 0
+}
+
+func (m *TimeskipModel) viewInput() string {
+	statNames := []string{"饱腹", "快乐", "健康", "精力"}
+	stats := []int{m.Pet.Hunger, m.Pet.Happiness, m.Pet.Health, m.Pet.Energy}
+
+	var lines []string
+	lines = append(lines, tsInfoStyle.Render(fmt.Sprintf("当前年龄: %.1f 小时", m.Pet.AgeHours())))
+	lines = append(lines, "")
+	for i, name := range statNames {
+		bar := components.NewProgressBar().
+			SetValue(stats[i]).
+			SetMax(100).
+			SetWidth(20).
+			SetFilledStyle(styles.DevCommandStyles.BarFilled).
+			SetEmptyStyle(styles.DevCommandStyles.BarEmpty).
+			Render()
+		lines = append(lines, fmt.Sprintf("  %-6s %3d %s", name, stats[i], bar))
+	}
+	lines = append(lines, "")
+	lines = append(lines, tsInputLabelStyle.Render("跳过小时数:"))
+	lines = append(lines, "> "+m.Input.View())
+
+	if m.InputErr != "" {
+		lines = append(lines, tsErrStyle.Render(m.InputErr))
+	}
+
+	lines = append(lines, "")
+	lines = append(lines, tsInfoStyle.Render("Enter预览  q退出"))
+
+	return strings.Join(lines, "\n")
+}
+
+func (m *TimeskipModel) viewPreview() string {
+	statNames := []string{"饱腹", "快乐", "健康", "精力"}
+
+	var lines []string
+	lines = append(lines, tsInputLabelStyle.Render(fmt.Sprintf("跳过 %.1f 小时后的变化:", m.PreviewHours)))
+	lines = append(lines, "")
+	lines = append(lines, fmt.Sprintf("  年龄   %.1fh → %.1fh", m.OldAge, m.NewAge))
+	lines = append(lines, "")
+
+	for i, name := range statNames {
+		oldBar := components.NewProgressBar().
+			SetValue(m.OldStats[i]).
+			SetMax(100).
+			SetWidth(15).
+			SetFilledStyle(styles.DevCommandStyles.BarFilled).
+			SetEmptyStyle(styles.DevCommandStyles.BarEmpty).
+			Render()
+		newBar := components.NewProgressBar().
+			SetValue(m.NewStats[i]).
+			SetMax(100).
+			SetWidth(15).
+			SetFilledStyle(styles.DevCommandStyles.BarFilled).
+			SetEmptyStyle(styles.DevCommandStyles.BarEmpty).
+			Render()
+		delta := m.NewStats[i] - m.OldStats[i]
+		deltaStr := fmt.Sprintf("%+d", delta)
+		if delta < 0 {
+			deltaStr = tsErrStyle.Render(deltaStr)
+		}
+		lines = append(lines, fmt.Sprintf("  %-6s %3d %s → %3d %s  %s",
+			name, m.OldStats[i], oldBar, m.NewStats[i], newBar, deltaStr))
+	}
+
+	if m.WouldDie {
+		lines = append(lines, "")
+		lines = append(lines, tsErrStyle.Render("  ⚠ 警告: 宠物将会死亡!"))
+	}
+
+	lines = append(lines, "")
+	lines = append(lines, tsInputLabelStyle.Render("确认执行? (Enter/y 确认, Esc/n 返回)"))
+
+	return strings.Join(lines, "\n")
+}
+
+func clamp(v, lo, hi int) int {
+	if v < lo {
+		return lo
+	}
+	if v > hi {
+		return hi
+	}
+	return v
+}
+
+// Styles
+var (
+	tsPanelStyle      = styles.DevCommandStyles.Panel
+	tsHeaderStyle     = styles.MakeTitleStyle("#E94560") // Timeskip uses red
+	tsInfoStyle       = styles.DevCommandStyles.Info
+	tsInputLabelStyle = styles.DevCommandStyles.InputLabel
+	tsErrStyle        = styles.DevCommandStyles.Error
+)
