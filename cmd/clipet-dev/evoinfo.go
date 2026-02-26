@@ -9,10 +9,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newEvoInfoCmd() *cobra.Command {
+func newEvoInfoSubCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "evoinfo",
-		Short: "[开发] 查看当前阶段的进化条件及达成状态",
+		Use:   "info",
+		Short: "查看当前阶段的进化条件及达成状态",
 		Long:  "显示宠物当前阶段所有可能的进化路径，以及每个条件的达成情况。",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -257,7 +257,7 @@ func printEvoTree(pack *plugin.SpeciesPack, currentStageID string) {
 		}
 		phase := phases[id]
 
-		fmt.Printf("%s%s%s%s (%s)\n", prefix, connector, marker, name, phase)
+		fmt.Printf("%s%s%s%s [%s] (%s)\n", prefix, connector, marker, name, id, phase)
 
 		children := adj[id]
 		childPrefix := prefix + "│   "
@@ -285,7 +285,7 @@ func printEvoTree(pack *plugin.SpeciesPack, currentStageID string) {
 		}
 		// Print roots without connector
 		children := adj[root]
-		fmt.Printf("%s%s (%s)\n", marker, name, phase)
+		fmt.Printf("%s%s [%s] (%s)\n", marker, name, root, phase)
 		for j, child := range children {
 			printNode(child, "", j == len(children)-1)
 		}

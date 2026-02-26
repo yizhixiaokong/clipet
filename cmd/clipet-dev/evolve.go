@@ -7,10 +7,24 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newEvolveCmd() *cobra.Command {
+// newEvoCmd creates the parent "evo" command with subcommands "do" and "info".
+func newEvoCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "evo",
+		Short: "[开发] 进化相关命令",
+		Long:  "进化相关的开发工具集，包含强制进化和查看进化信息子命令。",
+	}
+
+	cmd.AddCommand(newEvoDoCmd())
+	cmd.AddCommand(newEvoInfoSubCmd())
+
+	return cmd
+}
+
+func newEvoDoCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "evolve <stage-id>",
-		Short: "[开发] 强制进化到指定阶段",
+		Use:   "to <stage-id>",
+		Short: "强制进化到指定阶段",
 		Long:  "跳过所有进化条件，直接将宠物设置为指定的 stage ID。",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

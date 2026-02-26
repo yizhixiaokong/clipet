@@ -36,8 +36,7 @@ func main() {
 
 	root.AddCommand(newTimeskipCmd())
 	root.AddCommand(newSetCmd())
-	root.AddCommand(newEvolveCmd())
-	root.AddCommand(newEvoInfoCmd())
+	root.AddCommand(newEvoCmd())
 	root.AddCommand(newValidateCmd())
 	root.AddCommand(newPreviewCmd())
 
