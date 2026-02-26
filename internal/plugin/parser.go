@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/BurntSushi/toml"
+	"github.com/mattn/go-runewidth"
 )
 
 // ParseSpecies reads and decodes species.toml from the given filesystem.
@@ -349,11 +350,12 @@ func parseSpriteSheet(stageID, animState, content string) Frame {
 		}
 	}
 
-	// Calculate max width across all frames
+	// Calculate max display width across all frames
 	for _, art := range frame.Frames {
 		for _, line := range strings.Split(art, "\n") {
-			if len(line) > frame.Width {
-				frame.Width = len(line)
+			w := runewidth.StringWidth(line)
+			if w > frame.Width {
+				frame.Width = w
 			}
 		}
 	}

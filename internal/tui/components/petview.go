@@ -5,6 +5,8 @@ import (
 	"clipet/internal/game"
 	"clipet/internal/plugin"
 	"strings"
+
+	"github.com/mattn/go-runewidth"
 )
 
 // PetView manages the animated ASCII display of a pet.
@@ -71,9 +73,8 @@ func normalizeArt(art string, minWidth int) string {
 	return strings.Join(lines, "\n")
 }
 
-// displayWidth returns the visible column width of a string.
-// For pure ASCII this equals len(s). Uses a simple approach that
-// counts bytes — upgrade to uniseg/runewidth if Unicode art is needed.
+// displayWidth returns the visible column width of a string,
+// accounting for multi-byte UTF-8 characters and wide glyphs.
 func displayWidth(s string) int {
-	return len(s)
+	return runewidth.StringWidth(s)
 }
