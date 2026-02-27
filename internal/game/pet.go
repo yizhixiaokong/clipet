@@ -172,6 +172,11 @@ func (p *Pet) SetRegistry(registry *plugin.Registry) {
 	p.registry = registry
 }
 
+// Registry returns the plugin registry for the pet.
+func (p *Pet) Registry() *plugin.Registry {
+	return p.registry
+}
+
 // Feed increases the pet's hunger (fullness) level.
 // Dynamic cooldown based on urgency. Prerequisite: hunger < 95. Diminishing returns on gain.
 func (p *Pet) Feed() ActionResult {
