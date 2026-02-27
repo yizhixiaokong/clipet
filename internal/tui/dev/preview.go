@@ -73,7 +73,7 @@ func (k PreviewKeyMap) ShortHelp() []key.Binding {
 func (k PreviewKeyMap) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
 		{k.Up, k.Down, k.Left, k.Right},
-		{k.SpeedUp, k.SlowDown, k.Quit},
+		{k.SpeedUp, k.SlowDown, k.Quit, k.ToggleHelp},
 	}
 }
 

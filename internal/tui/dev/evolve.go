@@ -66,7 +66,7 @@ func (k EvolveKeyMap) ShortHelp() []key.Binding {
 func (k EvolveKeyMap) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
 		{k.Up, k.Down, k.Left, k.Right},
-		{k.Enter, k.Quit},
+		{k.Enter, k.Quit, k.ToggleHelp},
 	}
 }
 
