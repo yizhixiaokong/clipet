@@ -464,33 +464,47 @@ func (h HomeModel) View() string {
 	)
 }
 
-// renderGameView renders a full-screen game overlay.
+// renderGameView renders a split-screen view with pet on left and game on right.
 func (h HomeModel) renderGameView() string {
 	totalInner := h.width - 2
 	if totalInner < 50 {
 		totalInner = 50
 	}
 
-	title := h.theme.TitleBar.Width(totalInner).Render("🐾 Clipet — " + h.activeGame.GetConfig().Name)
+	// Split into left (pet) and right (game) panels
+	const leftPanelW = 28
+	rightPanelW := totalInner - leftPanelW
+	if rightPanelW < 30 {
+		rightPanelW = 30
+	}
+
+	// Left panel: Pet view (same as normal home view)
+	leftPanel := h.renderPetPanel(leftPanelW)
+
+	// Right panel: Game content
+	title := h.theme.TitleBar.Width(rightPanelW).Render("🎮 " + h.activeGame.GetConfig().Name)
 
 	gameContent := h.activeGame.View()
 	gameBox := h.theme.GamePanel.
-		Width(totalInner - 4).
+		Width(rightPanelW - 4).
 		Render(gameContent)
 
 	helpText := "Esc 退出游戏"
 	if h.activeGame.IsFinished() {
 		helpText = "Enter 继续  Esc 退出"
 	}
-	help := h.theme.HelpBar.Width(totalInner).Render(helpText)
+	help := h.theme.HelpBar.Width(rightPanelW).Render(helpText)
 
-	return lipgloss.JoinVertical(lipgloss.Left,
+	rightPanel := lipgloss.JoinVertical(lipgloss.Left,
 		title,
 		"",
 		gameBox,
 		"",
 		help,
 	)
+
+	// Join horizontally
+	return lipgloss.JoinHorizontal(lipgloss.Top, leftPanel, rightPanel)
 }
 
 // renderPetPanel renders the left panel with centered ASCII art + dialogue bubble.

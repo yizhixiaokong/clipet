@@ -3,6 +3,7 @@ package screens
 import (
 	"clipet/internal/game"
 	"clipet/internal/plugin"
+	"clipet/internal/tui/components"
 	"clipet/internal/tui/styles"
 	"fmt"
 	"strings"
@@ -27,6 +28,8 @@ type AdventureModel struct {
 	pet       *game.Pet
 	adventure plugin.Adventure
 	theme     styles.Theme
+	petView   *components.PetView // 新增：宠物视图组件
+	registry  *plugin.Registry    // 新增：用于获取帧数据
 
 	phase     AdventurePhase
 	choiceIdx int
@@ -39,11 +42,13 @@ type AdventureModel struct {
 }
 
 // NewAdventureModel creates a new adventure screen for the given adventure.
-func NewAdventureModel(pet *game.Pet, adv plugin.Adventure, theme styles.Theme) AdventureModel {
+func NewAdventureModel(pet *game.Pet, adv plugin.Adventure, theme styles.Theme, petView *components.PetView, registry *plugin.Registry) AdventureModel {
 	return AdventureModel{
 		pet:       pet,
 		adventure: adv,
 		theme:     theme,
+		petView:   petView,
+		registry:  registry,
 		phase:     AdventureIntro,
 	}
 }
@@ -116,24 +121,75 @@ func (a AdventureModel) Update(msg tea.Msg) (AdventureModel, tea.Cmd) {
 	return a, nil
 }
 
-// View renders the adventure screen.
+// View renders the adventure screen with pet on the left.
 func (a AdventureModel) View() string {
-	w := a.width
-	if w < 50 {
-		w = 50
+	if a.width == 0 {
+		return "加载中..."
 	}
 
+	totalInner := a.width - 2
+	if totalInner < 50 {
+		totalInner = 50
+	}
+
+	// Split into left (pet) and right (adventure) panels
+	const leftPanelW = 28
+	rightPanelW := totalInner - leftPanelW
+	if rightPanelW < 30 {
+		rightPanelW = 30
+	}
+
+	// Left panel: Pet view
+	leftPanel := a.renderPetPanel(leftPanelW)
+
+	// Right panel: Adventure content based on phase
+	var rightPanel string
 	switch a.phase {
 	case AdventureIntro:
-		return a.viewIntro(w)
+		rightPanel = a.viewIntro(rightPanelW)
 	case AdventureChoosing:
-		return a.viewChoosing(w)
+		rightPanel = a.viewChoosing(rightPanelW)
 	case AdventureResolving:
-		return a.viewResolving(w)
+		rightPanel = a.viewResolving(rightPanelW)
 	case AdventureResult:
-		return a.viewResult(w)
+		rightPanel = a.viewResult(rightPanelW)
 	}
-	return ""
+
+	// Join horizontally
+	mainArea := lipgloss.JoinHorizontal(lipgloss.Top, leftPanel, rightPanel)
+
+	return mainArea
+}
+
+// renderPetPanel renders the pet display on the left side
+func (a AdventureModel) renderPetPanel(w int) string {
+	if a.petView == nil {
+		return ""
+	}
+
+	// Update pet in petView (in case it changed)
+	a.petView.SetPet(a.pet)
+
+	// Render pet art
+	art := a.petView.Render()
+
+	const minHeight = 12
+	lines := strings.Split(art, "\n")
+	for len(lines) < minHeight {
+		lines = append(lines, "")
+	}
+	art = strings.Join(lines, "\n")
+
+	innerW := w - 6
+	if innerW < 20 {
+		innerW = 20
+	}
+
+	return a.theme.PetPanel.
+		Width(innerW).
+		Height(minHeight).
+		Align(lipgloss.Center, lipgloss.Center).
+		Render(art)
 }
 
 func (a AdventureModel) viewIntro(w int) string {
