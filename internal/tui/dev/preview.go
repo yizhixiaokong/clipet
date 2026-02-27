@@ -204,6 +204,9 @@ func (m *PreviewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.Width = msg.Width
 		m.Height = msg.Height
 
+		// Update help width
+		m.Help.SetWidth(m.Width)
+
 		// Update tree size (right panel)
 		rightW := m.Width * 45 / 100
 		if rightW < 20 {

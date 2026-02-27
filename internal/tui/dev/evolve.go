@@ -129,6 +129,9 @@ func (m *EvolveModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.Width = msg.Width
 		m.Height = msg.Height
 
+		// Update help width
+		m.Help.SetWidth(m.Width)
+
 		// Update tree size
 		treeW := m.Width * 40 / 100
 		if treeW < 30 {

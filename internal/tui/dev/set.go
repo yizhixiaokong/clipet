@@ -168,6 +168,7 @@ func (m *SetModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.Width = msg.Width
 		m.Height = msg.Height
+		m.Help.SetWidth(m.Width)
 	case tea.KeyPressMsg:
 		if m.Phase == setPhaseSelect {
 			return m.updateSelect(msg)
