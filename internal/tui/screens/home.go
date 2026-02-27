@@ -389,8 +389,22 @@ func (h HomeModel) executeAction(action string) HomeModel {
 		}
 		h.pendingAdventure = adv
 		return h
+
+	default:
+		// Handle skill actions (format: "skill:skill_id")
+		if strings.HasPrefix(action, "skill:") {
+			skillID := strings.TrimPrefix(action, "skill:")
+			res := h.pet.UseSkill(skillID)
+			if !res.OK {
+				return h.failMsg(res.Message)
+			}
+			chH := res.Changes["health"]
+			chE := res.Changes["energy"]
+			return h.applyActionResult(res, fmt.Sprintf("%s  健康 %d→%d  精力 %d→%d",
+				res.Message, chH[0], chH[1], chE[0], chE[1]))
+		}
+		return h
 	}
-	return h
 }
 
 // startGame initiates a mini-game session.
@@ -727,6 +741,11 @@ func (h HomeModel) getActionCooldown(action string) string {
 		// Adventure uses fixed cooldown (not dynamic)
 		return cooldownLeft(p.LastAdventureAt, game.CooldownAdventure)
 	default:
+		// Handle skill actions (format: "skill:skill_id")
+		if strings.HasPrefix(action, "skill:") {
+			skillID := strings.TrimPrefix(action, "skill:")
+			return h.getSkillCooldown(skillID)
+		}
 		return ""
 	}
 }
@@ -741,6 +760,27 @@ func cooldownLeft(last time.Time, cd time.Duration) string {
 		return fmt.Sprintf("%ds", int(remaining.Seconds()))
 	}
 	return fmt.Sprintf("%dm", int(remaining.Minutes()))
+}
+
+// getSkillCooldown returns the cooldown remaining for a skill (empty string if no cooldown).
+func (h HomeModel) getSkillCooldown(skillID string) string {
+	capReg := h.pet.CapabilitiesRegistry()
+	if capReg == nil {
+		return ""
+	}
+
+	trait, exists := capReg.GetTrait(h.pet.Species, skillID)
+	if !exists || trait.Type != "active" || trait.ActiveEffect == nil {
+		return ""
+	}
+
+	// Cooldown is already parsed as time.Duration
+	cooldown := trait.ActiveEffect.Cooldown
+	if cooldown == 0 {
+		cooldown = 30 * time.Minute // fallback
+	}
+
+	return cooldownLeft(h.pet.LastSkillUsedAt, cooldown)
 }
 
 func (h HomeModel) statBar(icon, label string, value int) string {
@@ -844,12 +884,26 @@ func (h HomeModel) renderActionMenu(totalWidth int) string {
 	tabBar := lipgloss.JoinHorizontal(lipgloss.Center, tabs...)
 
 	cat := categories[h.catIdx]
-	actW := (totalWidth - 4) / len(cat.actions)
+	actions := cat.actions
+
+	// Dynamically add skill actions to the "互动" category (index 1)
+	if h.catIdx == 1 && h.pet.CapabilitiesRegistry() != nil {
+		skills := h.pet.CapabilitiesRegistry().GetActiveTraits(h.pet.Species)
+		for _, skill := range skills {
+			actions = append(actions, actionItem{
+				icon:   "✨",
+				label:  skill.Name,
+				action: "skill:" + skill.ID,
+			})
+		}
+	}
+
+	actW := (totalWidth - 4) / len(actions)
 	if actW < 8 {
 		actW = 8
 	}
 	var acts []string
-	for i, act := range cat.actions {
+	for i, act := range actions {
 		// Check if action is on cooldown
 		cooldown := h.getActionCooldown(act.action)
 		label := act.icon + " " + act.label

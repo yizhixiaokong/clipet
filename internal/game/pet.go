@@ -110,6 +110,7 @@ type Pet struct {
 	LastTalkedAt     time.Time `json:"last_talked_at"`
 	LastCheckedAt    time.Time `json:"last_checked_at"`
 	LastAdventureAt  time.Time `json:"last_adventure_at"`
+	LastSkillUsedAt  time.Time `json:"last_skill_used_at"` // NEW: skill cooldown tracking
 
 	// Statistics
 	TotalInteractions   int `json:"total_interactions"`
@@ -167,6 +168,7 @@ func NewPet(name, species, eggStageID string, hunger, happiness, health, energy 
 		LastTalkedAt:     now,
 		LastCheckedAt:    now,
 		LastAdventureAt:  now,
+		LastSkillUsedAt:  now,
 		Alive:            true,
 		CurrentAnimation: AnimIdle,
 		registry:         registry,
@@ -737,4 +739,67 @@ func (p *Pet) ApplyOfflineDecay() {
 		return
 	}
 	p.SimulateDecay(elapsed)
+}
+
+// UseSkill uses an active skill/ability.
+// The skill must be defined in the species traits with type="active".
+// Returns an ActionResult indicating success or failure.
+func (p *Pet) UseSkill(skillID string) ActionResult {
+	if !p.Alive {
+		return failResult("宠物已经不在了...")
+	}
+
+	// Get the skill from capabilities registry
+	if p.capabilitiesReg == nil {
+		return failResult("技能系统未初始化")
+	}
+
+	trait, exists := p.capabilitiesReg.GetTrait(p.Species, skillID)
+	if !exists {
+		return failResult("未知技能")
+	}
+
+	if trait.Type != "active" || trait.ActiveEffect == nil {
+		return failResult("这不是一个主动技能")
+	}
+
+	effect := trait.ActiveEffect
+
+	// Cooldown is already parsed as time.Duration
+	cooldown := effect.Cooldown
+	if cooldown == 0 {
+		cooldown = 30 * time.Minute // fallback
+	}
+
+	// Check cooldown
+	if left := cooldownLeft(p.LastSkillUsedAt, cooldown); left != "" {
+		return failResult(fmt.Sprintf("技能冷却中，%s后可再次使用", left))
+	}
+
+	// Check energy cost
+	if p.Energy < effect.EnergyCost {
+		return failResult(fmt.Sprintf("精力不足，需要 %d 精力", effect.EnergyCost))
+	}
+
+	// Apply skill effect
+	ch := make(map[string][2]int)
+	oldHealth := p.Health
+	oldEnergy := p.Energy
+
+	p.Energy -= effect.EnergyCost
+	p.Health = clamp(p.Health+effect.HealthRestore, 0, 100)
+
+	ch["health"] = [2]int{oldHealth, p.Health}
+	ch["energy"] = [2]int{oldEnergy, p.Energy}
+
+	p.LastSkillUsedAt = time.Now()
+	p.TotalInteractions++
+
+	return ActionResult{
+		OK:                true,
+		Message:           fmt.Sprintf("使用技能「%s」！", trait.Name),
+		Changes:           ch,
+		Animation:         AnimHappy,
+		AnimationDuration: 2 * time.Second,
+	}
 }
