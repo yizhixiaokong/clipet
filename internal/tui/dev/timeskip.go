@@ -39,8 +39,8 @@ var DefaultTimeskipKeyMap = TimeskipKeyMap{
 		key.WithHelp("Esc/n", "返回"),
 	),
 	Quit: key.NewBinding(
-		key.WithKeys("q", "ctrl+c"),
-		key.WithHelp("q/Ctrl+C", "退出"),
+		key.WithKeys("q", "ctrl+c", "esc"),
+		key.WithHelp("q/Ctrl+C/Esc", "退出"),
 	),
 	ToggleHelp: key.NewBinding(
 		key.WithKeys("?"),
@@ -191,6 +191,10 @@ func (m *TimeskipModel) updatePreview(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) 
 		return m, tea.Quit
 	case key.Matches(msg, m.KeyMap.Cancel):
 		m.Phase = timeskipPhaseInput
+	case key.Matches(msg, m.KeyMap.Quit):
+		// q/Ctrl+C quit from preview mode
+		m.Quitting = true
+		return m, tea.Quit
 	case key.Matches(msg, m.KeyMap.ToggleHelp):
 		m.Help.ShowAll = !m.Help.ShowAll
 		return m, nil

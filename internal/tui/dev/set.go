@@ -51,8 +51,8 @@ var DefaultSetKeyMap = SetKeyMap{
 		key.WithHelp("Esc", "取消/退出"),
 	),
 	Quit: key.NewBinding(
-		key.WithKeys("q", "ctrl+c"),
-		key.WithHelp("q/Ctrl+C", "退出"),
+		key.WithKeys("q", "ctrl+c", "esc"),
+		key.WithHelp("q/Ctrl+C/Esc", "退出"),
 	),
 	ToggleHelp: key.NewBinding(
 		key.WithKeys("?"),
@@ -245,15 +245,15 @@ func (m *SetModel) updateSelect(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 
 func (m *SetModel) updateInput(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch {
-	case key.Matches(msg, m.KeyMap.Quit):
-		// Allow q/Ctrl+C/Esc to quit from input mode
-		m.Quitting = true
-		return m, tea.Quit
 	case key.Matches(msg, m.KeyMap.Cancel):
 		// Esc cancels input, returns to select
 		m.Phase = setPhaseSelect
 		m.Input = nil
 		m.Message = ""
+	case key.Matches(msg, m.KeyMap.Quit):
+		// q/Ctrl+C quit from input mode
+		m.Quitting = true
+		return m, tea.Quit
 	case key.Matches(msg, m.KeyMap.ToggleHelp):
 		m.Help.ShowAll = !m.Help.ShowAll
 		return m, nil
