@@ -20,10 +20,10 @@ Clipet 是一个运行在终端中的虚拟宠物养成游戏，使用 Go 和 [B
 make build
 
 # 初始化宠物
-./clipet init "小猫"
+./clipet init
 
 # 启动 TUI
-./clipet tui
+./clipet
 
 # CLI 命令
 ./clipet status
@@ -80,16 +80,16 @@ clipet/
 make dev
 
 # 时间跳跃测试衰减
-./clipet-dev timeskip 2h
+./clipet-dev timeskip --hours 2
 
-# 手动设属性
-./clipet-dev set hunger 50
+# 手动设属性（交互式）
+./clipet-dev set
 
-# 强制进化检查
-./clipet-dev evolve
+# 强制进化（交互式）
+./clipet-dev evo to
 
 # 查看进化信息
-./clipet-dev evoinfo
+./clipet-dev evo info
 ```
 
 ## 自定义物种
