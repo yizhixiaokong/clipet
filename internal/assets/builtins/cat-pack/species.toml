@@ -241,14 +241,16 @@ from = "child_feral"
 to = "adult_feral_flame"
 [evolutions.condition]
 min_age_hours = 72.0
-attr_bias = "hunger"
+attr_bias = "playful"
+night_interactions_bias = true
 
 [[evolutions]]
 from = "child_feral"
 to = "adult_feral_frost"
 [evolutions.condition]
 min_age_hours = 72.0
-attr_bias = "energy"
+attr_bias = "health"
+day_interactions_bias = true
 
 # Child Mech -> Adult (2 branches)
 [[evolutions]]

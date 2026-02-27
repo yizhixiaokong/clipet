@@ -98,7 +98,7 @@ func newSetCmd() *cobra.Command {
 					return fmt.Errorf("save: %w", err)
 				}
 				fmt.Printf("set %s: %s -> %s\n", args[0], old, args[1])
-				checkEvoAfterChange(pet)
+				// Note: dev commands do not trigger evolution checks
 				return nil
 			}
 
@@ -109,19 +109,6 @@ func newSetCmd() *cobra.Command {
 			// Interactive mode
 			return runSetTUI(pet)
 		},
-	}
-}
-
-func checkEvoAfterChange(pet *game.Pet) {
-	candidates := game.CheckEvolution(pet, registry)
-	if len(candidates) > 0 {
-		best := game.BestCandidate(candidates)
-		if best != nil {
-			oldID := pet.StageID
-			game.DoEvolve(pet, *best)
-			_ = petStore.Save(pet)
-			fmt.Printf("evolve: %s -> %s (%s)\n", oldID, best.ToStage.ID, best.ToStage.Phase)
-		}
 	}
 }
 
@@ -156,9 +143,7 @@ func runSetTUI(pet *game.Pet) error {
 		return old, nil
 	}
 
-	m.OnFieldChanged = func() {
-		checkEvoAfterChange(pet)
-	}
+	// Note: dev commands do not trigger evolution checks
 
 	p := tea.NewProgram(m)
 	finalModel, err := p.Run()

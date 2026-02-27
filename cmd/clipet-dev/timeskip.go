@@ -69,7 +69,7 @@ func doTimeskip(pet *game.Pet, dur time.Duration) error {
 		fmt.Println("  WARNING: pet died during timeskip!")
 	}
 
-	checkEvoAfterChange(pet)
+	// Note: dev commands do not trigger evolution checks
 	return nil
 }
 
