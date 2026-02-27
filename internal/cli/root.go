@@ -4,6 +4,7 @@ package cli
 import (
 	"clipet/internal/assets"
 	"clipet/internal/game"
+	"clipet/internal/game/capabilities"
 	"clipet/internal/plugin"
 	"clipet/internal/store"
 	"fmt"
@@ -14,8 +15,9 @@ import (
 )
 
 var (
-	registry *plugin.Registry
-	petStore *store.JSONStore
+	registry         *plugin.Registry
+	capabilitiesReg  *capabilities.Registry
+	petStore         *store.JSONStore
 )
 
 // NewRootCmd creates the root cobra command.
@@ -46,8 +48,11 @@ func NewRootCmd() *cobra.Command {
 
 // setup initializes the plugin registry and store.
 func setup() error {
-	// Initialize registry
+	// Initialize plugin registry
 	registry = plugin.NewRegistry()
+
+	// Initialize capabilities registry
+	capabilitiesReg = capabilities.NewRegistry()
 
 	// Load builtin species packs
 	if err := registry.LoadFromFS(assets.BuiltinFS, "builtins", plugin.SourceBuiltin); err != nil {
@@ -65,8 +70,18 @@ func setup() error {
 		}
 	}
 
-	// Initialize time system with registry
-	game.InitTimeSystem(registry)
+	// Register all species traits to capabilities registry
+	for _, speciesInfo := range registry.ListSpecies() {
+		speciesPack := registry.GetSpecies(speciesInfo.ID)
+		if speciesPack != nil && len(speciesPack.Traits) > 0 {
+			if err := capabilitiesReg.RegisterTraits(speciesInfo.ID, speciesPack.Traits); err != nil {
+				fmt.Fprintf(os.Stderr, "warning: failed to register traits for %q: %v\n", speciesInfo.ID, err)
+			}
+		}
+	}
+
+	// Initialize time system with registries
+	game.InitTimeSystem(registry, capabilitiesReg)
 
 	// Initialize store
 	petStore, err = store.NewJSONStore("")
@@ -100,8 +115,9 @@ func loadPet() (*game.Pet, error) {
 		return nil, fmt.Errorf("load pet: %w", err)
 	}
 
-	// Restore registry reference (not serialized)
+	// Restore registry references (not serialized)
 	pet.SetRegistry(registry)
+	pet.SetCapabilitiesRegistry(capabilitiesReg)
 
 	return pet, nil
 }

@@ -2,6 +2,7 @@
 package game
 
 import (
+	"clipet/internal/game/capabilities"
 	"clipet/internal/plugin"
 	"fmt"
 	"strconv"
@@ -137,6 +138,9 @@ type Pet struct {
 
 	// Plugin registry (not serialized)
 	registry *plugin.Registry `json:"-"`
+
+	// Capabilities registry (not serialized)
+	capabilitiesReg *capabilities.Registry `json:"-"`
 }
 
 // NewPet creates a new pet with the given name and species.
@@ -172,9 +176,19 @@ func (p *Pet) SetRegistry(registry *plugin.Registry) {
 	p.registry = registry
 }
 
+// SetCapabilitiesRegistry sets the capabilities registry for the pet.
+func (p *Pet) SetCapabilitiesRegistry(capReg *capabilities.Registry) {
+	p.capabilitiesReg = capReg
+}
+
 // Registry returns the plugin registry for the pet.
 func (p *Pet) Registry() *plugin.Registry {
 	return p.registry
+}
+
+// CapabilitiesRegistry returns the capabilities registry for the pet.
+func (p *Pet) CapabilitiesRegistry() *capabilities.Registry {
+	return p.capabilitiesReg
 }
 
 // Feed increases the pet's hunger (fullness) level.
@@ -195,6 +209,12 @@ func (p *Pet) Feed() ActionResult {
 
 	// Get effects from plugin or defaults
 	hungerGain, happinessGain, _, _ := GetActionEffects(p.registry, p.Species, "feed")
+
+	// Apply passive trait effects
+	if p.capabilitiesReg != nil {
+		hungerGain, happinessGain, _, _ = p.capabilitiesReg.ApplyPassiveEffects(
+			p.Species, "feed", hungerGain, happinessGain, 0, 0)
+	}
 
 	ch := make(map[string][2]int)
 	oldH := p.Hunger
@@ -234,6 +254,12 @@ func (p *Pet) Play() ActionResult {
 
 	// Get effects from plugin or defaults
 	_, happinessGain, _, energyLoss := GetActionEffects(p.registry, p.Species, "play")
+
+	// Apply passive trait effects
+	if p.capabilitiesReg != nil {
+		_, happinessGain, _, energyLoss = p.capabilitiesReg.ApplyPassiveEffects(
+			p.Species, "play", 0, happinessGain, 0, energyLoss)
+	}
 
 	ch := make(map[string][2]int)
 	oldHp := p.Happiness
@@ -296,6 +322,12 @@ func (p *Pet) Rest() ActionResult {
 
 	// Get effects from plugin or defaults
 	_, happinessLoss, healthGain, energyGain := GetActionEffects(p.registry, p.Species, "rest")
+
+	// Apply passive trait effects (use "sleep" for rest action)
+	if p.capabilitiesReg != nil {
+		_, happinessLoss, healthGain, energyGain = p.capabilitiesReg.ApplyPassiveEffects(
+			p.Species, "sleep", 0, happinessLoss, healthGain, energyGain)
+	}
 
 	ch := make(map[string][2]int)
 	oldE := p.Energy

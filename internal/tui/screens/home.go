@@ -739,6 +739,14 @@ func (h HomeModel) renderMessageArea(width int) string {
 		return ""
 	}
 
+	// Show lifecycle warning if pet is approaching end of life
+	if h.pet.LifecycleWarningShown {
+		return h.theme.MessageBox.Width(innerW).
+			BorderForeground(lipgloss.Color("#AA5555")).
+			Foreground(lipgloss.Color("#FF8888")).
+			Render("⚠ 你的宠物已步入暮年，珍惜与它在一起的时光...")
+	}
+
 	// Render success animation if active
 	if h.successMsg != "" {
 		// Create blinking effect

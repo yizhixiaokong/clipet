@@ -3,6 +3,7 @@ package main
 import (
 	"clipet/internal/assets"
 	"clipet/internal/game"
+	"clipet/internal/game/capabilities"
 	"clipet/internal/plugin"
 	"clipet/internal/store"
 	"fmt"
@@ -13,9 +14,10 @@ import (
 )
 
 var (
-	registry *plugin.Registry
-	petStore *store.JSONStore
-	packDir  string
+	registry         *plugin.Registry
+	capabilitiesReg  *capabilities.Registry
+	petStore         *store.JSONStore
+	packDir          string
 )
 
 func main() {
@@ -49,6 +51,7 @@ func main() {
 
 func setup() error {
 	registry = plugin.NewRegistry()
+	capabilitiesReg = capabilities.NewRegistry()
 
 	if err := registry.LoadFromFS(assets.BuiltinFS, "builtins", plugin.SourceBuiltin); err != nil {
 		return fmt.Errorf("load builtins: %w", err)
@@ -71,8 +74,18 @@ func setup() error {
 		registry.Register(pack)
 	}
 
-	// Initialize time system with registry
-	game.InitTimeSystem(registry)
+	// Register all species traits to capabilities registry
+	for _, speciesInfo := range registry.ListSpecies() {
+		speciesPack := registry.GetSpecies(speciesInfo.ID)
+		if speciesPack != nil && len(speciesPack.Traits) > 0 {
+			if err := capabilitiesReg.RegisterTraits(speciesInfo.ID, speciesPack.Traits); err != nil {
+				fmt.Fprintf(os.Stderr, "warning: failed to register traits for %q: %v\n", speciesInfo.ID, err)
+			}
+		}
+	}
+
+	// Initialize time system with registries
+	game.InitTimeSystem(registry, capabilitiesReg)
 
 	petStore, err = store.NewJSONStore("")
 	if err != nil {
@@ -100,8 +113,9 @@ func loadPet() (*game.Pet, error) {
 		return nil, fmt.Errorf("load save: %w", err)
 	}
 
-	// Restore registry reference (not serialized)
+	// Restore registry references (not serialized)
 	pet.SetRegistry(registry)
+	pet.SetCapabilitiesRegistry(capabilitiesReg)
 
 	return pet, nil
 }
