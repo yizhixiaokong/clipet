@@ -672,6 +672,24 @@ func (h HomeModel) moodDisplay() (string, lipgloss.Style) {
 	}
 }
 
+// isPetNearEndOfLife checks if pet is actually near end of life
+func (h HomeModel) isPetNearEndOfLife() bool {
+	// Get species lifecycle config
+	species := h.registry.GetSpecies(h.pet.Species)
+	if species == nil {
+		return false
+	}
+
+	maxAge := species.Lifecycle.MaxAgeHours
+	if maxAge <= 0 {
+		return false // Eternal or invalid
+	}
+
+	// Calculate age percentage
+	agePercent := h.pet.AgeHours() / maxAge
+	return agePercent >= species.Lifecycle.WarningThreshold
+}
+
 // getActionCooldown returns the cooldown remaining for an action (empty string if no cooldown).
 func (h HomeModel) getActionCooldown(action string) string {
 	p := h.pet
@@ -739,14 +757,6 @@ func (h HomeModel) renderMessageArea(width int) string {
 		return ""
 	}
 
-	// Show lifecycle warning if pet is approaching end of life
-	if h.pet.LifecycleWarningShown {
-		return h.theme.MessageBox.Width(innerW).
-			BorderForeground(lipgloss.Color("#AA5555")).
-			Foreground(lipgloss.Color("#FF8888")).
-			Render("⚠ 你的宠物已步入暮年，珍惜与它在一起的时光...")
-	}
-
 	// Render success animation if active
 	if h.successMsg != "" {
 		// Create blinking effect
@@ -765,6 +775,7 @@ func (h HomeModel) renderMessageArea(width int) string {
 		return style.Render(check + " " + h.successMsg)
 	}
 
+	// Show regular messages (warnings, info, normal)
 	if h.message != "" {
 		if h.msgIsWarn {
 			return h.theme.MessageBox.Width(innerW).
@@ -779,6 +790,15 @@ func (h HomeModel) renderMessageArea(width int) string {
 				Render("📋 " + h.message)
 		}
 		return h.theme.MessageBox.Width(innerW).Render("✨ " + h.message)
+	}
+
+	// Show lifecycle warning only when no other messages
+	// Check dynamically if pet is actually near end of life
+	if h.pet.LifecycleWarningShown && h.isPetNearEndOfLife() {
+		return h.theme.MessageBox.Width(innerW).
+			BorderForeground(lipgloss.Color("#AA5555")).
+			Foreground(lipgloss.Color("#FF8888")).
+			Render("⚠ 你的宠物已步入暮年，珍惜与它在一起的时光...")
 	}
 
 	// Empty placeholder
