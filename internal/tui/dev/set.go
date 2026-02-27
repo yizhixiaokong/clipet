@@ -62,7 +62,7 @@ var DefaultSetKeyMap = SetKeyMap{
 
 // ShortHelp returns keybindings to be shown in the mini help view
 func (k SetKeyMap) ShortHelp() []key.Binding {
-	return []key.Binding{k.Enter, k.Quit}
+	return []key.Binding{k.Enter, k.Quit, k.ToggleHelp}
 }
 
 // FullHelp returns keybindings for the expanded help view
