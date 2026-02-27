@@ -2,6 +2,7 @@ package main
 
 import (
 	"clipet/internal/assets"
+	"clipet/internal/game"
 	"clipet/internal/plugin"
 	"clipet/internal/store"
 	"fmt"
@@ -18,6 +19,8 @@ var (
 )
 
 func main() {
+	game.InitTimeSystem()
+
 	root := &cobra.Command{
 		Use:   "clipet-dev",
 		Short: "Clipet developer tool",

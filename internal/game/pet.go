@@ -8,6 +8,14 @@ import (
 	"time"
 )
 
+// globalTimeManager is the package-level singleton for time evolution management
+var globalTimeManager = NewTimeManager()
+
+// RegisterTimeHook registers a time hook with the global time manager
+func RegisterTimeHook(hook TimeHook, priority TimeHookPriority) {
+	globalTimeManager.RegisterHook(hook, priority)
+}
+
 // PetStage represents the current life phase of a pet.
 type PetStage string
 
@@ -350,33 +358,22 @@ func Clamp(val, min, max int) int {
 // clamp is the internal shorthand.
 func clamp(val, min, max int) int { return Clamp(val, min, max) }
 
+// AdvanceTime executes time evolution by delegating to the global TimeManager.
+func (p *Pet) AdvanceTime(elapsed time.Duration) {
+	if !p.Alive {
+		return
+	}
+	globalTimeManager.AdvanceTime(elapsed, p)
+}
+
 // SimulateDecay applies time-based attribute decay over the given duration.
 // Decay rates per hour: hunger -3, happiness -2, energy -1.
 // If hunger drops below 20, health decays at -0.5/hr.
 // If health reaches 0, the pet dies.
+// Deprecated: Use AdvanceTime instead. This method now delegates to AdvanceTime
+// for backward compatibility.
 func (p *Pet) SimulateDecay(elapsed time.Duration) {
-	if !p.Alive {
-		return
-	}
-	hours := elapsed.Hours()
-	p.Hunger = clamp(p.Hunger-int(3*hours), 0, 100)
-	p.Happiness = clamp(p.Happiness-int(2*hours), 0, 100)
-	p.Energy = clamp(p.Energy-int(1*hours), 0, 100)
-	if p.Hunger < 20 {
-		p.Health = clamp(p.Health-int(0.5*hours), 0, 100)
-	}
-	if p.Health <= 0 {
-		p.Alive = false
-	}
-
-	// Rewind all cooldown timestamps so time.Since() returns larger values
-	p.LastFedAt = p.LastFedAt.Add(-elapsed)
-	p.LastPlayedAt = p.LastPlayedAt.Add(-elapsed)
-	p.LastRestedAt = p.LastRestedAt.Add(-elapsed)
-	p.LastHealedAt = p.LastHealedAt.Add(-elapsed)
-	p.LastTalkedAt = p.LastTalkedAt.Add(-elapsed)
-	p.LastAdventureAt = p.LastAdventureAt.Add(-elapsed)
-	p.LastCheckedAt = time.Now()
+	p.AdvanceTime(elapsed)
 }
 
 // SetField sets a pet field by name from a raw string value.
