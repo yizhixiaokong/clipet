@@ -59,6 +59,158 @@ name = "龙之蛋"      # 显示名称
 phase = "egg"        # 生命阶段: egg | baby | child | adult | legend
 ```
 
+### 生命周期配置 (v2.0+)
+
+定义宠物的生命周期参数和终局类型：
+
+```toml
+[lifecycle]
+max_age_hours = 240.0       # 最大寿命（小时），默认 720 小时（30 天）
+ending_type = "death"       # 终局类型: death | ascend | eternal
+warning_threshold = 0.75    # 预警阈值（0.0-1.0），达到时显示温馨提示
+```
+
+**生命周期示例**：
+
+```toml
+# 短寿命物种（10天）
+[lifecycle]
+max_age_hours = 240.0
+ending_type = "death"
+warning_threshold = 0.75
+
+# 长寿命物种（60天）
+[lifecycle]
+max_age_hours = 1440.0
+ending_type = "ascend"
+warning_threshold = 0.9
+```
+
+**向后兼容**：旧插件不包含 `[lifecycle]` 段时，使用默认值（30 天寿命，death 终局）。
+
+### 个性特征定义 (v2.0+)
+
+定义物种的个性特征（非战斗能力），分为三类：被动特征、主动技能和进化修正器。
+
+**被动特征** (passive) - 自动生效的特征：
+
+```toml
+[[traits]]
+id = "picky_eater"
+name = "挑食"
+description = "对食物比较挑剔，但喂食时心情更好"
+type = "passive"
+[traits.passive_effect]
+feed_hunger_bonus = -0.2     # 喂食饱食度 -20%
+feed_happiness_bonus = 0.1   # 但快乐度 +10%
+```
+
+**主动技能** (active) - 玩家可触发的技能：
+
+```toml
+[[traits]]
+id = "purr_heal"
+name = "呼噜治愈"
+description = "消耗精力通过呼噜治愈自己"
+type = "active"
+[traits.active_effect]
+energy_cost = 10             # 消耗 10 点精力
+health_restore = 15          # 恢复 15 点健康
+cooldown = "30m"             # 30 分钟冷却
+```
+
+**进化修正器** (modifier) - 影响进化点数积累：
+
+```toml
+[[traits]]
+id = "night_owl"
+name = "夜猫子"
+description = "晚上更活跃"
+type = "modifier"
+[traits.evolution_modifier]
+night_interaction_bonus = 1.5  # 夜间互动进化点数 +50%
+```
+
+**可用字段**：
+
+| 字段 | 类型 | 说明 |
+|-----|------|------|
+| `feed_hunger_bonus` | float | 喂食饱食度增益倍率（-1.0 到 1.0）|
+| `feed_happiness_bonus` | float | 喂食快乐度增益倍率 |
+| `play_happiness_bonus` | float | 玩耍快乐度增益倍率 |
+| `sleep_energy_bonus` | float | 休息精力增益倍率 |
+| `resurrect_chance` | float | 死亡时复活概率（0.0-1.0）|
+| `health_restore_percent` | float | 复活时恢复生命值百分比 |
+| `energy_cost` | int | 主动技能精力消耗 |
+| `health_restore` | int | 主动技能健康恢复量 |
+| `hunger_restore` | int | 主动技能饱食度恢复量 |
+| `happiness_boost` | int | 主动技能快乐度提升量 |
+| `cooldown` | duration | 主动技能冷却时间（如 "30m", "1h"）|
+| `night_interaction_bonus` | float | 夜间互动进化点数倍率 |
+| `day_interaction_bonus` | float | 日间互动进化点数倍率 |
+| `feed_bonus` | float | 喂食进化点数倍率 |
+| `play_bonus` | float | 玩耍进化点数倍率 |
+| `adventure_bonus` | float | 冒险进化点数倍率 |
+
+### 终局定义 (v2.0+)
+
+定义物种的多种可能终局，基于宠物的生命周期质量：
+
+```toml
+# 幸福终老 - 高快乐度 + 长寿
+[[endings]]
+type = "blissful_passing"
+name = "幸福终老"
+message = "带着满足的笑容，你的猫咪安详地离开了..."
+[endings.condition]
+min_happiness = 80
+min_age_hours = 200.0
+
+# 冒险一生 - 完成多次冒险
+[[endings]]
+type = "adventurous_life"
+name = "冒险一生"
+message = "它度过了充满冒险的一生，成为了传奇..."
+[endings.condition]
+min_adventures = 30
+
+# 平静休息 - 默认终局
+[[endings]]
+type = "peaceful_rest"
+name = "平静休息"
+message = "平静地度过了这一生，它已经离开了..."
+[endings.condition]
+```
+
+**终局条件字段**：
+
+| 字段 | 类型 | 说明 |
+|-----|------|------|
+| `min_happiness` | int | 最低心情分数（0-100）|
+| `min_age_hours` | float | 最低存活时间（小时）|
+| `min_adventures` | int | 最少完成冒险次数 |
+
+终局按定义顺序匹配，第一个满足条件的终局将被触发。建议将特定条件高的终局放在前面，默认终局（空条件）放在最后。
+
+### 自定义属性 (v2.0+，可选)
+
+定义物种特有的自定义属性（扩展核心四属性）：
+
+```toml
+[[attributes]]
+id = "magic"
+display_name = "魔力"
+min = 0
+max = 100
+default = 50
+decay_rate = 0.5  # 每小时衰减 0.5 点
+```
+
+自定义属性会与核心属性（饥饿、快乐、健康、精力）一起管理，支持：
+- 属性衰减（基于 decay_rate）
+- 个性化特征效果
+- 进化条件检查
+
 ## dialogues.toml
 
 ### 基本格式

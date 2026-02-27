@@ -1,4 +1,4 @@
-<!-- Generated: 2026-02-27 | Files scanned: 6 | Token estimate: ~750 -->
+<!-- Generated: 2026-02-27 | Files scanned: 8 | Token estimate: ~900 -->
 
 # Data Structures & Storage
 
@@ -11,10 +11,13 @@
 ```go
 type SpeciesPack struct {
     Species    SpeciesConfig    `toml:"species"`
+    Lifecycle  LifecycleConfig  `toml:"lifecycle"`   // M7: Lifecycle config
     Stages     []Stage          `toml:"stages"`
     Evolutions []Evolution      `toml:"evolutions"`
-    Dialogues  []DialogueGroup  `toml:"dialogues"`
-    Adventures []Adventure      `toml:"adventures"`
+    Traits     []PersonalityTrait `toml:"traits"`    // M7: Personality traits
+    Endings    []Ending         `toml:"endings"`     // M7: Custom endings
+    Dialogues  []DialogueGroup  `toml:"-"`  // Loaded from dialogues.toml
+    Adventures []Adventure      `toml:"-"`  // Loaded from adventures.toml
     Frames     map[string]Frame `toml:"-"`  // Parsed from files
 
     Source PluginSource  // builtin/external
@@ -30,6 +33,65 @@ type SpeciesConfig struct {
     BaseHunger, BaseHappiness, BaseHealth, BaseEnergy int
     FirstStage string
 }
+```
+
+### LifecycleConfig (M7)
+
+```go
+type LifecycleConfig struct {
+    MaxAgeHours      float64 `toml:"max_age_hours"`      // Default: 720 (30 days)
+    EndingType       string  `toml:"ending_type"`        // death | ascend | eternal
+    WarningThreshold float64 `toml:"warning_threshold"`  // Default: 0.8
+}
+
+// Defaults() provides backward compatibility for old plugins
+```
+
+### PersonalityTrait (M7)
+
+```go
+type PersonalityTrait struct {
+    ID, Name, Description string
+    Type string  // passive | active | modifier
+
+    PassiveEffect *PassiveEffect
+    ActiveEffect *ActiveEffect
+    EvolutionModifier *EvolutionModifier
+}
+
+type PassiveEffect struct {
+    FeedHungerBonus, FeedHappinessBonus float64
+    PlayHappinessBonus, SleepEnergyBonus float64
+    ResurrectChance, HealthRestorePercent float64
+    HealthRegenMultiplier string  // Expression like "magic * 0.01"
+}
+
+type ActiveEffect struct {
+    EnergyCost, HealthRestore, HungerRestore, HappinessBoost int
+    Cooldown time.Duration
+}
+
+type EvolutionModifier struct {
+    NightInteractionBonus, DayInteractionBonus float64
+    FeedBonus, PlayBonus, AdventureBonus float64
+}
+```
+
+### Ending (M7)
+
+```go
+type Ending struct {
+    Type, Name, Message string
+    Condition EndingCondition
+}
+
+type EndingCondition struct {
+    MinHappiness int
+    MinAgeHours float64
+    MinAdventures int
+}
+
+// Endings are checked in order, first match wins
 ```
 
 ### Stage
@@ -129,6 +191,9 @@ type Pet struct {
     Health int
     Energy int
 
+    // Custom attributes (M7)
+    CustomAttributes map[string]int `json:"custom_attributes,omitempty"`
+
     // Timestamps (for cooldowns)
     Birthday time.Time
     LastFedAt time.Time
@@ -153,6 +218,9 @@ type Pet struct {
     NightCount int
     DayCount int
     FeedRegularity float64
+
+    // Lifecycle tracking (M7)
+    LifecycleWarningShown bool `json:"lifecycle_warning_shown"`
 
     // Display state
     CurrentAnimation string
@@ -250,15 +318,70 @@ GetAdventures(species, stage) → []Adventure
 Filter by Requirements
 ```
 
+## Capabilities Registry (M7)
+
+### Registry (capabilities/registry.go)
+
+```go
+type Registry struct {
+    mu sync.RWMutex
+    traits map[string]map[string]PersonalityTrait  // species_id → trait_id → trait
+}
+```
+
+**Key Methods**:
+
+```
+RegisterTraits(speciesID, traits)
+  └─ Store in nested map
+
+GetTrait(speciesID, traitID) → (PersonalityTrait, bool)
+GetAllTraits(speciesID) → []PersonalityTrait
+
+ApplyPassiveEffects(speciesID, action, hunger, happiness, health, energy)
+  └─ Return modified attribute values
+
+GetEvolutionModifier(speciesID) → *EvolutionModifier
+  └─ Combine all modifier traits
+
+GetActiveTraits(speciesID) → []PersonalityTrait
+  └─ Return all active abilities
+```
+
+## Attributes System (M7)
+
+### System (attributes/system.go)
+
+```go
+type System struct {
+    coreAttrs   map[string]Definition  // hunger, happiness, health, energy
+    customAttrs map[string]Definition  // Plugin-defined
+}
+
+type Definition struct {
+    ID, DisplayName string
+    Min, Max, Default int
+    DecayRate float64  // Per hour
+}
+```
+
 ## Data Relationships
 
 ```
 SpeciesPack
+  ├─→ Lifecycle (1:1, M7)
+  │    └─→ EndingType → ending trigger logic
   ├─→ Stages (1:N)
   │    └─→ Frames (N:M, via stage ID)
   ├─→ Evolutions (1:N)
   │    ├─→ From → Stage.ID
   │    └─→ To → Stage.ID
+  ├─→ Traits (1:N, M7)
+  │    ├─→ PassiveEffect → capability registry
+  │    ├─→ ActiveEffect → capability registry
+  │    └─→ EvolutionModifier → capability registry
+  ├─→ Endings (1:N, M7)
+  │    └─→ Condition → lifecycle trigger
   ├─→ Dialogues (1:N)
   │    └─→ Stage → Stage.ID
   └─→ Adventures (1:N)
@@ -266,7 +389,8 @@ SpeciesPack
 
 Pet
   ├─→ Species → SpeciesPack.ID
-  └─→ StageID → Stage.ID
+  ├─→ StageID → Stage.ID
+  └─→ CustomAttributes → attributes.System (M7)
 
 EvolutionCandidate
   ├─→ Evolution → plugin.Evolution
@@ -283,9 +407,14 @@ EvolutionCandidate
 - All adventure requirements reference valid stages
 - Frame files exist and match stage IDs
 - No duplicate stage/evolution IDs
+- **M7**: Lifecycle config has valid values (or uses defaults)
+- **M7**: Trait IDs not duplicated per species
+- **M7**: Ending conditions are valid
 
 **Error types**:
 - Missing required fields
 - Invalid references
 - Missing frame files
 - Duplicate IDs
+- **M7**: Invalid trait types
+- **M7**: Invalid lifecycle thresholds

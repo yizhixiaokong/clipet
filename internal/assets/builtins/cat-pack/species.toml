@@ -1,15 +1,68 @@
 [species]
 id = "cat"
 name = "猫"
-description = "灵动的小猫咪，拥有无限可能。从一颗神秘之蛋开始，成长为奥术、狂野或机械方向的传奇生物。"
+description = "灵动的小猫咪，展示插件系统的完整能力。从一颗神秘之蛋开始，成长为奥术、狂野或机械方向的传奇生物。"
 author = "clipet-builtin"
-version = "1.0.0"
+version = "2.0.0"
 
 [species.base_stats]
 hunger = 50
 happiness = 60
 health = 70
 energy = 65
+
+# ============================================================
+# 生命周期配置 (Phase 2)
+# ============================================================
+
+[lifecycle]
+max_age_hours = 240.0       # 10 天寿命
+ending_type = "death"       # 自然离世
+warning_threshold = 0.75    # 75% 寿命时预警（7.5天）
+
+# ============================================================
+# 个性特征定义 (Phase 1)
+# ============================================================
+
+# 九条命：死亡时有 30% 概率复活
+[[traits]]
+id = "nine_lives"
+name = "九条命"
+description = "死亡时有 30% 概率复活，恢复 25% 生命值"
+type = "passive"
+[traits.passive_effect]
+resurrect_chance = 0.3
+health_restore_percent = 25.0
+
+# 呼噜治愈：消耗精力通过呼噜治愈自己
+[[traits]]
+id = "purr_heal"
+name = "呼噜治愈"
+description = "消耗精力通过呼噜治愈自己，恢复 15 点健康"
+type = "active"
+[traits.active_effect]
+energy_cost = 10
+health_restore = 15
+cooldown = "30m"
+
+# 夜猫子：晚上更活跃
+[[traits]]
+id = "night_owl"
+name = "夜猫子"
+description = "晚上更活跃，夜间互动进化点数 +50%"
+type = "modifier"
+[traits.evolution_modifier]
+night_interaction_bonus = 1.5
+
+# 挑食：喂食饱食度 -20%，但快乐度 +10%
+[[traits]]
+id = "picky_eater"
+name = "挑食"
+description = "对食物比较挑剔，但喂食时心情更好"
+type = "passive"
+[traits.passive_effect]
+feed_hunger_bonus = -0.2
+feed_happiness_bonus = 0.1
 
 # ============================================================
 # 进化阶段定义
@@ -247,3 +300,32 @@ health = 85
 [scripts]
 # on_evolve = "scripts/on_evolve.lua"
 # on_adventure = "scripts/on_adventure.lua"
+
+# ============================================================
+# 终局定义 (Phase 2)
+# ============================================================
+
+# 幸福终老：高快乐度 + 长寿
+[[endings]]
+type = "blissful_passing"
+name = "幸福终老"
+message = "带着满足的笑容，你的猫咪安详地离开了..."
+[endings.condition]
+min_happiness = 80
+min_age_hours = 200.0
+
+# 冒险一生：完成多次冒险
+[[endings]]
+type = "adventurous_life"
+name = "冒险一生"
+message = "它度过了充满冒险的一生，成为了传奇..."
+[endings.condition]
+min_adventures = 30
+
+# 平静休息：默认终局
+[[endings]]
+type = "peaceful_rest"
+name = "平静休息"
+message = "平静地度过了这一生，它已经离开了..."
+[endings.condition]
+

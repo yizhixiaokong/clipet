@@ -19,8 +19,6 @@ var (
 )
 
 func main() {
-	game.InitTimeSystem()
-
 	root := &cobra.Command{
 		Use:   "clipet-dev",
 		Short: "Clipet developer tool",
@@ -72,6 +70,9 @@ func setup() error {
 		pack.Source = plugin.SourceExternal
 		registry.Register(pack)
 	}
+
+	// Initialize time system with registry
+	game.InitTimeSystem(registry)
 
 	petStore, err = store.NewJSONStore("")
 	if err != nil {

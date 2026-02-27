@@ -3,6 +3,7 @@ package cli
 
 import (
 	"clipet/internal/assets"
+	"clipet/internal/game"
 	"clipet/internal/plugin"
 	"clipet/internal/store"
 	"fmt"
@@ -63,6 +64,9 @@ func setup() error {
 			}
 		}
 	}
+
+	// Initialize time system with registry
+	game.InitTimeSystem(registry)
 
 	// Initialize store
 	petStore, err = store.NewJSONStore("")

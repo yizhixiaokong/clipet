@@ -3,6 +3,10 @@
 // the same Registry.LoadFromFS interface.
 package plugin
 
+import (
+	"clipet/internal/game/capabilities"
+)
+
 // PluginSource indicates where a plugin was loaded from.
 type PluginSource string
 
@@ -16,8 +20,11 @@ const (
 // adventures, and ASCII art frames.
 type SpeciesPack struct {
 	Species    SpeciesConfig    `toml:"species"`
+	Lifecycle  capabilities.LifecycleConfig `toml:"lifecycle"`  // NEW: lifecycle configuration
 	Stages     []Stage          `toml:"stages"`
 	Evolutions []Evolution      `toml:"evolutions"`
+	Traits     []capabilities.PersonalityTrait `toml:"traits"` // NEW: personality traits
+	Endings    []capabilities.Ending `toml:"endings"` // NEW: possible endings
 	Dialogues  []DialogueGroup  `toml:"-"` // loaded from dialogues.toml
 	Adventures []Adventure      `toml:"-"` // loaded from adventures.toml
 	Frames     map[string]Frame `toml:"-"` // loaded from frames/ directory

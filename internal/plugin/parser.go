@@ -24,6 +24,9 @@ func ParseSpecies(fsys fs.FS, dir string) (*SpeciesPack, error) {
 		return nil, fmt.Errorf("parse species.toml: %w", err)
 	}
 
+	// Apply defaults for backward compatibility
+	pack.Lifecycle = pack.Lifecycle.Defaults()
+
 	return &pack, nil
 }
 

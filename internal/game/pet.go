@@ -124,8 +124,12 @@ type Pet struct {
 	FeedExpectedCount int     `json:"feed_expected_count"`
 
 	// State
-	Alive            bool      `json:"alive"`
-	CurrentAnimation AnimState `json:"current_animation"`
+	Alive                 bool      `json:"alive"`
+	CurrentAnimation      AnimState `json:"current_animation"`
+	LifecycleWarningShown bool      `json:"lifecycle_warning_shown"` // NEW: lifecycle tracking
+
+	// Custom attributes (Phase 3)
+	CustomAttributes map[string]int `json:"custom_attributes,omitempty"` // NEW: custom attribute storage
 }
 
 // NewPet creates a new pet with the given name and species.
@@ -380,6 +384,7 @@ func (p *Pet) SimulateDecay(elapsed time.Duration) {
 // Returns the previous value as a string for display purposes.
 func (p *Pet) SetField(field string, raw string) (old string, err error) {
 	switch strings.ToLower(field) {
+	// Core attributes (0-100)
 	case "hunger":
 		old = strconv.Itoa(p.Hunger)
 		v, e := strconv.Atoi(raw)
@@ -408,6 +413,8 @@ func (p *Pet) SetField(field string, raw string) (old string, err error) {
 			return "", e
 		}
 		p.Energy = clamp(v, 0, 100)
+
+	// Basic info
 	case "name":
 		old = p.Name
 		p.Name = raw
@@ -424,13 +431,104 @@ func (p *Pet) SetField(field string, raw string) (old string, err error) {
 			return "", e
 		}
 		p.Alive = b
+
+	// Statistics
+	case "total_interactions", "interactions":
+		old = strconv.Itoa(p.TotalInteractions)
+		v, e := strconv.Atoi(raw)
+		if e != nil {
+			return "", e
+		}
+		p.TotalInteractions = v
+	case "feed_count", "feeds":
+		old = strconv.Itoa(p.FeedCount)
+		v, e := strconv.Atoi(raw)
+		if e != nil {
+			return "", e
+		}
+		p.FeedCount = v
+	case "dialogue_count", "dialogues":
+		old = strconv.Itoa(p.DialogueCount)
+		v, e := strconv.Atoi(raw)
+		if e != nil {
+			return "", e
+		}
+		p.DialogueCount = v
+	case "adventures_completed", "adventures":
+		old = strconv.Itoa(p.AdventuresCompleted)
+		v, e := strconv.Atoi(raw)
+		if e != nil {
+			return "", e
+		}
+		p.AdventuresCompleted = v
+	case "games_won", "wins":
+		old = strconv.Itoa(p.GamesWon)
+		v, e := strconv.Atoi(raw)
+		if e != nil {
+			return "", e
+		}
+		p.GamesWon = v
+
+	// Evolution accumulators
+	case "acc_happiness":
+		old = strconv.Itoa(p.AccHappiness)
+		v, e := strconv.Atoi(raw)
+		if e != nil {
+			return "", e
+		}
+		p.AccHappiness = v
+	case "acc_health":
+		old = strconv.Itoa(p.AccHealth)
+		v, e := strconv.Atoi(raw)
+		if e != nil {
+			return "", e
+		}
+		p.AccHealth = v
+	case "acc_playful":
+		old = strconv.Itoa(p.AccPlayful)
+		v, e := strconv.Atoi(raw)
+		if e != nil {
+			return "", e
+		}
+		p.AccPlayful = v
+	case "night_interactions", "night":
+		old = strconv.Itoa(p.NightInteractions)
+		v, e := strconv.Atoi(raw)
+		if e != nil {
+			return "", e
+		}
+		p.NightInteractions = v
+	case "day_interactions", "day":
+		old = strconv.Itoa(p.DayInteractions)
+		v, e := strconv.Atoi(raw)
+		if e != nil {
+			return "", e
+		}
+		p.DayInteractions = v
+	case "feed_regularity":
+		old = strconv.FormatFloat(p.FeedRegularity, 'f', 2, 64)
+		v, e := strconv.ParseFloat(raw, 64)
+		if e != nil {
+			return "", e
+		}
+		p.FeedRegularity = v
+
+	// Lifecycle (M7)
+	case "lifecycle_warning", "warning_shown":
+		old = strconv.FormatBool(p.LifecycleWarningShown)
+		b, e := strconv.ParseBool(raw)
+		if e != nil {
+			return "", e
+		}
+		p.LifecycleWarningShown = b
+
 	default:
-		return "", fmt.Errorf("unknown field %q; valid: hunger, happiness, health, energy, name, species, stage_id, alive", field)
+		return "", fmt.Errorf("unknown field %q\n\nValid fields:\n  Attributes: hunger, happiness, health, energy (0-100)\n  Info: name, species, stage_id, alive\n  Stats: interactions, feeds, dialogues, adventures, wins\n  Evolution: acc_happiness, acc_health, acc_playful, night, day, feed_regularity\n  Lifecycle: lifecycle_warning", field)
 	}
 	return old, nil
 }
 
-// GetAttr returns a named attribute value (hunger, happiness, health, energy).
+// GetAttr returns a named attribute value (hunger, happiness, health, energy, or custom).
 func (p *Pet) GetAttr(name string) int {
 	switch strings.ToLower(name) {
 	case "hunger":
@@ -442,8 +540,23 @@ func (p *Pet) GetAttr(name string) int {
 	case "energy":
 		return p.Energy
 	default:
+		// Check custom attributes
+		if p.CustomAttributes != nil {
+			if val, ok := p.CustomAttributes[strings.ToLower(name)]; ok {
+				return val
+			}
+		}
 		return 0
 	}
+}
+
+// SetAttr sets a custom attribute value (not for core attributes).
+// Core attributes (hunger, happiness, health, energy) should be set directly.
+func (p *Pet) SetAttr(name string, value int) {
+	if p.CustomAttributes == nil {
+		p.CustomAttributes = make(map[string]int)
+	}
+	p.CustomAttributes[strings.ToLower(name)] = value
 }
 
 // UpdateFeedRegularity recalculates the feed regularity based on age.
