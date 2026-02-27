@@ -116,18 +116,6 @@ func newEvoInfoCmd() *cobra.Command {
 }
 
 func printEvoInfo(pet *game.Pet, registry *plugin.Registry) {
-	// Print evolution info
+	// Print evolution info only (no auto-evolution)
 	dev.PrintEvolutionInfo(pet, registry, pet.Species)
-
-	// Auto-evolve if any path is ready
-	candidates := game.CheckEvolution(pet, registry)
-	if len(candidates) > 0 {
-		best := game.BestCandidate(candidates)
-		if best != nil {
-			oldID := pet.StageID
-			game.DoEvolve(pet, *best)
-			_ = petStore.Save(pet)
-			fmt.Printf(">>> 自动进化: %s -> %s (%s) <<<\n\n", oldID, best.ToStage.ID, best.ToStage.Phase)
-		}
-	}
 }
