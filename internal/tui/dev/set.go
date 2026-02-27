@@ -22,18 +22,24 @@ type SetField struct {
 	Kind  string // "int" or "string" or "bool"
 }
 
-// SetKeyMap defines keybindings for set command
-type SetKeyMap struct {
+// SetSelectKeyMap defines keybindings for set command (select phase)
+type SetSelectKeyMap struct {
 	Up         key.Binding
 	Down       key.Binding
 	Enter      key.Binding
-	Cancel     key.Binding
 	Quit       key.Binding
 	ToggleHelp key.Binding
 }
 
-// DefaultSetKeyMap returns default keybindings for set command
-var DefaultSetKeyMap = SetKeyMap{
+// SetInputKeyMap defines keybindings for set command (input phase)
+type SetInputKeyMap struct {
+	Enter      key.Binding
+	Cancel     key.Binding
+	ToggleHelp key.Binding
+}
+
+// DefaultSetSelectKeyMap returns default keybindings for select phase
+var DefaultSetSelectKeyMap = SetSelectKeyMap{
 	Up: key.NewBinding(
 		key.WithKeys("up", "k"),
 		key.WithHelp("↑/k", "上移"),
@@ -46,10 +52,6 @@ var DefaultSetKeyMap = SetKeyMap{
 		key.WithKeys("enter"),
 		key.WithHelp("Enter", "编辑"),
 	),
-	Cancel: key.NewBinding(
-		key.WithKeys("esc"),
-		key.WithHelp("Esc", "取消/退出"),
-	),
 	Quit: key.NewBinding(
 		key.WithKeys("q", "ctrl+c", "esc"),
 		key.WithHelp("q/Ctrl+C/Esc", "退出"),
@@ -60,32 +62,62 @@ var DefaultSetKeyMap = SetKeyMap{
 	),
 }
 
+// DefaultSetInputKeyMap returns default keybindings for input phase
+var DefaultSetInputKeyMap = SetInputKeyMap{
+	Enter: key.NewBinding(
+		key.WithKeys("enter"),
+		key.WithHelp("Enter", "确认"),
+	),
+	Cancel: key.NewBinding(
+		key.WithKeys("esc"),
+		key.WithHelp("Esc", "取消"),
+	),
+	ToggleHelp: key.NewBinding(
+		key.WithKeys("?"),
+		key.WithHelp("?", "帮助"),
+	),
+}
+
 // ShortHelp returns keybindings to be shown in the mini help view
-func (k SetKeyMap) ShortHelp() []key.Binding {
+func (k SetSelectKeyMap) ShortHelp() []key.Binding {
 	return []key.Binding{k.Enter, k.Quit, k.ToggleHelp}
 }
 
 // FullHelp returns keybindings for the expanded help view
-func (k SetKeyMap) FullHelp() [][]key.Binding {
+func (k SetSelectKeyMap) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
 		{k.Up, k.Down, k.Enter},
-		{k.Cancel, k.Quit},
+		{k.Quit, k.ToggleHelp},
+	}
+}
+
+// ShortHelp returns keybindings to be shown in the mini help view
+func (k SetInputKeyMap) ShortHelp() []key.Binding {
+	return []key.Binding{k.Enter, k.Cancel, k.ToggleHelp}
+}
+
+// FullHelp returns keybindings for the expanded help view
+func (k SetInputKeyMap) FullHelp() [][]key.Binding {
+	return [][]key.Binding{
+		{k.Enter, k.Cancel},
+		{k.ToggleHelp},
 	}
 }
 
 // SetModel is the TUI model for set command
 type SetModel struct {
-	Pet      *game.Pet
-	Fields   []SetField
-	Cursor   int
-	Phase    setPhase
-	Input    *components.InputField
-	Width    int
-	Height   int
-	Quitting bool
-	Message  string
-	KeyMap   SetKeyMap
-	Help     help.Model
+	Pet          *game.Pet
+	Fields       []SetField
+	Cursor       int
+	Phase        setPhase
+	Input        *components.InputField
+	Width        int
+	Height       int
+	Quitting     bool
+	Message      string
+	SelectKeyMap SetSelectKeyMap
+	InputKeyMap  SetInputKeyMap
+	Help         help.Model
 
 	// Changes records all successful modifications (for output after TUI exits)
 	Changes []FieldChange
@@ -116,11 +148,12 @@ func NewSetModel(pet *game.Pet, fields []SetField) *SetModel {
 	h.ShowAll = false // Start with short help
 
 	return &SetModel{
-		Pet:    pet,
-		Fields: fields,
-		Phase:  setPhaseSelect,
-		KeyMap: DefaultSetKeyMap,
-		Help:   h,
+		Pet:          pet,
+		Fields:       fields,
+		Phase:        setPhaseSelect,
+		SelectKeyMap: DefaultSetSelectKeyMap,
+		InputKeyMap:  DefaultSetInputKeyMap,
+		Help:         h,
 	}
 }
 
@@ -189,11 +222,11 @@ func (m *SetModel) View() tea.View {
 	// Help - show different help based on phase
 	var helpView string
 	if m.Phase == setPhaseInput {
-		// Input phase: show only relevant keys
-		helpView = m.Help.ShortHelpView([]key.Binding{m.KeyMap.Enter, m.KeyMap.Cancel, m.KeyMap.ToggleHelp})
+		// Input phase: show input help
+		helpView = m.Help.View(m.InputKeyMap)
 	} else {
 		// Select phase: show navigation help
-		helpView = m.Help.View(m.KeyMap)
+		helpView = m.Help.View(m.SelectKeyMap)
 	}
 
 	content := lipgloss.JoinVertical(lipgloss.Left,
@@ -216,22 +249,21 @@ func (m *SetModel) View() tea.View {
 
 func (m *SetModel) updateSelect(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch {
-	case key.Matches(msg, m.KeyMap.Quit), key.Matches(msg, m.KeyMap.Cancel):
-		// Both Quit (q/Ctrl+C) and Cancel (Esc) exit in select mode
+	case key.Matches(msg, m.SelectKeyMap.Quit):
 		m.Quitting = true
 		return m, tea.Quit
-	case key.Matches(msg, m.KeyMap.ToggleHelp):
+	case key.Matches(msg, m.SelectKeyMap.ToggleHelp):
 		m.Help.ShowAll = !m.Help.ShowAll
 		return m, nil
-	case key.Matches(msg, m.KeyMap.Up):
+	case key.Matches(msg, m.SelectKeyMap.Up):
 		if m.Cursor > 0 {
 			m.Cursor--
 		}
-	case key.Matches(msg, m.KeyMap.Down):
+	case key.Matches(msg, m.SelectKeyMap.Down):
 		if m.Cursor < len(m.Fields)-1 {
 			m.Cursor++
 		}
-	case key.Matches(msg, m.KeyMap.Enter):
+	case key.Matches(msg, m.SelectKeyMap.Enter):
 		m.Phase = setPhaseInput
 		currentValue := ""
 		if m.GetCurrentValue != nil {
@@ -245,19 +277,12 @@ func (m *SetModel) updateSelect(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 
 func (m *SetModel) updateInput(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch {
-	case key.Matches(msg, m.KeyMap.Cancel):
+	case key.Matches(msg, m.InputKeyMap.Cancel):
 		// Esc cancels input, returns to select
 		m.Phase = setPhaseSelect
 		m.Input = nil
 		m.Message = ""
-	case key.Matches(msg, m.KeyMap.Quit):
-		// q/Ctrl+C quit from input mode
-		m.Quitting = true
-		return m, tea.Quit
-	case key.Matches(msg, m.KeyMap.ToggleHelp):
-		m.Help.ShowAll = !m.Help.ShowAll
-		return m, nil
-	case key.Matches(msg, m.KeyMap.Enter):
+	case key.Matches(msg, m.InputKeyMap.Enter):
 		field := m.Fields[m.Cursor]
 		if m.SetFieldValue != nil {
 			old, err := m.SetFieldValue(field, m.Input.Value())
@@ -278,6 +303,9 @@ func (m *SetModel) updateInput(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		}
 		m.Phase = setPhaseSelect
 		m.Input = nil
+	case key.Matches(msg, m.InputKeyMap.ToggleHelp):
+		m.Help.ShowAll = !m.Help.ShowAll
+		return m, nil
 	default:
 		// Delegate to InputField component
 		m.Input, _ = m.Input.Update(msg)

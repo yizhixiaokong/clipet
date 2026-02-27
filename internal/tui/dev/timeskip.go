@@ -15,28 +15,26 @@ import (
 	"charm.land/lipgloss/v2"
 )
 
-// TimeskipKeyMap defines keybindings for timeskip command
-type TimeskipKeyMap struct {
+// TimeskipInputKeyMap defines keybindings for timeskip command (input phase)
+type TimeskipInputKeyMap struct {
 	Enter      key.Binding
+	Quit       key.Binding
+	ToggleHelp key.Binding
+}
+
+// TimeskipPreviewKeyMap defines keybindings for timeskip command (preview phase)
+type TimeskipPreviewKeyMap struct {
 	Yes        key.Binding
 	Cancel     key.Binding
 	Quit       key.Binding
 	ToggleHelp key.Binding
 }
 
-// DefaultTimeskipKeyMap returns default keybindings for timeskip command
-var DefaultTimeskipKeyMap = TimeskipKeyMap{
+// DefaultTimeskipInputKeyMap returns default keybindings for input phase
+var DefaultTimeskipInputKeyMap = TimeskipInputKeyMap{
 	Enter: key.NewBinding(
 		key.WithKeys("enter"),
 		key.WithHelp("Enter", "预览"),
-	),
-	Yes: key.NewBinding(
-		key.WithKeys("enter", "y"),
-		key.WithHelp("Enter/y", "确认"),
-	),
-	Cancel: key.NewBinding(
-		key.WithKeys("esc", "n"),
-		key.WithHelp("Esc/n", "返回"),
 	),
 	Quit: key.NewBinding(
 		key.WithKeys("q", "ctrl+c", "esc"),
@@ -48,30 +46,63 @@ var DefaultTimeskipKeyMap = TimeskipKeyMap{
 	),
 }
 
+// DefaultTimeskipPreviewKeyMap returns default keybindings for preview phase
+var DefaultTimeskipPreviewKeyMap = TimeskipPreviewKeyMap{
+	Yes: key.NewBinding(
+		key.WithKeys("enter", "y"),
+		key.WithHelp("Enter/y", "确认"),
+	),
+	Cancel: key.NewBinding(
+		key.WithKeys("esc", "n"),
+		key.WithHelp("Esc/n", "返回"),
+	),
+	Quit: key.NewBinding(
+		key.WithKeys("q", "ctrl+c"),
+		key.WithHelp("q/Ctrl+C", "退出"),
+	),
+	ToggleHelp: key.NewBinding(
+		key.WithKeys("?"),
+		key.WithHelp("?", "帮助"),
+	),
+}
+
 // ShortHelp returns keybindings to be shown in the mini help view
-func (k TimeskipKeyMap) ShortHelp() []key.Binding {
+func (k TimeskipInputKeyMap) ShortHelp() []key.Binding {
 	return []key.Binding{k.Enter, k.Quit, k.ToggleHelp}
 }
 
 // FullHelp returns keybindings for the expanded help view
-func (k TimeskipKeyMap) FullHelp() [][]key.Binding {
+func (k TimeskipInputKeyMap) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
 		{k.Enter, k.Quit},
+		{k.ToggleHelp},
+	}
+}
+
+// ShortHelp returns keybindings to be shown in the mini help view
+func (k TimeskipPreviewKeyMap) ShortHelp() []key.Binding {
+	return []key.Binding{k.Yes, k.Cancel, k.ToggleHelp}
+}
+
+// FullHelp returns keybindings for the expanded help view
+func (k TimeskipPreviewKeyMap) FullHelp() [][]key.Binding {
+	return [][]key.Binding{
 		{k.Yes, k.Cancel},
+		{k.Quit, k.ToggleHelp},
 	}
 }
 
 // TimeskipModel is the TUI model for timeskip command
 type TimeskipModel struct {
-	Pet    *game.Pet
-	Width  int
-	Height int
-
-	Phase    timeskipPhase
-	Input    *components.InputField
-	InputErr string
-	KeyMap   TimeskipKeyMap
-	Help     help.Model
+	Pet          *game.Pet
+	Width        int
+	Height       int
+	Phase        timeskipPhase
+	Input        *components.InputField
+	InputErr     string
+	InputKeyMap  TimeskipInputKeyMap
+	PreviewKeyMap TimeskipPreviewKeyMap
+	Help         help.Model
 
 	// Preview data (computed from input)
 	PreviewHours float64
@@ -102,9 +133,10 @@ func NewTimeskipModel(pet *game.Pet) *TimeskipModel {
 		Input: components.NewInputField().
 			SetValue("24").
 			SetFilter(components.NumericFilter(".")),
-		Phase:  timeskipPhaseInput,
-		KeyMap: DefaultTimeskipKeyMap,
-		Help:   h,
+		Phase:         timeskipPhaseInput,
+		InputKeyMap:   DefaultTimeskipInputKeyMap,
+		PreviewKeyMap: DefaultTimeskipPreviewKeyMap,
+		Help:          h,
 	}
 }
 
@@ -160,13 +192,13 @@ func (m *TimeskipModel) View() tea.View {
 
 func (m *TimeskipModel) updateInput(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch {
-	case key.Matches(msg, m.KeyMap.Quit):
+	case key.Matches(msg, m.InputKeyMap.Quit):
 		m.Quitting = true
 		return m, tea.Quit
-	case key.Matches(msg, m.KeyMap.ToggleHelp):
+	case key.Matches(msg, m.InputKeyMap.ToggleHelp):
 		m.Help.ShowAll = !m.Help.ShowAll
 		return m, nil
-	case key.Matches(msg, m.KeyMap.Enter):
+	case key.Matches(msg, m.InputKeyMap.Enter):
 		h, err := strconv.ParseFloat(m.Input.Value(), 64)
 		if err != nil || h <= 0 {
 			m.InputErr = "请输入正数"
@@ -186,16 +218,16 @@ func (m *TimeskipModel) updateInput(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 
 func (m *TimeskipModel) updatePreview(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch {
-	case key.Matches(msg, m.KeyMap.Yes):
+	case key.Matches(msg, m.PreviewKeyMap.Yes):
 		m.Done = true
 		return m, tea.Quit
-	case key.Matches(msg, m.KeyMap.Cancel):
+	case key.Matches(msg, m.PreviewKeyMap.Cancel):
 		m.Phase = timeskipPhaseInput
-	case key.Matches(msg, m.KeyMap.Quit):
+	case key.Matches(msg, m.PreviewKeyMap.Quit):
 		// q/Ctrl+C quit from preview mode
 		m.Quitting = true
 		return m, tea.Quit
-	case key.Matches(msg, m.KeyMap.ToggleHelp):
+	case key.Matches(msg, m.PreviewKeyMap.ToggleHelp):
 		m.Help.ShowAll = !m.Help.ShowAll
 		return m, nil
 	}
@@ -246,7 +278,7 @@ func (m *TimeskipModel) viewInput() string {
 	}
 
 	lines = append(lines, "")
-	lines = append(lines, m.Help.ShortHelpView([]key.Binding{m.KeyMap.Enter, m.KeyMap.Quit, m.KeyMap.ToggleHelp}))
+	lines = append(lines, m.Help.View(m.InputKeyMap))
 
 	return strings.Join(lines, "\n")
 }
@@ -291,7 +323,7 @@ func (m *TimeskipModel) viewPreview() string {
 
 	lines = append(lines, "")
 	lines = append(lines, tsInputLabelStyle.Render("确认执行?"))
-	lines = append(lines, m.Help.ShortHelpView([]key.Binding{m.KeyMap.Yes, m.KeyMap.Cancel, m.KeyMap.ToggleHelp}))
+	lines = append(lines, m.Help.View(m.PreviewKeyMap))
 
 	return strings.Join(lines, "\n")
 }
