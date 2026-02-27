@@ -6,7 +6,6 @@ import (
 	"clipet/internal/plugin"
 	"clipet/internal/tui/components"
 	"fmt"
-	"strings"
 )
 
 // PrintEvolutionInfo prints evolution information for a pet
@@ -269,40 +268,4 @@ func AttrName(attr string) string {
 	default:
 		return attr
 	}
-}
-
-// CondSummary returns a short summary of an evolution condition
-func CondSummary(cond plugin.EvolutionCondition) string {
-	var parts []string
-	if cond.MinAgeHours > 0 {
-		parts = append(parts, fmt.Sprintf("年龄>=%.0fh", cond.MinAgeHours))
-	}
-	if cond.AttrBias != "" {
-		parts = append(parts, fmt.Sprintf("偏好:%s", cond.AttrBias))
-	}
-	if cond.MinDialogues > 0 {
-		parts = append(parts, fmt.Sprintf("对话>=%d", cond.MinDialogues))
-	}
-	if cond.MinAdventures > 0 {
-		parts = append(parts, fmt.Sprintf("冒险>=%d", cond.MinAdventures))
-	}
-	if cond.MinFeedRegularity > 0 {
-		parts = append(parts, fmt.Sprintf("喂食率>=%.1f", cond.MinFeedRegularity))
-	}
-	if cond.NightBias {
-		parts = append(parts, "夜间偏好")
-	}
-	if cond.DayBias {
-		parts = append(parts, "日间偏好")
-	}
-	if cond.MinInteractions > 0 {
-		parts = append(parts, fmt.Sprintf("互动>=%d", cond.MinInteractions))
-	}
-	for attr, val := range cond.MinAttr {
-		parts = append(parts, fmt.Sprintf("%s>=%d", AttrName(attr), val))
-	}
-	if len(parts) == 0 {
-		return "无条件"
-	}
-	return strings.Join(parts, ", ")
 }

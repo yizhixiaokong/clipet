@@ -3,8 +3,6 @@
 // the same Registry.LoadFromFS interface.
 package plugin
 
-import "time"
-
 // PluginSource indicates where a plugin was loaded from.
 type PluginSource string
 
@@ -148,20 +146,4 @@ var ValidPhases = map[string]bool{
 	PhaseChild:  true,
 	PhaseAdult:  true,
 	PhaseLegend: true,
-}
-
-// PhaseDuration returns the minimum suggested time in each phase.
-func PhaseDuration(phase string) time.Duration {
-	switch phase {
-	case PhaseEgg:
-		return 1 * time.Hour
-	case PhaseBaby:
-		return 24 * time.Hour
-	case PhaseChild:
-		return 72 * time.Hour
-	case PhaseAdult:
-		return 720 * time.Hour // 30 days
-	default:
-		return 0
-	}
 }

@@ -3,7 +3,6 @@ package components
 import (
 	"strings"
 
-	"charm.land/bubbles/v2/progress"
 	"charm.land/lipgloss/v2"
 )
 
@@ -88,21 +87,4 @@ func (pb *ProgressBar) SetFilledStyle(style lipgloss.Style) *ProgressBar {
 func (pb *ProgressBar) SetEmptyStyle(style lipgloss.Style) *ProgressBar {
 	pb.emptyStyle = style
 	return pb
-}
-
-// SetChars sets the filled and empty characters
-func (pb *ProgressBar) SetChars(filled, empty string) *ProgressBar {
-	pb.filledChar = filled
-	pb.emptyChar = empty
-	return pb
-}
-
-// String implements fmt.Stringer
-func (pb ProgressBar) String() string {
-	return pb.Render()
-}
-
-// NewBubblesProgress creates a bubbles/progress.Model for advanced use cases
-func NewBubblesProgress() progress.Model {
-	return progress.New(progress.WithDefaultBlend())
 }

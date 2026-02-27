@@ -96,15 +96,3 @@ func MakeTitleStyle(bgColor string) lipgloss.Style {
 		Background(lipgloss.Color(bgColor)).
 		Padding(0, 1)
 }
-
-// MakePanelStyle creates a panel style with optional width and height
-func MakePanelStyle(width, height int) lipgloss.Style {
-	style := DevCommandStyles.Panel
-	if width > 0 {
-		style = style.Width(width)
-	}
-	if height > 0 {
-		style = style.Height(height)
-	}
-	return style
-}

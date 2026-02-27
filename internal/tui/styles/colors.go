@@ -7,11 +7,6 @@ func DimColor() color.Color {
 	return colorDim
 }
 
-// PrimaryColor returns the primary accent color.
-func PrimaryColor() color.Color {
-	return colorPrimary
-}
-
 // GoldColor returns the gold/highlight color.
 func GoldColor() color.Color {
 	return colorGold

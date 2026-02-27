@@ -18,11 +18,10 @@ Clipet 是一个运行在终端中的宠物养成程序（TUI），以 ASCII 像
 | 语言          | Go                               | 1.25+    |
 | TUI 框架      | Bubble Tea v2                    | 2.0.0    |
 | 样式          | Lipgloss v2                      | 2.0.0    |
-| TUI 组件      | Bubbles v2                       | 2.0.0    |
+| TUI 组件      | Bubbles v2                       | 2.0.0 (间接依赖) |
 | CLI 框架      | Cobra                            | 1.10.2   |
 | 配置格式      | TOML (BurntSushi/toml)           | 1.6.0    |
-| 动画缓动      | Harmonica                        | 0.2.0    |
-| 日志          | charmbracelet/log                | 0.4.2    |
+| 动画缓动      | Harmonica                        | 0.2.0 (间接依赖) |
 
 > **注意**: Bubble Tea v2 使用 `charm.land/bubbletea/v2` 导入路径，
 > 不是 `github.com/charmbracelet/bubbletea/v2`。Lipgloss v2 和 Bubbles v2 同理。
@@ -42,12 +41,12 @@ Clipet 是一个运行在终端中的宠物养成程序（TUI），以 ASCII 像
 
 四项核心属性（0-100）：
 
-| 属性       | 说明                  | 操作影响（base值）          |
-|------------|----------------------|---------------------------|
-| Hunger     | 饱腹度，越高表示越饱  | Feed +25                  |
-| Happiness  | 快乐度               | Play +20, Feed +5, Talk +5 |
-| Health     | 健康值               | Rest +5, Heal +25          |
-| Energy     | 精力值               | Play -10, Heal -15, Rest +30 |
+| 属性       | 说明                  | 操作影响（base值）               |
+|------------|----------------------|---------------------------------|
+| Hunger     | 饱腹度，越高表示越饱  | Feed +25                        |
+| Happiness  | 快乐度               | Play +20, Feed +5, Talk +5, Rest -5 |
+| Health     | 健康值               | Heal +25, Rest +5               |
+| Energy     | 精力值               | Rest +30, Play -10, Heal -15    |
 
 #### 收益递减
 
