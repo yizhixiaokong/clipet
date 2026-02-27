@@ -27,8 +27,6 @@ make build
 
 # CLI 命令
 ./clipet status
-./clipet feed
-./clipet play
 ```
 
 ## 操作指南

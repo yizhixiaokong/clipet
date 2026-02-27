@@ -223,8 +223,7 @@ clipet          # 启动全屏 TUI 交互界面
 ```bash
 clipet init     # 创建新宠物
 clipet status   # 查看宠物状态 (-j 输出 JSON)
-clipet feed     # 快速喂食
-clipet play     # 快速玩耍
+clipet          # 启动 TUI 主界面
 ```
 
 ## 数据路径

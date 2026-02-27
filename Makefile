@@ -21,12 +21,6 @@ init: clipet          ## 创建新宠物
 status: clipet        ## 查看宠物状态
 	./clipet status
 
-feed: clipet          ## 喂食
-	./clipet feed
-
-play: clipet          ## 玩耍
-	./clipet play
-
 reset: clipet         ## 删除存档
 	./clipet reset -y
 
