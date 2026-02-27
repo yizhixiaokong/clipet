@@ -52,7 +52,8 @@ func doTimeskip(pet *game.Pet, dur time.Duration) error {
 	oldEnergy := pet.Energy
 
 	pet.Birthday = pet.Birthday.Add(-dur)
-	pet.SimulateDecay(dur)
+	// Use dev-only decay that doesn't trigger death/evolution hooks
+	pet.DevOnlySimulateDecay(dur)
 
 	if err := petStore.Save(pet); err != nil {
 		return fmt.Errorf("save: %w", err)
@@ -65,9 +66,7 @@ func doTimeskip(pet *game.Pet, dur time.Duration) error {
 	fmt.Printf("  happy:   %d -> %d\n", oldHappiness, pet.Happiness)
 	fmt.Printf("  health:  %d -> %d\n", oldHealth, pet.Health)
 	fmt.Printf("  energy:  %d -> %d\n", oldEnergy, pet.Energy)
-	if !pet.Alive {
-		fmt.Println("  WARNING: pet died during timeskip!")
-	}
+	// Note: No death check in dev mode
 
 	// Note: dev commands do not trigger evolution checks
 	return nil

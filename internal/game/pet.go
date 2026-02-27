@@ -848,3 +848,31 @@ func (p *Pet) addEvolutionPoints(basePoints int, interactionType string) int {
 
 	return int(points)
 }
+
+// DevOnlySimulateDecay applies time-based attribute decay WITHOUT triggering hooks.
+// This is for dev tools (timeskip) to test decay without triggering death/evolution.
+// Only applies attribute decay, does NOT check death or trigger lifecycle events.
+func (p *Pet) DevOnlySimulateDecay(elapsed time.Duration) {
+	if p.registry == nil {
+		return
+	}
+
+	// Get decay config from plugin
+	var decayConfig capabilities.DecayConfig
+	decayConfig = p.registry.GetDecayConfig(p.Species)
+
+	hours := elapsed.Hours()
+
+	// Apply decay directly
+	p.Hunger = clamp(p.Hunger-int(decayConfig.Hunger*hours), 0, 100)
+	p.Happiness = clamp(p.Happiness-int(decayConfig.Happiness*hours), 0, 100)
+	p.Energy = clamp(p.Energy-int(decayConfig.Energy*hours), 0, 100)
+
+	// Health decay due to hunger
+	if p.Hunger < 20 {
+		p.Health = clamp(p.Health-int(decayConfig.Health*hours), 0, 100)
+	}
+
+	// Update last checked time
+	p.LastCheckedAt = time.Now()
+}
