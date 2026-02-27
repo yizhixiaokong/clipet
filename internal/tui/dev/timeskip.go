@@ -17,10 +17,11 @@ import (
 
 // TimeskipKeyMap defines keybindings for timeskip command
 type TimeskipKeyMap struct {
-	Enter  key.Binding
-	Yes    key.Binding
-	Cancel key.Binding
-	Quit   key.Binding
+	Enter      key.Binding
+	Yes        key.Binding
+	Cancel     key.Binding
+	Quit       key.Binding
+	ToggleHelp key.Binding
 }
 
 // DefaultTimeskipKeyMap returns default keybindings for timeskip command
@@ -40,6 +41,10 @@ var DefaultTimeskipKeyMap = TimeskipKeyMap{
 	Quit: key.NewBinding(
 		key.WithKeys("q", "ctrl+c"),
 		key.WithHelp("q/Ctrl+C", "退出"),
+	),
+	ToggleHelp: key.NewBinding(
+		key.WithKeys("?"),
+		key.WithHelp("?", "帮助"),
 	),
 }
 
@@ -158,6 +163,9 @@ func (m *TimeskipModel) updateInput(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	case key.Matches(msg, m.KeyMap.Quit):
 		m.Quitting = true
 		return m, tea.Quit
+	case key.Matches(msg, m.KeyMap.ToggleHelp):
+		m.Help.ShowAll = !m.Help.ShowAll
+		return m, nil
 	case key.Matches(msg, m.KeyMap.Enter):
 		h, err := strconv.ParseFloat(m.Input.Value(), 64)
 		if err != nil || h <= 0 {
@@ -183,6 +191,9 @@ func (m *TimeskipModel) updatePreview(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) 
 		return m, tea.Quit
 	case key.Matches(msg, m.KeyMap.Cancel):
 		m.Phase = timeskipPhaseInput
+	case key.Matches(msg, m.KeyMap.ToggleHelp):
+		m.Help.ShowAll = !m.Help.ShowAll
+		return m, nil
 	}
 	return m, nil
 }

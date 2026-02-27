@@ -18,13 +18,14 @@ import (
 
 // PreviewKeyMap defines keybindings for preview command
 type PreviewKeyMap struct {
-	Up        key.Binding
-	Down      key.Binding
-	Left      key.Binding
-	Right     key.Binding
-	SpeedUp   key.Binding
-	SlowDown  key.Binding
-	Quit      key.Binding
+	Up         key.Binding
+	Down       key.Binding
+	Left       key.Binding
+	Right      key.Binding
+	SpeedUp    key.Binding
+	SlowDown   key.Binding
+	Quit       key.Binding
+	ToggleHelp key.Binding
 }
 
 // DefaultPreviewKeyMap returns default keybindings for preview command
@@ -55,7 +56,11 @@ var DefaultPreviewKeyMap = PreviewKeyMap{
 	),
 	Quit: key.NewBinding(
 		key.WithKeys("q", "ctrl+c", "esc"),
-		key.WithHelp("q/Esc", "退出"),
+		key.WithHelp("q/Ctrl+C/Esc", "退出"),
+	),
+	ToggleHelp: key.NewBinding(
+		key.WithKeys("?"),
+		key.WithHelp("?", "帮助"),
 	),
 }
 
@@ -226,6 +231,9 @@ func (m *PreviewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.Fps > 1 {
 				m.Fps--
 			}
+			return m, nil
+		case key.Matches(msg, m.KeyMap.ToggleHelp):
+			m.Help.ShowAll = !m.Help.ShowAll
 			return m, nil
 		}
 

@@ -24,11 +24,12 @@ type SetField struct {
 
 // SetKeyMap defines keybindings for set command
 type SetKeyMap struct {
-	Up     key.Binding
-	Down   key.Binding
-	Enter  key.Binding
-	Cancel key.Binding
-	Quit   key.Binding
+	Up         key.Binding
+	Down       key.Binding
+	Enter      key.Binding
+	Cancel     key.Binding
+	Quit       key.Binding
+	ToggleHelp key.Binding
 }
 
 // DefaultSetKeyMap returns default keybindings for set command
@@ -52,6 +53,10 @@ var DefaultSetKeyMap = SetKeyMap{
 	Quit: key.NewBinding(
 		key.WithKeys("q", "ctrl+c"),
 		key.WithHelp("q/Ctrl+C", "退出"),
+	),
+	ToggleHelp: key.NewBinding(
+		key.WithKeys("?"),
+		key.WithHelp("?", "帮助"),
 	),
 }
 
@@ -215,6 +220,9 @@ func (m *SetModel) updateSelect(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		// Both Quit (q/Ctrl+C) and Cancel (Esc) exit in select mode
 		m.Quitting = true
 		return m, tea.Quit
+	case key.Matches(msg, m.KeyMap.ToggleHelp):
+		m.Help.ShowAll = !m.Help.ShowAll
+		return m, nil
 	case key.Matches(msg, m.KeyMap.Up):
 		if m.Cursor > 0 {
 			m.Cursor--
@@ -246,6 +254,9 @@ func (m *SetModel) updateInput(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 		m.Phase = setPhaseSelect
 		m.Input = nil
 		m.Message = ""
+	case key.Matches(msg, m.KeyMap.ToggleHelp):
+		m.Help.ShowAll = !m.Help.ShowAll
+		return m, nil
 	case key.Matches(msg, m.KeyMap.Enter):
 		field := m.Fields[m.Cursor]
 		if m.SetFieldValue != nil {

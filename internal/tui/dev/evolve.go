@@ -16,12 +16,13 @@ import (
 
 // EvolveKeyMap defines keybindings for evolve command
 type EvolveKeyMap struct {
-	Up    key.Binding
-	Down  key.Binding
-	Left  key.Binding
-	Right key.Binding
-	Enter key.Binding
-	Quit  key.Binding
+	Up         key.Binding
+	Down       key.Binding
+	Left       key.Binding
+	Right      key.Binding
+	Enter      key.Binding
+	Quit       key.Binding
+	ToggleHelp key.Binding
 }
 
 // DefaultEvolveKeyMap returns default keybindings for evolve command
@@ -49,6 +50,10 @@ var DefaultEvolveKeyMap = EvolveKeyMap{
 	Quit: key.NewBinding(
 		key.WithKeys("q", "ctrl+c", "esc"),
 		key.WithHelp("q/Ctrl+C/Esc", "退出"),
+	),
+	ToggleHelp: key.NewBinding(
+		key.WithKeys("?"),
+		key.WithHelp("?", "帮助"),
 	),
 }
 
@@ -137,6 +142,9 @@ func (m *EvolveModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, m.KeyMap.Quit):
 			m.Quitting = true
 			return m, tea.Quit
+		case key.Matches(msg, m.KeyMap.ToggleHelp):
+			m.Help.ShowAll = !m.Help.ShowAll
+			return m, nil
 		}
 
 		// Delegate navigation to tree
