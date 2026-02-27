@@ -289,6 +289,16 @@ func (h HomeModel) okMsg(msg string) HomeModel {
 	return h
 }
 
+// applyActionResult applies animation and shows message from ActionResult.
+func (h HomeModel) applyActionResult(res game.ActionResult, msg string) HomeModel {
+	// Apply animation if specified
+	if res.Animation != "" && res.AnimationDuration > 0 {
+		h.pet.CurrentAnimation = res.Animation
+		h.pet.AnimationEndTime = time.Now().Add(res.AnimationDuration)
+	}
+	return h.okMsg(msg)
+}
+
 // infoMsg sets an informational message.
 func (h HomeModel) infoMsg(msg string) HomeModel {
 	h.message = msg
@@ -305,7 +315,7 @@ func (h HomeModel) executeAction(action string) HomeModel {
 			return h.failMsg(res.Message)
 		}
 		ch := res.Changes["hunger"]
-		return h.okMsg(fmt.Sprintf("喂食成功！饱腹度 %d → %d", ch[0], ch[1]))
+		return h.applyActionResult(res, fmt.Sprintf("喂食成功！饱腹度 %d → %d", ch[0], ch[1]))
 
 	case "play":
 		res := h.pet.Play()
@@ -313,7 +323,7 @@ func (h HomeModel) executeAction(action string) HomeModel {
 			return h.failMsg(res.Message)
 		}
 		ch := res.Changes["happiness"]
-		return h.okMsg(fmt.Sprintf("玩耍愉快！快乐度 %d → %d", ch[0], ch[1]))
+		return h.applyActionResult(res, fmt.Sprintf("玩耍愉快！快乐度 %d → %d", ch[0], ch[1]))
 
 	case "talk":
 		res := h.pet.Talk()
@@ -335,7 +345,7 @@ func (h HomeModel) executeAction(action string) HomeModel {
 		}
 		chE := res.Changes["energy"]
 		chH := res.Changes["health"]
-		return h.okMsg(fmt.Sprintf("休息一下～精力 %d→%d  健康 %d→%d",
+		return h.applyActionResult(res, fmt.Sprintf("休息一下～精力 %d→%d  健康 %d→%d",
 			chE[0], chE[1], chH[0], chH[1]))
 
 	case "heal":
@@ -713,6 +723,9 @@ func (h HomeModel) getActionCooldown(action string) string {
 	case "talk":
 		cooldown = game.CalculateDynamicCooldown(p.Registry(), p.Species, "talk", p.Happiness)
 		return cooldownLeft(p.LastTalkedAt, cooldown)
+	case "adventure":
+		// Adventure uses fixed cooldown (not dynamic)
+		return cooldownLeft(p.LastAdventureAt, game.CooldownAdventure)
 	default:
 		return ""
 	}

@@ -3,6 +3,8 @@ package dev
 
 import (
 	"clipet/internal/game"
+	"clipet/internal/game/capabilities"
+	"clipet/internal/plugin"
 	"clipet/internal/tui/components"
 	"clipet/internal/tui/styles"
 	"fmt"
@@ -95,6 +97,7 @@ func (k TimeskipPreviewKeyMap) FullHelp() [][]key.Binding {
 // TimeskipModel is the TUI model for timeskip command
 type TimeskipModel struct {
 	Pet          *game.Pet
+	Registry     *plugin.Registry
 	Width        int
 	Height       int
 	Phase        timeskipPhase
@@ -124,12 +127,13 @@ const (
 )
 
 // NewTimeskipModel creates a new timeskip TUI model
-func NewTimeskipModel(pet *game.Pet) *TimeskipModel {
+func NewTimeskipModel(pet *game.Pet, registry *plugin.Registry) *TimeskipModel {
 	h := help.New()
 	h.ShowAll = false
 
 	return &TimeskipModel{
 		Pet: pet,
+		Registry: registry,
 		Input: components.NewInputField().
 			SetValue("24").
 			SetFilter(components.NumericFilter(".")),
@@ -240,15 +244,24 @@ func (m *TimeskipModel) computePreview() {
 	m.NewAge = m.OldAge + m.PreviewHours
 	m.OldStats = [4]int{m.Pet.Hunger, m.Pet.Happiness, m.Pet.Health, m.Pet.Energy}
 
-	// Simulate decay on a copy
+	// Get decay config from plugin (same as AttrDecayHook)
+	var decayConfig capabilities.DecayConfig
+	if m.Registry != nil {
+		decayConfig = m.Registry.GetDecayConfig(m.Pet.Species)
+	} else {
+		decayConfig = capabilities.DecayConfig{}.Defaults()
+	}
+
+	// Simulate decay using plugin-controlled rates
 	hours := m.PreviewHours
-	hunger := clamp(m.Pet.Hunger-int(3*hours), 0, 100)
-	happiness := clamp(m.Pet.Happiness-int(2*hours), 0, 100)
-	energy := clamp(m.Pet.Energy-int(1*hours), 0, 100)
+	hunger := clamp(m.Pet.Hunger-int(decayConfig.Hunger*hours), 0, 100)
+	happiness := clamp(m.Pet.Happiness-int(decayConfig.Happiness*hours), 0, 100)
+	energy := clamp(m.Pet.Energy-int(decayConfig.Energy*hours), 0, 100)
 	health := m.Pet.Health
 	if hunger < 20 {
-		health = clamp(health-int(0.5*hours), 0, 100)
+		health = clamp(health-int(decayConfig.Health*hours), 0, 100)
 	}
+
 	m.NewStats = [4]int{hunger, happiness, health, energy}
 	m.WouldDie = health <= 0
 }

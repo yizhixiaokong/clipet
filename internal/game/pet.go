@@ -52,9 +52,11 @@ const (
 
 // ActionResult holds the outcome of a pet action.
 type ActionResult struct {
-	OK      bool              // whether the action succeeded
-	Message string            // human-readable feedback
-	Changes map[string][2]int // attr name -> {old, new}
+	OK                bool              // whether the action succeeded
+	Message           string            // human-readable feedback
+	Changes           map[string][2]int // attr name -> {old, new}
+	Animation         AnimState         // animation to play (empty = no change)
+	AnimationDuration time.Duration     // how long the animation should last
 }
 
 // diminish calculates a diminishing-return gain.
@@ -126,9 +128,10 @@ type Pet struct {
 	FeedExpectedCount int     `json:"feed_expected_count"`
 
 	// State
-	Alive                 bool      `json:"alive"`
-	CurrentAnimation      AnimState `json:"current_animation"`
-	LifecycleWarningShown bool      `json:"lifecycle_warning_shown"` // NEW: lifecycle tracking
+	Alive                 bool          `json:"alive"`
+	CurrentAnimation      AnimState     `json:"current_animation"`
+	AnimationEndTime      time.Time     `json:"animation_end_time"`      // when current animation should end
+	LifecycleWarningShown bool          `json:"lifecycle_warning_shown"` // NEW: lifecycle tracking
 
 	// Ending information
 	EndingMessage string `json:"ending_message,omitempty"` // Final message when pet dies
@@ -227,7 +230,13 @@ func (p *Pet) Feed() ActionResult {
 	p.TotalInteractions++
 	p.FeedCount++
 	p.trackTimeOfDay()
-	return ActionResult{OK: true, Message: "喂食成功！", Changes: ch}
+	return ActionResult{
+		OK:                true,
+		Message:           "喂食成功！",
+		Changes:           ch,
+		Animation:         AnimEating,
+		AnimationDuration: 2 * time.Second,
+	}
 }
 
 // Play increases the pet's happiness and decreases energy.
@@ -272,7 +281,13 @@ func (p *Pet) Play() ActionResult {
 	p.LastPlayedAt = time.Now()
 	p.TotalInteractions++
 	p.trackTimeOfDay()
-	return ActionResult{OK: true, Message: "玩耍愉快！", Changes: ch}
+	return ActionResult{
+		OK:                true,
+		Message:           "玩耍愉快！",
+		Changes:           ch,
+		Animation:         AnimPlaying,
+		AnimationDuration: 2 * time.Second,
+	}
 }
 
 // Talk records a dialogue interaction.
@@ -342,7 +357,13 @@ func (p *Pet) Rest() ActionResult {
 	p.LastRestedAt = time.Now()
 	p.TotalInteractions++
 	p.trackTimeOfDay()
-	return ActionResult{OK: true, Message: "休息一下～", Changes: ch}
+	return ActionResult{
+		OK:                true,
+		Message:           "休息一下～",
+		Changes:           ch,
+		Animation:         AnimSleeping,
+		AnimationDuration: 2 * time.Second,
+	}
 }
 
 // Heal treats the pet, recovering health but costing energy.
@@ -423,6 +444,14 @@ func (p *Pet) IsAlive() bool {
 
 // UpdateAnimation sets the appropriate animation based on current state.
 func (p *Pet) UpdateAnimation() {
+	// If we're in a timed animation and it hasn't expired, keep it
+	if !p.AnimationEndTime.IsZero() && time.Now().Before(p.AnimationEndTime) {
+		return
+	}
+
+	// Clear animation end time when expired
+	p.AnimationEndTime = time.Time{}
+
 	if !p.Alive {
 		p.CurrentAnimation = AnimSad
 		return
