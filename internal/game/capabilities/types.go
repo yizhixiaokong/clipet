@@ -91,6 +91,8 @@ type Ending struct {
 type LifecycleState struct {
 	NearEnd    bool    // Is pet near end of life?
 	AgePercent float64 // Age as percentage of max lifespan (0.0-1.0)
+	IsEternal  bool    // true for eternal pets (never age/die)
+	IsLooping  bool    // true for looping lifecycle (resets age instead of ending)
 }
 
 // EndingResult represents the result of triggering an ending

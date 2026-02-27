@@ -29,8 +29,31 @@ func (m *LifecycleManager) CheckLifecycle(pet *Pet) capabilities.LifecycleState 
 	}
 
 	maxAge := species.Lifecycle.MaxAgeHours
-	agePercent := pet.AgeHours() / maxAge
 
+	// Handle eternal lifecycle
+	if species.Lifecycle.EndingType == "eternal" {
+		return capabilities.LifecycleState{
+			NearEnd:    false,
+			AgePercent: 0.0,
+			IsEternal:  true,
+		}
+	}
+
+	// Handle looping lifecycle
+	if species.Lifecycle.EndingType == "loop" {
+		agePercent := pet.AgeHours() / maxAge
+		// Loop: reset age when reaching 100%
+		if agePercent >= 1.0 {
+			agePercent = agePercent - float64(int(agePercent))
+		}
+		return capabilities.LifecycleState{
+			NearEnd:    agePercent >= species.Lifecycle.WarningThreshold,
+			AgePercent: agePercent,
+			IsLooping:  true,
+		}
+	}
+
+	agePercent := pet.AgeHours() / maxAge
 	return capabilities.LifecycleState{
 		NearEnd:    agePercent >= species.Lifecycle.WarningThreshold,
 		AgePercent: agePercent,

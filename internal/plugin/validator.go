@@ -1,6 +1,7 @@
 package plugin
 
 import (
+	"clipet/internal/game/capabilities"
 	"fmt"
 	"strings"
 )
@@ -136,6 +137,42 @@ func Validate(pack *SpeciesPack) []ValidationError {
 			}
 		}
 	}
+
+	// Phase 6 - Plugin safety constraints
+	constraints := capabilities.DefaultConstraints()
+
+	// Validate lifecycle boundaries
+	if lifecycleErrs := constraints.ValidateLifecycle(pack.Lifecycle); len(lifecycleErrs) > 0 {
+		for _, errMsg := range lifecycleErrs {
+			errs = append(errs, ValidationError{"lifecycle", errMsg})
+		}
+	}
+
+	// Validate passive effect modifiers
+	for i, trait := range pack.Traits {
+		if trait.PassiveEffect != nil {
+			if effectErrs := constraints.ValidatePassiveEffect(*trait.PassiveEffect); len(effectErrs) > 0 {
+				prefix := fmt.Sprintf("traits[%d].passive_effect", i)
+				for _, errMsg := range effectErrs {
+					errs = append(errs, ValidationError{prefix, errMsg})
+				}
+			}
+		}
+	}
+
+	// Validate adventure frequency (prevent too many high-frequency adventures)
+	adventureCount := len(pack.Adventures)
+	if adventureCount > 20 {
+		errs = append(errs, ValidationError{"adventures",
+			fmt.Sprintf("too many adventures (%d), maximum is 20 to prevent overwhelming players", adventureCount)})
+	}
+
+	// Validate dialogue count (prevent content overload)
+	if len(pack.Dialogues) > 100 {
+		errs = append(errs, ValidationError{"dialogues",
+			fmt.Sprintf("too many dialogue groups (%d), maximum is 100", len(pack.Dialogues))})
+	}
+
 
 	// Frames: check that at least egg idle frames exist
 	eggStageID := ""

@@ -40,6 +40,19 @@ func (h *LifecycleHook) OnTimeAdvance(elapsed time.Duration, pet *Pet) {
 		// For now, we just mark the flag so the UI can check it
 	}
 
+	// Eternal pets never trigger endings
+	if state.IsEternal {
+		return
+	}
+
+	// Looping lifecycle resets age instead of ending
+	if state.IsLooping && state.AgePercent >= 1.0 {
+		pet.LifecycleWarningShown = false
+		// Note: In a full implementation, we would emit a rebirth message to the UI
+		fmt.Printf("[Lifecycle] Pet %s has completed a life cycle and begins anew\n", pet.Name)
+		return
+	}
+
 	// Trigger ending when pet reaches end of natural lifespan
 	if state.AgePercent >= 1.0 {
 		result := h.lifecycleMgr.TriggerEnding(pet)

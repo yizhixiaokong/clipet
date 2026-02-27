@@ -1,8 +1,10 @@
 package plugin
 
 import (
+	"clipet/internal/game/capabilities"
 	"fmt"
 	"io/fs"
+	"log"
 	"path"
 	"sort"
 	"strings"
@@ -26,6 +28,16 @@ func ParseSpecies(fsys fs.FS, dir string) (*SpeciesPack, error) {
 
 	// Apply defaults for backward compatibility
 	pack.Lifecycle = pack.Lifecycle.Defaults()
+
+	// Phase 6: Apply safety constraints (clamp if not explicitly overridden)
+	constraints := capabilities.DefaultConstraints()
+	if pack.Lifecycle.MaxAgeHours < constraints.MinLifespanHours &&
+		pack.Lifecycle.EndingType != "eternal" {
+		// Fallback to minimum safe value
+		pack.Lifecycle.MaxAgeHours = constraints.MinLifespanHours
+		log.Printf("[Plugin] Warning: species %q lifespan too short, clamped to %.0f hours",
+			pack.Species.ID, pack.Lifecycle.MaxAgeHours)
+	}
 
 	return &pack, nil
 }

@@ -86,6 +86,41 @@ ending_type = "ascend"
 warning_threshold = 0.9
 ```
 
+**Phase 5 新增 - 多风格生命周期**：
+
+```toml
+# 7天高风险（挑战模式）
+[lifecycle]
+max_age_hours = 168.0        # 7 天
+ending_type = "death"
+warning_threshold = 0.6      # 第 4 天预警
+
+# 30天伴侣（长期陪伴）
+[lifecycle]
+max_age_hours = 720.0        # 30 天
+ending_type = "death"
+warning_threshold = 0.85     # 第 25 天预警
+
+# 永恒物种（永不老死）
+[lifecycle]
+max_age_hours = 0.0          # 忽略
+ending_type = "eternal"      # 永不老死
+warning_threshold = 0.0      # 无预警
+
+# 循环重生物种
+[lifecycle]
+max_age_hours = 240.0        # 10 天一个周期
+ending_type = "loop"         # 10 天后重置年龄
+warning_threshold = 0.8      # 每个周期末预警
+```
+
+**生命周期类型说明**：
+
+- `death`: 自然离世（默认）
+- `ascend`: 飞升/升华（温馨主题）
+- `eternal`: 永恒存在，永不触发终局
+- `loop`: 循环重生，达到寿命后重置年龄而非死亡
+
 **向后兼容**：旧插件不包含 `[lifecycle]` 段时，使用默认值（30 天寿命，death 终局）。
 
 ### 个性特征定义 (v2.0+)
@@ -465,6 +500,90 @@ U-U(_/
 7. **帧文件**: egg 阶段必须有 idle 帧
 
 校验失败时，整个插件包将被拒绝加载，并输出详细的错误信息列表。
+
+## Phase 6: 安全约束系统
+
+为防止插件滥用（过短寿命、极端数值、过多危机），系统实施轻量级安全边界。
+
+### 默认约束
+
+| 约束类型 | 默认值 | 说明 |
+|---------|--------|------|
+| 最小寿命 | 24 小时 | 防止瞬间死亡（eternal 除外）|
+| 最大寿命 | 10 年 | 防止永不死亡（eternal 除外）|
+| 属性修正器 | 10% - 300% | 防止极端增益/惩罚 |
+| 冒险数量上限 | 20 | 防止玩家 overwhelmed |
+| 对话组数量上限 | 100 | 防止内容过载 |
+
+### 约束验证
+
+**生命周期验证**：
+
+```toml
+# 错误：寿命过短（< 24 小时）
+[lifecycle]
+max_age_hours = 0.5  # 验证失败
+
+# 错误：寿命过长（> 10 年）
+[lifecycle]
+max_age_hours = 100000.0  # 验证失败
+
+# 正确：eternal 类型不受寿命限制
+[lifecycle]
+ending_type = "eternal"  # 验证通过
+```
+
+**属性修正器验证**：
+
+```toml
+# 错误：修正器过大（> 300%）
+[[traits]]
+[traits.passive_effect]
+feed_hunger_bonus = 5.0  # 600% 增益，验证失败
+
+# 错误：修正器过小（< 10%）
+[traits.passive_effect]
+play_happiness_bonus = -0.95  # 5% 增益，验证失败
+
+# 正确：合理范围
+[traits.passive_effect]
+feed_hunger_bonus = -0.2  # 80% 增益，验证通过
+```
+
+### 约束覆盖机制
+
+如需覆盖默认约束，必须提供理由说明（至少 50 字符）：
+
+```toml
+# 物种级别约束覆盖
+[species]
+id = "challenge_beetle"
+name = "挑战甲虫"
+
+[constraints]
+min_lifespan_hours = 1.0      # 覆盖：1 小时寿命
+reason = "Roguelike 挑战模式：玩家需在 1 小时内完成目标，体验紧张刺激的极限养成"
+```
+
+**验证规则**：
+- 覆盖默认约束时，`reason` 字段必须存在且至少 50 字符
+- 系统会验证 `reason` 字段的完整性
+- 无覆盖时不需要 `reason` 字段
+
+### 默认回退
+
+如果插件配置超出安全边界且未提供约束覆盖，系统会自动钳制到安全范围：
+
+```go
+// 解析时自动钳制过短寿命
+if max_age_hours < 24.0 && ending_type != "eternal" {
+    max_age_hours = 24.0  // 回退到最小安全值
+    // 输出警告日志
+}
+```
+
+**建议**：对于特殊玩法需求，显式声明约束覆盖并提供理由，而不是依赖自动钳制。
+
 
 ## 参考：内置猫物种包
 
