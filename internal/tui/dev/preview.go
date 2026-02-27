@@ -11,8 +11,66 @@ import (
 	"time"
 
 	tea "charm.land/bubbletea/v2"
+	"charm.land/bubbles/v2/help"
+	"charm.land/bubbles/v2/key"
 	"charm.land/lipgloss/v2"
 )
+
+// PreviewKeyMap defines keybindings for preview command
+type PreviewKeyMap struct {
+	Up        key.Binding
+	Down      key.Binding
+	Left      key.Binding
+	Right     key.Binding
+	SpeedUp   key.Binding
+	SlowDown  key.Binding
+	Quit      key.Binding
+}
+
+// DefaultPreviewKeyMap returns default keybindings for preview command
+var DefaultPreviewKeyMap = PreviewKeyMap{
+	Up: key.NewBinding(
+		key.WithKeys("up", "k"),
+		key.WithHelp("↑/k", "上移"),
+	),
+	Down: key.NewBinding(
+		key.WithKeys("down", "j"),
+		key.WithHelp("↓/j", "下移"),
+	),
+	Left: key.NewBinding(
+		key.WithKeys("left", "h"),
+		key.WithHelp("←/h", "折叠"),
+	),
+	Right: key.NewBinding(
+		key.WithKeys("right", "l"),
+		key.WithHelp("→/l", "展开"),
+	),
+	SpeedUp: key.NewBinding(
+		key.WithKeys("+", "="),
+		key.WithHelp("+", "加速"),
+	),
+	SlowDown: key.NewBinding(
+		key.WithKeys("-", "_"),
+		key.WithHelp("-", "减速"),
+	),
+	Quit: key.NewBinding(
+		key.WithKeys("q", "ctrl+c", "esc"),
+		key.WithHelp("q/Esc", "退出"),
+	),
+}
+
+// ShortHelp returns keybindings to be shown in the mini help view
+func (k PreviewKeyMap) ShortHelp() []key.Binding {
+	return []key.Binding{k.Quit}
+}
+
+// FullHelp returns keybindings for the expanded help view
+func (k PreviewKeyMap) FullHelp() [][]key.Binding {
+	return [][]key.Binding{
+		{k.Up, k.Down, k.Left, k.Right},
+		{k.SpeedUp, k.SlowDown, k.Quit},
+	}
+}
 
 // PreviewModel is the Bubble Tea model for interactive preview.
 type PreviewModel struct {
@@ -23,6 +81,8 @@ type PreviewModel struct {
 	Width    int
 	Height   int
 	Quitting bool
+	KeyMap   PreviewKeyMap
+	Help     help.Model
 }
 
 // PreviewTickMsg drives animation.
@@ -30,9 +90,12 @@ type PreviewTickMsg time.Time
 
 // NewPreviewModel creates a new preview TUI model
 func NewPreviewModel(pack *plugin.SpeciesPack, fps int, initStage, initAnim string) *PreviewModel {
+	h := help.New()
+	h.ShowAll = false
+
 	roots := buildPreviewTree(pack)
 	if len(roots) == 0 {
-		return &PreviewModel{Pack: pack, Fps: fps}
+		return &PreviewModel{Pack: pack, Fps: fps, KeyMap: DefaultPreviewKeyMap, Help: h}
 	}
 
 	// Create TreeList component
@@ -42,9 +105,11 @@ func NewPreviewModel(pack *plugin.SpeciesPack, fps int, initStage, initAnim stri
 	tree.SetSize(40, 20)        // Initial size (will be updated)
 
 	m := &PreviewModel{
-		Pack: pack,
-		Tree: tree,
-		Fps:  fps,
+		Pack:   pack,
+		Tree:   tree,
+		Fps:    fps,
+		KeyMap: DefaultPreviewKeyMap,
+		Help:   h,
 	}
 
 	// Set initial cursor position
@@ -148,16 +213,16 @@ func (m *PreviewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyPressMsg:
 		// Handle global keys
-		switch msg.String() {
-		case "q", "ctrl+c", "escape":
+		switch {
+		case key.Matches(msg, m.KeyMap.Quit):
 			m.Quitting = true
 			return m, tea.Quit
-		case "+", "=":
+		case key.Matches(msg, m.KeyMap.SpeedUp):
 			if m.Fps < 30 {
 				m.Fps++
 			}
 			return m, nil
-		case "-", "_":
+		case key.Matches(msg, m.KeyMap.SlowDown):
 			if m.Fps > 1 {
 				m.Fps--
 			}
@@ -201,10 +266,15 @@ func (m *PreviewModel) View() tea.View {
 
 	leftPanel := m.renderPreview(leftW)
 	rightPanel := m.renderTreePanel(rightW)
+	helpBar := m.Help.View(m.KeyMap)
 
-	sep := strings.Repeat("│\n", m.Height-2)
+	sep := strings.Repeat("│\n", m.Height-4)
 	content := lipgloss.JoinHorizontal(lipgloss.Top, leftPanel, sep, rightPanel)
-	v := tea.NewView(content)
+
+	// Add help bar at the bottom
+	fullContent := lipgloss.JoinVertical(lipgloss.Left, content, "", helpBar)
+
+	v := tea.NewView(fullContent)
 	v.AltScreen = true
 	return v
 }
@@ -270,8 +340,6 @@ func (m *PreviewModel) renderPreview(width int) string {
 		m.FrameIdx%max(frameCount, 1)+1, max(frameCount, 1), m.Fps,
 	))
 
-	helpText := previewInfoStyle.Render("+/-调速  q退出")
-
 	content := lipgloss.JoinVertical(lipgloss.Left,
 		panelTitle,
 		"",
@@ -280,12 +348,11 @@ func (m *PreviewModel) renderPreview(width int) string {
 		artStr,
 		"",
 		frameStats,
-		helpText,
 	)
 
 	return previewPanelStyle.
 		Width(width - 2).
-		Height(m.Height - 1).
+		Height(m.Height - 4).
 		Render(content)
 }
 
@@ -297,13 +364,11 @@ func (m *PreviewModel) renderTreePanel(width int) string {
 		title,
 		"",
 		m.Tree.View(),
-		"",
-		previewInfoStyle.Render("↑↓选择  ←→折叠/展开  q退出"),
 	)
 
 	return previewPanelStyle.
 		Width(width - 2).
-		Height(m.Height - 1).
+		Height(m.Height - 4).
 		Render(content)
 }
 

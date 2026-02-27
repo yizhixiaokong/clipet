@@ -10,25 +10,21 @@ import (
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
+	"charm.land/bubbles/v2/help"
 	"charm.land/bubbles/v2/key"
 	"charm.land/lipgloss/v2"
 )
 
 // TimeskipKeyMap defines keybindings for timeskip command
 type TimeskipKeyMap struct {
-	Quit   key.Binding
 	Enter  key.Binding
 	Yes    key.Binding
-	No     key.Binding
 	Cancel key.Binding
+	Quit   key.Binding
 }
 
 // DefaultTimeskipKeyMap returns default keybindings for timeskip command
 var DefaultTimeskipKeyMap = TimeskipKeyMap{
-	Quit: key.NewBinding(
-		key.WithKeys("q", "ctrl+c"),
-		key.WithHelp("q/Ctrl+C", "退出"),
-	),
 	Enter: key.NewBinding(
 		key.WithKeys("enter"),
 		key.WithHelp("Enter", "预览"),
@@ -37,13 +33,13 @@ var DefaultTimeskipKeyMap = TimeskipKeyMap{
 		key.WithKeys("enter", "y"),
 		key.WithHelp("Enter/y", "确认"),
 	),
-	No: key.NewBinding(
-		key.WithKeys("n", "q"),
-		key.WithHelp("n/q", "返回"),
-	),
 	Cancel: key.NewBinding(
-		key.WithKeys("esc", "n", "q"),
-		key.WithHelp("Esc/n/q", "返回"),
+		key.WithKeys("esc", "n"),
+		key.WithHelp("Esc/n", "返回"),
+	),
+	Quit: key.NewBinding(
+		key.WithKeys("q", "ctrl+c"),
+		key.WithHelp("q/Ctrl+C", "退出"),
 	),
 }
 
@@ -56,7 +52,7 @@ func (k TimeskipKeyMap) ShortHelp() []key.Binding {
 func (k TimeskipKeyMap) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
 		{k.Enter, k.Quit},
-		{k.Yes, k.No, k.Cancel},
+		{k.Yes, k.Cancel},
 	}
 }
 
@@ -70,6 +66,7 @@ type TimeskipModel struct {
 	Input    *components.InputField
 	InputErr string
 	KeyMap   TimeskipKeyMap
+	Help     help.Model
 
 	// Preview data (computed from input)
 	PreviewHours float64
@@ -92,6 +89,9 @@ const (
 
 // NewTimeskipModel creates a new timeskip TUI model
 func NewTimeskipModel(pet *game.Pet) *TimeskipModel {
+	h := help.New()
+	h.ShowAll = false
+
 	return &TimeskipModel{
 		Pet: pet,
 		Input: components.NewInputField().
@@ -99,6 +99,7 @@ func NewTimeskipModel(pet *game.Pet) *TimeskipModel {
 			SetFilter(components.NumericFilter(".")),
 		Phase:  timeskipPhaseInput,
 		KeyMap: DefaultTimeskipKeyMap,
+		Help:   h,
 	}
 }
 
@@ -230,7 +231,7 @@ func (m *TimeskipModel) viewInput() string {
 	}
 
 	lines = append(lines, "")
-	lines = append(lines, tsInfoStyle.Render("Enter预览  q退出"))
+	lines = append(lines, m.Help.ShortHelpView([]key.Binding{m.KeyMap.Enter, m.KeyMap.Quit}))
 
 	return strings.Join(lines, "\n")
 }
@@ -274,7 +275,8 @@ func (m *TimeskipModel) viewPreview() string {
 	}
 
 	lines = append(lines, "")
-	lines = append(lines, tsInputLabelStyle.Render("确认执行? (Enter/y 确认, Esc/n/q 返回)"))
+	lines = append(lines, tsInputLabelStyle.Render("确认执行?"))
+	lines = append(lines, m.Help.ShortHelpView([]key.Binding{m.KeyMap.Yes, m.KeyMap.Cancel}))
 
 	return strings.Join(lines, "\n")
 }

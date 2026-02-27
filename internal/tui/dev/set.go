@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
+	"charm.land/bubbles/v2/help"
 	"charm.land/bubbles/v2/key"
 	"charm.land/lipgloss/v2"
 )
@@ -26,8 +27,8 @@ type SetKeyMap struct {
 	Up     key.Binding
 	Down   key.Binding
 	Enter  key.Binding
-	Quit   key.Binding
 	Cancel key.Binding
+	Quit   key.Binding
 }
 
 // DefaultSetKeyMap returns default keybindings for set command
@@ -44,13 +45,13 @@ var DefaultSetKeyMap = SetKeyMap{
 		key.WithKeys("enter"),
 		key.WithHelp("Enter", "编辑"),
 	),
+	Cancel: key.NewBinding(
+		key.WithKeys("esc"),
+		key.WithHelp("Esc", "取消/退出"),
+	),
 	Quit: key.NewBinding(
 		key.WithKeys("q", "ctrl+c"),
 		key.WithHelp("q/Ctrl+C", "退出"),
-	),
-	Cancel: key.NewBinding(
-		key.WithKeys("esc", "q"),
-		key.WithHelp("Esc/q", "取消"),
 	),
 }
 
@@ -79,11 +80,22 @@ type SetModel struct {
 	Quitting bool
 	Message  string
 	KeyMap   SetKeyMap
+	Help     help.Model
+
+	// Changes records all successful modifications (for output after TUI exits)
+	Changes []FieldChange
 
 	// Callbacks for business logic
 	GetCurrentValue func(field SetField) string
 	SetFieldValue   func(field SetField, value string) (old string, err error)
 	OnFieldChanged  func()
+}
+
+// FieldChange records a single field modification
+type FieldChange struct {
+	Field string
+	Old   string
+	New   string
 }
 
 type setPhase int
@@ -95,11 +107,15 @@ const (
 
 // NewSetModel creates a new set TUI model
 func NewSetModel(pet *game.Pet, fields []SetField) *SetModel {
+	h := help.New()
+	h.ShowAll = false // Start with short help
+
 	return &SetModel{
 		Pet:    pet,
 		Fields: fields,
 		Phase:  setPhaseSelect,
 		KeyMap: DefaultSetKeyMap,
+		Help:   h,
 	}
 }
 
@@ -156,8 +172,7 @@ func (m *SetModel) View() tea.View {
 	if m.Phase == setPhaseInput {
 		f := m.Fields[m.Cursor]
 		inputArea = "\n" + setInputLabelStyle.Render(fmt.Sprintf("编辑 %s:", f.Label)) +
-			"\n> " + m.Input.View() +
-			"\n" + setInfoStyle.Render("Enter确认  Esc/q取消")
+			"\n> " + m.Input.View()
 	}
 
 	// Message
@@ -166,14 +181,22 @@ func (m *SetModel) View() tea.View {
 		msgArea = "\n" + m.Message
 	}
 
-	help := setInfoStyle.Render("↑↓选择  Enter编辑  q退出")
+	// Help - show different help based on phase
+	var helpView string
+	if m.Phase == setPhaseInput {
+		// Input phase: show only relevant keys
+		helpView = m.Help.ShortHelpView([]key.Binding{m.KeyMap.Enter, m.KeyMap.Cancel})
+	} else {
+		// Select phase: show navigation help
+		helpView = m.Help.View(m.KeyMap)
+	}
 
 	content := lipgloss.JoinVertical(lipgloss.Left,
 		title, "",
 		strings.Join(lines, "\n"),
 		inputArea,
 		msgArea,
-		"", help,
+		"", helpView,
 	)
 
 	panel := setPanelStyle.
@@ -188,7 +211,8 @@ func (m *SetModel) View() tea.View {
 
 func (m *SetModel) updateSelect(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch {
-	case key.Matches(msg, m.KeyMap.Quit):
+	case key.Matches(msg, m.KeyMap.Quit), key.Matches(msg, m.KeyMap.Cancel):
+		// Both Quit (q/Ctrl+C) and Cancel (Esc) exit in select mode
 		m.Quitting = true
 		return m, tea.Quit
 	case key.Matches(msg, m.KeyMap.Up):
@@ -213,8 +237,12 @@ func (m *SetModel) updateSelect(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 
 func (m *SetModel) updateInput(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	switch {
+	case key.Matches(msg, m.KeyMap.Quit):
+		// Allow q/Ctrl+C/Esc to quit from input mode
+		m.Quitting = true
+		return m, tea.Quit
 	case key.Matches(msg, m.KeyMap.Cancel):
-		// Allow both esc and 'q' to cancel
+		// Esc cancels input, returns to select
 		m.Phase = setPhaseSelect
 		m.Input = nil
 		m.Message = ""
@@ -226,6 +254,12 @@ func (m *SetModel) updateInput(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 				m.Message = fmt.Sprintf("❌ %v", err)
 			} else {
 				m.Message = fmt.Sprintf("✓ %s: %s → %s", field.Label, old, m.Input.Value())
+				// Record the change for output after TUI exits
+				m.Changes = append(m.Changes, FieldChange{
+					Field: field.Label,
+					Old:   old,
+					New:   m.Input.Value(),
+				})
 				if m.OnFieldChanged != nil {
 					m.OnFieldChanged()
 				}

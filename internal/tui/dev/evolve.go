@@ -9,32 +9,59 @@ import (
 	"fmt"
 
 	tea "charm.land/bubbletea/v2"
+	"charm.land/bubbles/v2/help"
 	"charm.land/bubbles/v2/key"
 	"charm.land/lipgloss/v2"
 )
 
 // EvolveKeyMap defines keybindings for evolve command
 type EvolveKeyMap struct {
-	Quit key.Binding
+	Up    key.Binding
+	Down  key.Binding
+	Left  key.Binding
+	Right key.Binding
+	Enter key.Binding
+	Quit  key.Binding
 }
 
 // DefaultEvolveKeyMap returns default keybindings for evolve command
 var DefaultEvolveKeyMap = EvolveKeyMap{
+	Up: key.NewBinding(
+		key.WithKeys("up", "k"),
+		key.WithHelp("↑/k", "上移"),
+	),
+	Down: key.NewBinding(
+		key.WithKeys("down", "j"),
+		key.WithHelp("↓/j", "下移"),
+	),
+	Left: key.NewBinding(
+		key.WithKeys("left", "h"),
+		key.WithHelp("←/h", "折叠"),
+	),
+	Right: key.NewBinding(
+		key.WithKeys("right", "l"),
+		key.WithHelp("→/l", "展开"),
+	),
+	Enter: key.NewBinding(
+		key.WithKeys("enter"),
+		key.WithHelp("Enter", "确认进化"),
+	),
 	Quit: key.NewBinding(
 		key.WithKeys("q", "ctrl+c", "esc"),
-		key.WithHelp("q/Esc", "退出"),
+		key.WithHelp("q/Ctrl+C/Esc", "退出"),
 	),
 }
 
 // ShortHelp returns keybindings to be shown in the mini help view
 func (k EvolveKeyMap) ShortHelp() []key.Binding {
-	return []key.Binding{k.Quit}
+	return []key.Binding{k.Enter, k.Quit}
 }
 
 // FullHelp returns keybindings for the expanded help view
 func (k EvolveKeyMap) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
-		{k.Quit},
+		{k.Up, k.Down, k.Left, k.Right},
+		{k.Enter, k.Quit},
 	}
 }
 
@@ -48,6 +75,7 @@ type EvolveModel struct {
 	Height    int
 	Quitting  bool
 	KeyMap    EvolveKeyMap
+	Help      help.Model
 
 	// Callback when user selects a stage to evolve to
 	OnEvolve func(toStageID string) error
@@ -58,9 +86,12 @@ type EvolveModel struct {
 
 // NewEvolveModel creates a new evolve TUI model
 func NewEvolveModel(pet *game.Pet, species string, registry *plugin.Registry) *EvolveModel {
+	h := help.New()
+	h.ShowAll = false
+
 	pack := registry.GetSpecies(species)
 	if pack == nil {
-		return &EvolveModel{Pet: pet, Species: species, Registry: registry, KeyMap: DefaultEvolveKeyMap}
+		return &EvolveModel{Pet: pet, Species: species, Registry: registry, KeyMap: DefaultEvolveKeyMap, Help: h}
 	}
 
 	roots := buildEvoTreeFromPack(pack)
@@ -77,6 +108,7 @@ func NewEvolveModel(pet *game.Pet, species string, registry *plugin.Registry) *E
 		Registry: registry,
 		Tree:     tree,
 		KeyMap:   DefaultEvolveKeyMap,
+		Help:     h,
 	}
 }
 
@@ -160,14 +192,14 @@ func (m *EvolveModel) View() tea.View {
 		isCurrent = evoInfoStyle.Render("  (当前阶段)")
 	}
 
-	help := evoInfoStyle.Render("↑↓导航  ←→折叠/展开  Enter确认  q退出")
+	helpView := m.Help.View(m.KeyMap)
 
 	content := lipgloss.JoinVertical(lipgloss.Left,
 		title, "",
 		treeStr,
 		"",
 		info+isCurrent,
-		help,
+		helpView,
 	)
 
 	panel := evoLeftStyle.

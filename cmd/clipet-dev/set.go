@@ -120,8 +120,19 @@ func runSetTUI(pet *game.Pet) error {
 	}
 
 	p := tea.NewProgram(m)
-	_, err := p.Run()
-	return err
+	finalModel, err := p.Run()
+	if err != nil {
+		return err
+	}
+
+	// Output changes after TUI exits
+	if fm, ok := finalModel.(*dev.SetModel); ok && len(fm.Changes) > 0 {
+		for _, change := range fm.Changes {
+			fmt.Printf("set %s: %s -> %s\n", change.Field, change.Old, change.New)
+		}
+	}
+
+	return nil
 }
 
 func getCurrentPetValue(pet *game.Pet, key string) string {
