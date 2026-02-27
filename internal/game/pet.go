@@ -369,13 +369,13 @@ func (p *Pet) SimulateDecay(elapsed time.Duration) {
 		p.Alive = false
 	}
 
-	// Advance all cooldown timestamps
-	p.LastFedAt = p.LastFedAt.Add(elapsed)
-	p.LastPlayedAt = p.LastPlayedAt.Add(elapsed)
-	p.LastRestedAt = p.LastRestedAt.Add(elapsed)
-	p.LastHealedAt = p.LastHealedAt.Add(elapsed)
-	p.LastTalkedAt = p.LastTalkedAt.Add(elapsed)
-	p.LastAdventureAt = p.LastAdventureAt.Add(elapsed)
+	// Rewind all cooldown timestamps so time.Since() returns larger values
+	p.LastFedAt = p.LastFedAt.Add(-elapsed)
+	p.LastPlayedAt = p.LastPlayedAt.Add(-elapsed)
+	p.LastRestedAt = p.LastRestedAt.Add(-elapsed)
+	p.LastHealedAt = p.LastHealedAt.Add(-elapsed)
+	p.LastTalkedAt = p.LastTalkedAt.Add(-elapsed)
+	p.LastAdventureAt = p.LastAdventureAt.Add(-elapsed)
 	p.LastCheckedAt = time.Now()
 }
 
