@@ -11,8 +11,11 @@ make build
 # Build only dev tool
 make dev
 
-# Run tests
+# Run all tests
 go test ./...
+
+# Run single test
+go test -run TestFunctionName ./path/to/package
 
 # Format code
 make fmt
@@ -48,7 +51,7 @@ cmd/clipet (entry) → internal/cli (Cobra) → internal/tui (Bubble Tea) or dir
 ### Plugin System
 
 **All species are plugins** (including the built-in cat). Species packs are directories containing:
-- `species.toml` - Species metadata, stages, evolution paths
+- `species.toml` - Species metadata, stages, evolution paths, custom attribute definitions
 - `dialogues.toml` - Mood/stage-based dialogue lines
 - `adventures.toml` - Random event definitions
 - `frames/` - ASCII animation files organized by stage/variant/anim-state
@@ -59,6 +62,29 @@ Both builtin (embedded via `go:embed`) and external (filesystem) packs use the s
 - `internal/plugin/types.go` - Core data structures (SpeciesPack, Stage, Evolution, Frame, etc.)
 - `internal/plugin/parser.go` - TOML parsing + frame file scanning
 - `internal/plugin/registry.go` - Thread-safe central registry with lookup methods
+
+### Custom Attributes System (v3.0+)
+
+**Purpose**: Allow plugins to define their own evolution conditions without framework hardcoding.
+
+**Architecture**:
+- `internal/game/attributes/system.go` - Manages both core attributes (hunger, happiness, health, energy) and custom plugin-defined attributes
+- `Pet.CustomAttributes map[string]int` - Storage for custom attribute values
+- `EvolutionCondition.CustomAcc map[string]int` - Custom accumulator requirements for evolution
+
+**Workflow**:
+1. **Define**: Species plugins define custom attributes in adventures (e.g., `arcane_affinity`, `fire_power`)
+2. **Accumulate**: Players trigger adventure events that add to custom attributes via `effects = { arcane_affinity = 10 }`
+3. **Check**: Evolution system checks custom attributes: `custom_acc = { arcane_affinity = 50 }`
+
+**Example**: The built-in cat species uses 10 custom attributes to create 3 distinct evolution paths (arcane, feral, mech), replacing hardcoded conditions like `night_bias` and `day_bias`.
+
+**Implementation Notes**:
+- `Pet.SetField("custom:attr_name", value)` - Set custom attributes via unified field API
+- `Pet.GetAttr(name)` / `Pet.SetAttr(name, value)` - Unified access for both core and custom attributes
+- Adventure system automatically records custom attribute changes in `ApplyAdventureOutcome()`
+- TUI displays custom attributes in the status panel when they exist
+- Dev tools (`set`, `evo info`) support custom attributes
 
 ### TUI Architecture
 
@@ -75,16 +101,22 @@ Built on **Bubble Tea v2** with **Lipgloss v2** for styling.
 ### Game Mechanics
 
 **Pet System** (`internal/game/pet.go`):
-- Four attributes: Hunger, Happiness, Health, Energy (0-100)
+- Four core attributes: Hunger, Happiness, Health, Energy (0-100)
+- Unlimited custom attributes defined by plugins
 - Time-based decay (hunger decays fastest, energy slowest)
 - Diminishing returns: `gain = base * (100 - current) / 100` (higher attributes → smaller gains)
 - Cooldown system: Actions have cooldown periods (Feed: 10min, Play: 5min, etc.)
 - Offline decay: Time since last save is compensated on load
 
 **Evolution System** (`internal/game/evolution.go`):
-- Condition-based triggers (age, attributes, interaction counts, time-of-day bias, etc.)
+- Condition-based triggers (age, attributes, interaction counts, custom accumulators)
 - Multiple evolution paths from a single stage
 - Automatic evolution check after any attribute change
+
+**Adventure System** (`internal/game/adventure.go`):
+- Weighted random outcomes
+- Effects can include core attributes OR custom attributes
+- Returns change log for UI feedback
 
 ### Dev Tools
 
@@ -92,8 +124,8 @@ Built on **Bubble Tea v2** with **Lipgloss v2** for styling.
 - `validate <pack-dir>` - Validate species pack structure
 - `preview <pack-dir>` - Interactive ASCII frame viewer with TreeList navigation
 - `evo to [stage-id]` - Force evolution (interactive tree selection or direct)
-- `evo info` - Show evolution conditions and current progress
-- `set [attr] [value]` - Directly modify pet attributes (interactive or CLI)
+- `evo info` - Show evolution conditions and current progress (includes custom attributes)
+- `set` - Directly modify pet attributes (interactive, supports custom attributes)
 - `timeskip [--hours N]` - Simulate time passing for testing decay/evolution
 
 All dev TUI logic is in `internal/tui/dev/` with reusable components from `internal/tui/components/`.
@@ -130,7 +162,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 **Plugin Pack IDs**: Use format `{species_id}.{stage_id}.{variant}` for stage IDs (e.g., `cat.adult.warrior`). Phase is one of: egg, baby, child, adult, legend.
 
+**Unified Field API**: `Pet.SetField()` supports:
+- Core attributes: `hunger`, `happiness`, `health`, `energy`
+- Custom attributes: `custom:attr_name` (prefix required)
+- Metadata: `name`, `stage_id`, `species_id`
+
 ### Documentation
 
+- `docs/CODEMAPS/` - Architecture diagrams and code structure
+- `docs/plugin-guide.md` - Plugin development syntax and API reference
+- `docs/plugin-best-practices.md` - Design patterns and optimization tips for plugins
 - `docs/architecture.md` - Full architecture diagram and dependency graph
-- `docs/plugin-guide.md` - Complete guide to creating species packs (TOML formats, dialogue design, frame organization)
