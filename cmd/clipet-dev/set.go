@@ -199,6 +199,8 @@ func getCurrentPetValue(pet *game.Pet, key string) string {
 		return pet.Species
 	case "stage_id":
 		return pet.StageID
+	case "age_hours":
+		return strconv.FormatFloat(pet.AgeHours(), 'f', 1, 64)
 	case "alive":
 		return strconv.FormatBool(pet.Alive)
 
