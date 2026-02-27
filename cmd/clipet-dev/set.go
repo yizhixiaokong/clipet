@@ -14,14 +14,34 @@ import (
 type settableField = dev.SetField
 
 var settableFields = []settableField{
+	// Core attributes (0-100)
 	{Key: "hunger", Label: "饱腹", Kind: "int"},
 	{Key: "happiness", Label: "快乐", Kind: "int"},
 	{Key: "health", Label: "健康", Kind: "int"},
 	{Key: "energy", Label: "精力", Kind: "int"},
+
+	// Basic info
 	{Key: "name", Label: "名字", Kind: "string"},
 	{Key: "species", Label: "物种", Kind: "string"},
 	{Key: "stage_id", Label: "阶段ID", Kind: "string"},
 	{Key: "alive", Label: "存活", Kind: "bool"},
+
+	// Statistics
+	{Key: "interactions", Label: "总互动", Kind: "int"},
+	{Key: "feeds", Label: "喂食次数", Kind: "int"},
+	{Key: "dialogues", Label: "对话次数", Kind: "int"},
+	{Key: "adventures", Label: "冒险次数", Kind: "int"},
+	{Key: "wins", Label: "游戏胜利", Kind: "int"},
+
+	// Evolution accumulators
+	{Key: "acc_happiness", Label: "快乐累积", Kind: "int"},
+	{Key: "acc_health", Label: "健康累积", Kind: "int"},
+	{Key: "acc_playful", Label: "玩耍累积", Kind: "int"},
+	{Key: "night", Label: "夜间互动", Kind: "int"},
+	{Key: "day", Label: "日间互动", Kind: "int"},
+
+	// Lifecycle
+	{Key: "lifecycle_warning", Label: "生命预警", Kind: "bool"},
 }
 
 func newSetCmd() *cobra.Command {
@@ -33,9 +53,31 @@ func newSetCmd() *cobra.Command {
 不带参数进入交互式界面，显示所有属性及当前值，选择后输入新值。
 带参数直接执行：set hunger 100
 
-可设属性: hunger, happiness, health, energy (0-100)
-          name, species, stage_id (字符串)
-          alive (true/false)`,
+【核心属性】(0-100)
+  hunger, happiness, health, energy
+
+【基本信息】
+  name, species, stage_id, alive
+
+【统计数据】
+  interactions (总互动次数)
+  feeds (喂食次数)
+  dialogues (对话次数)
+  adventures (冒险完成次数)
+  wins (游戏胜利次数)
+
+【进化累积】
+  acc_happiness, acc_health, acc_playful
+  night (夜间互动), day (日间互动)
+
+【生命周期】
+  lifecycle_warning (是否显示过生命预警)
+
+示例:
+  set hunger 100        # 直接设置饱腹度
+  set interactions 500  # 修改总互动次数
+  set adventures 30     # 设置冒险次数
+  set night 50          # 设置夜间互动次数`,
 		Args: cobra.RangeArgs(0, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := requirePet(); err != nil {
@@ -137,6 +179,7 @@ func runSetTUI(pet *game.Pet) error {
 
 func getCurrentPetValue(pet *game.Pet, key string) string {
 	switch key {
+	// Core attributes
 	case "hunger":
 		return strconv.Itoa(pet.Hunger)
 	case "happiness":
@@ -145,6 +188,8 @@ func getCurrentPetValue(pet *game.Pet, key string) string {
 		return strconv.Itoa(pet.Health)
 	case "energy":
 		return strconv.Itoa(pet.Energy)
+
+	// Basic info
 	case "name":
 		return pet.Name
 	case "species":
@@ -153,6 +198,34 @@ func getCurrentPetValue(pet *game.Pet, key string) string {
 		return pet.StageID
 	case "alive":
 		return strconv.FormatBool(pet.Alive)
+
+	// Statistics
+	case "interactions":
+		return strconv.Itoa(pet.TotalInteractions)
+	case "feeds":
+		return strconv.Itoa(pet.FeedCount)
+	case "dialogues":
+		return strconv.Itoa(pet.DialogueCount)
+	case "adventures":
+		return strconv.Itoa(pet.AdventuresCompleted)
+	case "wins":
+		return strconv.Itoa(pet.GamesWon)
+
+	// Evolution accumulators
+	case "acc_happiness":
+		return strconv.Itoa(pet.AccHappiness)
+	case "acc_health":
+		return strconv.Itoa(pet.AccHealth)
+	case "acc_playful":
+		return strconv.Itoa(pet.AccPlayful)
+	case "night":
+		return strconv.Itoa(pet.NightInteractions)
+	case "day":
+		return strconv.Itoa(pet.DayInteractions)
+
+	// Lifecycle
+	case "lifecycle_warning":
+		return strconv.FormatBool(pet.LifecycleWarningShown)
 	}
 	return ""
 }
