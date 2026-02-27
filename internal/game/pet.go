@@ -285,9 +285,8 @@ func (p *Pet) Rest() ActionResult {
 	}
 
 	// Calculate dynamic cooldown based on current energy (urgency)
-	// Note: for energy, higher value = less urgent, so we use (100 - Energy)
-	urgencyValue := 100 - p.Energy
-	cooldown := CalculateDynamicCooldown(p.registry, p.Species, "rest", urgencyValue)
+	// Low energy = urgent (short cooldown), high energy = not urgent (long cooldown)
+	cooldown := CalculateDynamicCooldown(p.registry, p.Species, "rest", p.Energy)
 	if left := cooldownLeft(p.LastRestedAt, cooldown); left != "" {
 		return failResult(fmt.Sprintf("宠物还不困，%s后可以再休息", left))
 	}
@@ -328,9 +327,8 @@ func (p *Pet) Heal() ActionResult {
 	}
 
 	// Calculate dynamic cooldown based on current health (urgency)
-	// Note: for health, higher value = less urgent, so we use (100 - Health)
-	urgencyValue := 100 - p.Health
-	cooldown := CalculateDynamicCooldown(p.registry, p.Species, "heal", urgencyValue)
+	// Low health = urgent (short cooldown), high health = not urgent (long cooldown)
+	cooldown := CalculateDynamicCooldown(p.registry, p.Species, "heal", p.Health)
 	if left := cooldownLeft(p.LastHealedAt, cooldown); left != "" {
 		return failResult(fmt.Sprintf("刚治疗过，%s后可以再治疗", left))
 	}

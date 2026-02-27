@@ -676,7 +676,6 @@ func (h HomeModel) moodDisplay() (string, lipgloss.Style) {
 func (h HomeModel) getActionCooldown(action string) string {
 	p := h.pet
 	var cooldown time.Duration
-	var urgencyValue int
 
 	switch action {
 	case "feed":
@@ -686,14 +685,12 @@ func (h HomeModel) getActionCooldown(action string) string {
 		cooldown = game.CalculateDynamicCooldown(p.Registry(), p.Species, "play", p.Happiness)
 		return cooldownLeft(p.LastPlayedAt, cooldown)
 	case "rest":
-		// For rest, urgency is based on low energy (100 - Energy)
-		urgencyValue = 100 - p.Energy
-		cooldown = game.CalculateDynamicCooldown(p.Registry(), p.Species, "rest", urgencyValue)
+		// Low energy = urgent (short cooldown)
+		cooldown = game.CalculateDynamicCooldown(p.Registry(), p.Species, "rest", p.Energy)
 		return cooldownLeft(p.LastRestedAt, cooldown)
 	case "heal":
-		// For heal, urgency is based on low health (100 - Health)
-		urgencyValue = 100 - p.Health
-		cooldown = game.CalculateDynamicCooldown(p.Registry(), p.Species, "heal", urgencyValue)
+		// Low health = urgent (short cooldown)
+		cooldown = game.CalculateDynamicCooldown(p.Registry(), p.Species, "heal", p.Health)
 		return cooldownLeft(p.LastHealedAt, cooldown)
 	case "talk":
 		cooldown = game.CalculateDynamicCooldown(p.Registry(), p.Species, "talk", p.Happiness)
