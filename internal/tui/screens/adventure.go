@@ -133,7 +133,7 @@ func (a AdventureModel) View() string {
 	}
 
 	// Split into left (pet) and right (adventure) panels
-	const leftPanelW = 28
+	const leftPanelW = 22  // Reduced from 28 to give more space to adventure
 	rightPanelW := totalInner - leftPanelW
 	if rightPanelW < 30 {
 		rightPanelW = 30

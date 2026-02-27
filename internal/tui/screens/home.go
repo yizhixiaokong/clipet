@@ -425,7 +425,8 @@ func (h HomeModel) View() string {
 		totalInner = 50
 	}
 
-	const rightPanelW = 30
+	// Right panel shows status (name, stats, etc.)
+	const rightPanelW = 40  // Increased from 30 to give more space for stats
 	leftW := totalInner - rightPanelW
 	if leftW < 20 {
 		leftW = 20
@@ -472,7 +473,7 @@ func (h HomeModel) renderGameView() string {
 	}
 
 	// Split into left (pet) and right (game) panels
-	const leftPanelW = 28
+	const leftPanelW = 22  // Reduced from 28 to give more space to game
 	rightPanelW := totalInner - leftPanelW
 	if rightPanelW < 30 {
 		rightPanelW = 30
