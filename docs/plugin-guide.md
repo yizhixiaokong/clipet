@@ -246,6 +246,76 @@ decay_rate = 0.5  # 每小时衰减 0.5 点
 - 个性化特征效果
 - 进化条件检查
 
+### 动作配置 (v3.0+, Phase 7)
+
+定义物种的动作行为，包括冷却时间和效果数值。**这是插件化设计的核心，让每个物种有独特的互动节奏。**
+
+```toml
+# 喂食动作
+[[actions]]
+id = "feed"
+cooldown = "10m"              # 冷却时间
+[actions.effects]
+hunger = 25                   # 饱食度 +25
+happiness = 5                 # 快乐度 +5
+
+# 玩耍动作
+[[actions]]
+id = "play"
+cooldown = "5m"
+energy_cost = 10              # 需要消耗 10 点精力才能执行
+[actions.effects]
+happiness = 20
+energy = -10                  # 精力 -10
+
+# 休息动作
+[[actions]]
+id = "rest"
+cooldown = "15m"
+[actions.effects]
+energy = 30                   # 精力 +30
+health = 5                    # 健康 +5
+happiness = -5                # 快乐 -5（休息可能无聊）
+
+# 治疗动作
+[[actions]]
+id = "heal"
+cooldown = "20m"
+energy_cost = 15
+[actions.effects]
+health = 25
+
+# 对话动作
+[[actions]]
+id = "talk"
+cooldown = "2m"
+[actions.effects]
+happiness = 5
+```
+
+**动作字段说明**：
+
+| 字段 | 类型 | 必需 | 说明 |
+|-----|------|------|------|
+| `id` | string | 是 | 动作ID，必须是 feed/play/rest/heal/talk 之一 |
+| `cooldown` | duration | 是 | 冷却时间（如 "10m", "1h30m"）|
+| `energy_cost` | int | 否 | 执行所需精力（不消耗则不设置）|
+| `effects.hunger` | int | 否 | 饱食度变化（正数为增加）|
+| `effects.happiness` | int | 否 | 快乐度变化 |
+| `effects.health` | int | 否 | 健康度变化 |
+| `effects.energy` | int | 否 | 精力变化（可为负数）|
+
+**向后兼容**：如果物种包未定义 actions，系统使用内置默认值。
+
+**设计理念**：
+
+1. **物种差异**：不同物种有不同的互动节奏
+   - 猫：快速恢复，适合频繁互动
+   - 龙：恢复慢，但单次效果强
+   - 机器宠物：精力恢复快，但需要频繁维护
+
+2. **平衡性考虑**：详见"最佳实践"部分
+
 ## dialogues.toml
 
 ### 基本格式
@@ -396,6 +466,75 @@ text = "安全地离开了。"
 [adventures.choices.outcomes.effects]
 energy = 5
 ```
+
+## decay 配置 (v3.0+, Phase 7)
+
+定义物种的属性衰减率。Clipet 是一个**大多数时间离线**的宠物养成游戏，因此采用**统一慢速衰减**设计。
+
+```toml
+[decay]
+hunger = 1.0        # 饱食度每小时衰减 1 点
+happiness = 0.5     # 快乐度每小时衰减 0.5 点
+energy = 0.3        # 精力每小时衰减 0.3 点
+health = 0.2        # 饥饿时健康每小时衰减 0.2 点
+```
+
+**设计原则**：
+
+1. **统一慢速衰减**：所有物种采用统一的慢速衰减率，无论在线/离线
+2. **可调整性**：不同物种可以有不同的衰减率（例如：高能量物种精力衰减慢）
+3. **离线友好**：衰减率设计为即使离线数天，宠物状态仍可控
+
+**推荐衰减率范围**：
+
+| 属性 | 推荐范围 | 说明 |
+|-----|---------|------|
+| `hunger` | 0.5 - 2.0 | 饱食度衰减（主要关注点）|
+| `happiness` | 0.3 - 1.0 | 快乐度衰减 |
+| `energy` | 0.2 - 0.5 | 精力衰减 |
+| `health` | 0.1 - 0.5 | 健康衰减（仅在饥饿时）|
+
+**向后兼容**：旧插件不包含 `[decay]` 段时，使用默认值（hunger=1.0, happiness=0.5, energy=0.3, health=0.2）。
+
+## dynamic_cooldown 配置 (v3.0+, Phase 7)
+
+定义动态冷却系统，根据属性紧急度自动调整冷却时间。解决离线游戏交互节奏问题。
+
+```toml
+[dynamic_cooldown]
+# 低紧急度（属性 < 30）：非常短的冷却
+low_urgency_multiplier = 0.1    # 10% 基础冷却
+low_threshold = 30
+
+# 中等紧急度（30 <= 属性 < 70）：中等冷却
+medium_urgency_multiplier = 0.5  # 50% 基础冷却
+
+# 高紧急度（属性 >= 70）：正常冷却
+high_urgency_multiplier = 1.0    # 100% 基础冷却
+high_threshold = 70
+```
+
+**动态冷却示例**：
+
+假设基础喂食冷却为 10 分钟：
+
+- 饱食度 = 10（非常低） → 冷却 = 10m × 0.1 = **1 分钟**
+- 饱食度 = 50（中等） → 冷却 = 10m × 0.5 = **5 分钟**
+- 饱食度 = 85（较高） → 冷却 = 10m × 1.0 = **10 分钟**
+
+**设计理念**：
+
+1. **紧急情况帮助**：属性低时，玩家获得额外帮助（短冷却），避免死循环
+2. **收益递减**：属性健康时，冷却正常，鼓励多元化操作
+3. **离线友好**：玩家短暂上线时，可以快速处理紧急状态
+
+**平衡性建议**：
+
+- `low_urgency_multiplier`: 0.05 - 0.2（5%-20% 冷却）
+- `medium_urgency_multiplier`: 0.4 - 0.6（40%-60% 冷却）
+- `high_urgency_multiplier`: 0.8 - 1.2（80%-120% 冷却）
+
+**向后兼容**：旧插件不包含 `[dynamic_cooldown]` 段时，使用默认值（0.1/0.5/1.0，阈值 30/70）。
 
 ## 动画帧文件
 
@@ -616,3 +755,347 @@ egg (神秘之蛋)
 - 蛋阶段设计为简单的声音反馈，符合生命初期不能说话的设定
 - 幼年阶段使用简单重复的音节，模拟幼崽学习语言的过程
 - 高级阶段的对话会变得更完整、更有深度
+
+---
+
+# 最佳实践与设计指南
+
+## 离线游戏交互节奏设计
+
+### 核心挑战
+
+Clipet 是一个**大多数时候离线**的宠物养成游戏。玩家通常只在打开界面的短时间内进行互动。这带来了独特的设计挑战：
+
+**问题场景**：
+```
+1. 玩家打开游戏，发现宠物饱腹度只有 20
+2. 喂食一次，恢复到 45，还远远不够
+3. 但有 10 分钟冷却，无法立即再次喂食
+4. 玩家只能等待或离开游戏，体验不流畅
+```
+
+### 设计原则
+
+#### 1. **单次操作要有意义**
+
+```toml
+# ❌ 错误：效果太弱，单次操作无意义
+[[actions]]
+id = "feed"
+cooldown = "10m"
+[actions.effects]
+hunger = 10   # 太少了！
+
+# ✅ 正确：单次操作有明显的效果
+[[actions]]
+id = "feed"
+cooldown = "10m"
+[actions.effects]
+hunger = 35   # 从 20 → 55，明显改善
+happiness = 5
+```
+
+**建议**：单次操作应该能恢复 30-40% 的属性，让玩家有成就感。
+
+#### 2. **冷却时间要合理**
+
+```toml
+# 不同物种的冷却节奏示例
+
+# 快节奏物种（猫）
+[[actions]]
+id = "feed"
+cooldown = "5m"    # 短冷却，适合频繁互动
+[actions.effects]
+hunger = 25
+
+# 慢节奏物种（龙）
+[[actions]]
+id = "feed"
+cooldown = "30m"   # 长冷却，但单次效果强
+[actions.effects]
+hunger = 60
+```
+
+**建议**：
+- 快节奏物种：5-10 分钟冷却
+- 慢节奏物种：15-30 分钟冷却
+- 冷却越长，单次效果应该越强
+
+#### 3. **动态冷却系统（推荐）**
+
+Clipet 使用**动态冷却**来平衡离线游戏体验。冷却时间根据属性紧急度自动调整：
+
+```toml
+[dynamic_cooldown]
+# 当饱食度很低（< 30）时，喂食冷却极短
+low_urgency_multiplier = 0.1    # 10% 冷却
+low_threshold = 30
+
+# 当饱食度中等（30-70）时，冷却适中
+medium_urgency_multiplier = 0.5  # 50% 冷却
+
+# 当饱食度较高（>= 70）时，冷却正常
+high_urgency_multiplier = 1.0    # 100% 冷却
+high_threshold = 70
+```
+
+**示例**（基础喂食冷却 = 10 分钟）：
+
+| 饱食度 | 冷却时间 | 设计意图 |
+|-------|---------|---------|
+| 10 | **1 分钟** | 紧急情况，玩家可快速喂食多次 |
+| 40 | **5 分钟** | 中等紧急，节奏适中 |
+| 85 | **10 分钟** | 状态良好，正常冷却 |
+
+**设计理由**：
+- **避免死循环**：属性低时不会陷入"无法恢复"的困境
+- **离线友好**：短暂上线即可处理紧急状态
+- **收益递减**：属性健康时冷却正常，鼓励多元化操作
+
+#### 4. **多元化恢复路径**
+
+```toml
+# 不要让玩家只能等待冷却
+
+# 主动技能：消耗资源快速恢复
+[[traits]]
+id = "emergency_feed"
+name = "紧急喂食"
+description = "消耗双倍精力，无视冷却喂食"
+type = "active"
+[traits.active_effect]
+energy_cost = 20      # 比正常高
+hunger_restore = 30
+cooldown = "1h"       # 长冷却，但提供选择
+```
+
+### 具体数值建议
+
+**基础冷却时间**（在 `[[actions]]` 中配置）：
+
+| 物种类型 | 基础冷却 | 单次效果 | 特点 |
+|---------|---------|---------|------|
+| 快节奏（猫、兔子）| 5-10m | 25-35 | 频繁互动，快速反馈 |
+| 平衡型（狗、狐狸）| 10-15m | 30-40 | 标准节奏 |
+| 慢节奏（龙、凤凰）| 20-30m | 50-70 | 少量但强力 |
+| 神话级 | 30-60m | 70-90 | 稀有但强力 |
+
+**实际冷却时间**（动态冷却系统自动调整）：
+
+例如：基础冷却 = 10 分钟，饱食度 = 15（紧急）
+
+```toml
+[dynamic_cooldown]
+low_urgency_multiplier = 0.1
+low_threshold = 30
+
+# 实际冷却 = 10m × 0.1 = 1 分钟
+```
+
+**衰减率建议**（在 `[decay]` 中配置）：
+
+| 物种类型 | Hunger | Happiness | Energy | Health |
+|---------|--------|-----------|--------|--------|
+| 低维护 | 0.5-0.8 | 0.3-0.5 | 0.2-0.3 | 0.1-0.2 |
+| 标准型 | 1.0 | 0.5 | 0.3 | 0.2 |
+| 高维护 | 1.5-2.0 | 0.8-1.0 | 0.4-0.5 | 0.3-0.5 |
+
+**推荐配置**：使用统一慢速衰减（hunger=1.0, happiness=0.5, energy=0.3, health=0.2），适合离线游戏体验。
+
+## 动作系统平衡性指南
+
+### 属性效果范围
+
+```toml
+# 推荐的效果范围（单次操作）
+
+[actions.effects]
+hunger = 20-60      # 饱食度
+happiness = 10-30   # 快乐度
+health = 15-40      # 健康度
+energy = 20-50      # 精力
+```
+
+**平衡原则**：
+1. **正面效果总和**：单次操作的正面效果总和不超过 80
+2. **负面效果限制**：负面效果不应超过正面效果的 30%
+3. **冷却与效果成正比**：效果越强，冷却越长
+
+### 示例：平衡的动作组合
+
+```toml
+# 喂食：主恢复，小副作用
+[[actions]]
+id = "feed"
+cooldown = "10m"
+[actions.effects]
+hunger = 35      # 主要效果
+happiness = 5    # 小加成
+
+# 玩耍：强快乐，消耗精力
+[[actions]]
+id = "play"
+cooldown = "8m"
+energy_cost = 10  # 前置条件
+[actions.effects]
+happiness = 25   # 主要效果
+energy = -15     # 消耗（大于 cost，因为还有体力消耗）
+
+# 休息：强精力恢复，小负面
+[[actions]]
+id = "rest"
+cooldown = "15m"
+[actions.effects]
+energy = 40      # 主要效果
+health = 5       # 小加成
+happiness = -5   # 小负面（休息无聊）
+
+# 治疗：强健康恢复，高消耗
+[[actions]]
+id = "heal"
+cooldown = "20m"
+energy_cost = 15
+[actions.effects]
+health = 35      # 主要效果
+```
+
+## 生命周期设计
+
+### 寿命与进化匹配
+
+**常见错误**：
+```toml
+[lifecycle]
+max_age_hours = 240.0  # 10 天
+
+[[evolutions]]
+from = "adult"
+to = "legend"
+[evolutions.condition]
+min_age_hours = 720.0  # 30 天 - 无法达到！
+```
+
+**正确做法**：
+```toml
+[lifecycle]
+max_age_hours = 240.0  # 10 天
+
+# 进化时间线
+# 0-1h: egg → baby
+# 1-24h: baby → child  
+# 24-72h: child → adult
+# 72-200h: adult → legend  ✓ 在寿命内
+[[evolutions]]
+from = "adult"
+to = "legend"
+[evolutions.condition]
+min_age_hours = 200.0  # 8.3 天 - 可以达到！
+```
+
+**原则**：确保玩家能在宠物寿命内体验完整的进化链。
+
+### 生命周期风格选择
+
+```toml
+# 短期挑战（7天）
+[lifecycle]
+max_age_hours = 168.0
+warning_threshold = 0.6
+
+# 标准体验（10-30天）
+max_age_hours = 240.0-720.0
+warning_threshold = 0.75-0.85
+
+# 长期陪伴（30-90天）
+max_age_hours = 720.0-2160.0
+warning_threshold = 0.9
+
+# 永恒宠物
+ending_type = "eternal"
+```
+
+## 测试与调试
+
+### 使用 clipet-dev 工具
+
+```bash
+# 验证物种包
+./clipet-dev validate internal/assets/builtins/cat-pack
+
+# 测试进化条件
+./clipet-dev evo info
+
+# 强制进化测试
+./clipet-dev evo to legend_arcane_shadow
+
+# 时间跳跃测试
+./clipet-dev timeskip --hours 200
+
+# 修改属性测试
+./clipet-dev set happiness 95
+./clipet-dev set age_hours 200
+```
+
+### 测试清单
+
+创建新物种包时，确保测试：
+
+- [ ] **基本功能**：所有阶段都有 idle 帧
+- [ ] **进化路径**：至少一条路径可以在寿命内完成
+- [ ] **动作平衡**：单次操作有明显效果
+- [ ] **对话覆盖**：每个阶段至少有 3-5 条对话
+- [ ] **冒险可用**：至少有 3-5 个冒险
+- [ ] **冷却合理**：不会让玩家陷入无法操作的死循环
+- [ ] **个性特征**：特征效果合理，不会过强或过弱
+
+## 常见陷阱
+
+### 1. 过度平衡
+
+```toml
+# ❌ 错误：所有效果都很小，操作没有意义
+[actions.effects]
+hunger = 5
+happiness = 2
+```
+
+**解决**：让操作有明显的效果，保持游戏乐趣。
+
+### 2. 冷却过长
+
+```toml
+# ❌ 错误：冷却 1 小时，玩家早就关闭游戏了
+cooldown = "1h"
+```
+
+**解决**：冷却时间不超过 30 分钟，除非效果非常强。
+
+### 3. 进化条件过严
+
+```toml
+# ❌ 错误：需要 1000 次互动
+[evolutions.condition]
+min_interactions = 1000
+```
+
+**解决**：确保进化条件在合理时间内可以达成（< 500 次互动）。
+
+### 4. 忽视收益递减
+
+```toml
+# ❌ 错误：高属性时喂食仍然恢复很多
+# 应该在代码中实现收益递减，而不是在配置中硬编码
+```
+
+**解决**：代码中实现 `diminish()` 函数，高属性时效果自动降低。
+
+---
+
+## 扩展阅读
+
+- **架构设计**：`docs/architecture.md`
+- **进化系统**：`docs/design.md`
+- **开发路线**：`docs/roadmap.md`
+- **内置示例**：`internal/assets/builtins/cat-pack/`
+

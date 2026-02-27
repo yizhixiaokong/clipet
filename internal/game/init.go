@@ -9,7 +9,7 @@ import (
 func InitTimeSystem(pluginRegistry *plugin.Registry) {
 	// Register core hooks (in priority order, highest first)
 	RegisterTimeHook(NewDeathCheckHook(), PriorityCritical) // 100
-	RegisterTimeHook(NewAttrDecayHook(), PriorityHigh)      // 80
+	RegisterTimeHook(NewAttrDecayHook(pluginRegistry), PriorityHigh) // 80
 	RegisterTimeHook(NewCooldownHook(), PriorityNormal)     // 50
 	RegisterTimeHook(NewLifecycleHook(pluginRegistry), PriorityLow) // 20
 }

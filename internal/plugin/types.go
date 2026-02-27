@@ -5,6 +5,7 @@ package plugin
 
 import (
 	"clipet/internal/game/capabilities"
+	"time"
 )
 
 // PluginSource indicates where a plugin was loaded from.
@@ -19,17 +20,20 @@ const (
 // containing species definition, evolution tree, dialogues,
 // adventures, and ASCII art frames.
 type SpeciesPack struct {
-	Species    SpeciesConfig    `toml:"species"`
-	Lifecycle  capabilities.LifecycleConfig `toml:"lifecycle"`  // NEW: lifecycle configuration
-	Stages     []Stage          `toml:"stages"`
-	Evolutions []Evolution      `toml:"evolutions"`
-	Traits     []capabilities.PersonalityTrait `toml:"traits"` // NEW: personality traits
-	Endings    []capabilities.Ending `toml:"endings"` // NEW: possible endings
-	Dialogues  []DialogueGroup  `toml:"-"` // loaded from dialogues.toml
-	Adventures []Adventure      `toml:"-"` // loaded from adventures.toml
-	Frames     map[string]Frame `toml:"-"` // loaded from frames/ directory
-	Scripts    ScriptsConfig    `toml:"scripts"`
-	Source     PluginSource     `toml:"-"`
+	Species       SpeciesConfig       `toml:"species"`
+	Lifecycle     capabilities.LifecycleConfig     `toml:"lifecycle"`     // Phase 2: lifecycle configuration
+	Decay         capabilities.DecayConfig         `toml:"decay"`         // Phase 7: attribute decay rates
+	DynamicCooldown capabilities.DynamicCooldownConfig `toml:"dynamic_cooldown"` // Phase 7: dynamic cooldown config
+	Stages        []Stage            `toml:"stages"`
+	Evolutions    []Evolution        `toml:"evolutions"`
+	Traits        []capabilities.PersonalityTrait `toml:"traits"` // Phase 1: personality traits
+	Endings       []capabilities.Ending `toml:"endings"` // Phase 2: possible endings
+	Actions       []ActionConfig     `toml:"actions"` // Phase 7: action configurations
+	Dialogues     []DialogueGroup    `toml:"-"` // loaded from dialogues.toml
+	Adventures    []Adventure        `toml:"-"` // loaded from adventures.toml
+	Frames        map[string]Frame   `toml:"-"` // loaded from frames/ directory
+	Scripts       ScriptsConfig      `toml:"scripts"`
+	Source        PluginSource       `toml:"-"`
 }
 
 // SpeciesConfig holds the species metadata and base stats.
@@ -75,6 +79,22 @@ type EvolutionCondition struct {
 	DayBias           bool           `toml:"day_interactions_bias"`
 	MinInteractions   int            `toml:"min_interactions"`
 	MinAttr           map[string]int `toml:"min_attr"`
+}
+
+// ActionConfig defines a pet action (feed, play, rest, etc.) - Phase 7
+type ActionConfig struct {
+	ID         string        `toml:"id"`
+	Cooldown   time.Duration `toml:"cooldown"`
+	EnergyCost int           `toml:"energy_cost"` // Energy required to perform action
+	Effects    ActionEffects `toml:"effects"`
+}
+
+// ActionEffects defines the attribute changes from an action - Phase 7
+type ActionEffects struct {
+	Hunger    int `toml:"hunger"`    // Change to hunger (positive = gain)
+	Happiness int `toml:"happiness"` // Change to happiness
+	Health    int `toml:"health"`    // Change to health
+	Energy    int `toml:"energy"`    // Change to energy (can be negative)
 }
 
 // DialogueGroup is a set of dialogue lines associated with

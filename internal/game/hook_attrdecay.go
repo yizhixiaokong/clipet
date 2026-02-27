@@ -1,12 +1,18 @@
 package game
 
-import "time"
+import (
+	"clipet/internal/game/capabilities"
+	"clipet/internal/plugin"
+	"time"
+)
 
 // AttrDecayHook handles attribute decay over time
-type AttrDecayHook struct{}
+type AttrDecayHook struct {
+	registry *plugin.Registry
+}
 
-func NewAttrDecayHook() *AttrDecayHook {
-	return &AttrDecayHook{}
+func NewAttrDecayHook(registry *plugin.Registry) *AttrDecayHook {
+	return &AttrDecayHook{registry: registry}
 }
 
 func (h *AttrDecayHook) Name() string {
@@ -14,15 +20,23 @@ func (h *AttrDecayHook) Name() string {
 }
 
 func (h *AttrDecayHook) OnTimeAdvance(elapsed time.Duration, pet *Pet) {
+	// Get decay config from plugin
+	var decayConfig capabilities.DecayConfig
+	if h.registry != nil {
+		decayConfig = h.registry.GetDecayConfig(pet.Species)
+	} else {
+		decayConfig = capabilities.DecayConfig{}.Defaults()
+	}
+
 	hours := elapsed.Hours()
 
-	// Basic attribute decay
-	pet.Hunger = clamp(pet.Hunger-int(3*hours), 0, 100)
-	pet.Happiness = clamp(pet.Happiness-int(2*hours), 0, 100)
-	pet.Energy = clamp(pet.Energy-int(1*hours), 0, 100)
+	// Attribute decay using plugin-controlled rates
+	pet.Hunger = clamp(pet.Hunger-int(decayConfig.Hunger*hours), 0, 100)
+	pet.Happiness = clamp(pet.Happiness-int(decayConfig.Happiness*hours), 0, 100)
+	pet.Energy = clamp(pet.Energy-int(decayConfig.Energy*hours), 0, 100)
 
 	// Health decay due to hunger
 	if pet.Hunger < 20 {
-		pet.Health = clamp(pet.Health-int(0.5*hours), 0, 100)
+		pet.Health = clamp(pet.Health-int(decayConfig.Health*hours), 0, 100)
 	}
 }

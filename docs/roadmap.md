@@ -164,6 +164,21 @@
 | 实现默认回退机制 | ✅ |
 | 文档化约束和覆盖机制 | ✅ |
 
+#### Phase 7: 动作系统插件化 ✅
+
+| 任务 | 状态 |
+|------|------|
+| 添加 ActionConfig 和 ActionEffects 类型 (plugin/types.go) | ✅ |
+| 添加 DecayConfig 和 DynamicCooldownConfig 类型 (capabilities/types.go) | ✅ |
+| 扩展 Registry 支持获取动作、衰减和动态冷却配置 | ✅ |
+| 创建 action_config.go 辅助函数 (GetActionCooldown, GetActionEffects, CalculateDynamicCooldown) | ✅ |
+| 修改 AttrDecayHook 使用插件控制的衰减率 | ✅ |
+| 为猫插件添加完整动作配置 (feed, play, rest, heal, talk) | ✅ |
+| 为猫插件添加衰减配置 (统一慢速衰减) | ✅ |
+| 为猫插件添加动态冷却配置 (基于紧急度的动态冷却) | ✅ |
+| 完善 plugin-guide.md 最佳实践文档 | ✅ |
+| 文档化离线游戏交互节奏设计 | ✅ |
+
 #### 向后兼容性 ✅
 
 - 旧插件自动使用默认生命周期配置

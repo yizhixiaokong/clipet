@@ -100,3 +100,79 @@ type EndingResult struct {
 	Type    string // Ending type
 	Message string // Ending message
 }
+
+// DecayConfig defines attribute decay rates per hour
+type DecayConfig struct {
+	Hunger    float64 `toml:"hunger"`     // Hunger decay per hour (default: 1.0)
+	Happiness float64 `toml:"happiness"`  // Happiness decay per hour (default: 0.5)
+	Energy    float64 `toml:"energy"`     // Energy decay per hour (default: 0.3)
+	Health    float64 `toml:"health"`     // Health decay per hour when hungry (default: 0.2)
+}
+
+// Defaults returns decay config with sensible defaults (slow unified decay)
+func (dc DecayConfig) Defaults() DecayConfig {
+	if dc.Hunger == 0 {
+		dc.Hunger = 1.0 // Slow decay: ~1 point per hour
+	}
+	if dc.Happiness == 0 {
+		dc.Happiness = 0.5
+	}
+	if dc.Energy == 0 {
+		dc.Energy = 0.3
+	}
+	if dc.Health == 0 {
+		dc.Health = 0.2
+	}
+	return dc
+}
+
+// DynamicCooldownConfig defines how cooldown scales with attribute urgency
+type DynamicCooldownConfig struct {
+	// Threshold tiers for urgency-based cooldown
+	// When attribute is very low (0-30): very short cooldown
+	// When attribute is medium (30-70): medium cooldown
+	// When attribute is high (70-100): long cooldown
+
+	// Low urgency multiplier (attribute < 30)
+	LowUrgencyMultiplier float64 `toml:"low_urgency_multiplier"` // e.g., 0.1 (10% of base cooldown)
+
+	// Medium urgency multiplier (30 <= attribute < 70)
+	MediumUrgencyMultiplier float64 `toml:"medium_urgency_multiplier"` // e.g., 0.5 (50% of base cooldown)
+
+	// High urgency multiplier (attribute >= 70)
+	HighUrgencyMultiplier float64 `toml:"high_urgency_multiplier"` // e.g., 1.0 (100% of base cooldown)
+
+	// Low/medium/high thresholds
+	LowThreshold  int `toml:"low_threshold"`  // default: 30
+	HighThreshold int `toml:"high_threshold"` // default: 70
+}
+
+// Defaults returns dynamic cooldown config with sensible defaults
+func (dcc DynamicCooldownConfig) Defaults() DynamicCooldownConfig {
+	if dcc.LowUrgencyMultiplier == 0 {
+		dcc.LowUrgencyMultiplier = 0.1 // 10% cooldown when urgent
+	}
+	if dcc.MediumUrgencyMultiplier == 0 {
+		dcc.MediumUrgencyMultiplier = 0.5 // 50% cooldown when medium
+	}
+	if dcc.HighUrgencyMultiplier == 0 {
+		dcc.HighUrgencyMultiplier = 1.0 // 100% cooldown when full
+	}
+	if dcc.LowThreshold == 0 {
+		dcc.LowThreshold = 30
+	}
+	if dcc.HighThreshold == 0 {
+		dcc.HighThreshold = 70
+	}
+	return dcc
+}
+
+// GetMultiplier returns the cooldown multiplier based on attribute value
+func (dcc DynamicCooldownConfig) GetMultiplier(attrValue int) float64 {
+	if attrValue < dcc.LowThreshold {
+		return dcc.LowUrgencyMultiplier
+	} else if attrValue < dcc.HighThreshold {
+		return dcc.MediumUrgencyMultiplier
+	}
+	return dcc.HighUrgencyMultiplier
+}

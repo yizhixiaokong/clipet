@@ -21,6 +21,32 @@ ending_type = "death"       # 自然离世
 warning_threshold = 0.75    # 75% 寿命时预警（7.5天）
 
 # ============================================================
+# 衰减配置 (Phase 7) - 统一慢速衰减
+# ============================================================
+
+[decay]
+hunger = 1.0        # 饱食度每小时衰减 1 点
+happiness = 0.5     # 快乐度每小时衰减 0.5 点
+energy = 0.3        # 精力每小时衰减 0.3 点
+health = 0.2        # 饥饿时健康每小时衰减 0.2 点
+
+# ============================================================
+# 动态冷却配置 (Phase 7) - 根据属性紧急度调整冷却
+# ============================================================
+
+[dynamic_cooldown]
+# 当属性很低 (< 30): 冷却非常短（10% 基础冷却）
+low_urgency_multiplier = 0.1
+low_threshold = 30
+
+# 当属性中等 (30-70): 冷却中等（50% 基础冷却）
+medium_urgency_multiplier = 0.5
+
+# 当属性较高 (>= 70): 冷却正常（100% 基础冷却）
+high_urgency_multiplier = 1.0
+high_threshold = 70
+
+# ============================================================
 # 个性特征定义 (Phase 1)
 # ============================================================
 
@@ -329,3 +355,48 @@ name = "平静休息"
 message = "平静地度过了这一生，它已经离开了..."
 [endings.condition]
 
+
+# ============================================================
+# 动作配置 (Phase 7) - 新增
+# ============================================================
+
+# 喂食动作
+[[actions]]
+id = "feed"
+cooldown = "10m"
+[actions.effects]
+hunger = 25
+happiness = 5
+
+# 玩耍动作
+[[actions]]
+id = "play"
+cooldown = "5m"
+energy_cost = 10
+[actions.effects]
+happiness = 20
+energy = -10
+
+# 休息动作
+[[actions]]
+id = "rest"
+cooldown = "15m"
+[actions.effects]
+energy = 30
+health = 5
+happiness = -5
+
+# 治疗动作
+[[actions]]
+id = "heal"
+cooldown = "20m"
+energy_cost = 15
+[actions.effects]
+health = 25
+
+# 对话动作
+[[actions]]
+id = "talk"
+cooldown = "2m"
+[actions.effects]
+happiness = 5

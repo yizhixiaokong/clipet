@@ -1,6 +1,7 @@
 package plugin
 
 import (
+	"clipet/internal/game/capabilities"
 	"fmt"
 	"io/fs"
 	"math/rand"
@@ -196,6 +197,41 @@ func (r *Registry) GetBaseStats(speciesID string) *BaseStats {
 		return nil
 	}
 	return &pack.Species.BaseStats
+}
+
+// GetAction returns the action configuration for a given species and action ID.
+// Returns nil if action is not defined (caller should use defaults).
+func (r *Registry) GetAction(speciesID, actionID string) *ActionConfig {
+	pack := r.GetSpecies(speciesID)
+	if pack == nil {
+		return nil
+	}
+	for i := range pack.Actions {
+		if pack.Actions[i].ID == actionID {
+			return &pack.Actions[i]
+		}
+	}
+	return nil
+}
+
+// GetDecayConfig returns the decay configuration for a species.
+// Returns defaults if not configured.
+func (r *Registry) GetDecayConfig(speciesID string) capabilities.DecayConfig {
+	pack := r.GetSpecies(speciesID)
+	if pack == nil {
+		return capabilities.DecayConfig{}.Defaults()
+	}
+	return pack.Decay.Defaults()
+}
+
+// GetDynamicCooldownConfig returns the dynamic cooldown configuration for a species.
+// Returns defaults if not configured.
+func (r *Registry) GetDynamicCooldownConfig(speciesID string) capabilities.DynamicCooldownConfig {
+	pack := r.GetSpecies(speciesID)
+	if pack == nil {
+		return capabilities.DynamicCooldownConfig{}.Defaults()
+	}
+	return pack.DynamicCooldown.Defaults()
 }
 
 // Count returns the number of registered species.
