@@ -513,7 +513,7 @@ func (h HomeModel) renderPetPanel(width int) string {
 	// Add dialogue bubble above pet if active
 	bubbleText := h.bubble.Render()
 	if bubbleText != "" {
-		art = " " + bubbleText + "\n\n" + art
+		art = bubbleText + "\n\n" + art
 	}
 
 	return h.theme.PetPanel.
