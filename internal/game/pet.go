@@ -232,6 +232,7 @@ func (p *Pet) Feed() ActionResult {
 	p.TotalInteractions++
 	p.FeedCount++
 	p.trackTimeOfDay()
+	// Evolution modifiers are applied in evolution checks, not here
 	return ActionResult{
 		OK:                true,
 		Message:           "喂食成功！",
@@ -279,7 +280,7 @@ func (p *Pet) Play() ActionResult {
 	p.Energy = clamp(p.Energy+energyLoss, 0, 100) // energyLoss is negative
 	ch["happiness"] = [2]int{oldHp, p.Happiness}
 	ch["energy"] = [2]int{oldE, p.Energy}
-	p.AccPlayful++
+	p.AccPlayful += p.addEvolutionPoints(1, "play")
 	p.LastPlayedAt = time.Now()
 	p.TotalInteractions++
 	p.trackTimeOfDay()
@@ -314,7 +315,7 @@ func (p *Pet) Talk() ActionResult {
 	ch["happiness"] = [2]int{oldHp, p.Happiness}
 	p.DialogueCount++
 	p.TotalInteractions++
-	p.AccHappiness++
+	p.AccHappiness += p.addEvolutionPoints(1, "happiness")
 	p.LastTalkedAt = time.Now()
 	p.trackTimeOfDay()
 	return ActionResult{OK: true, Message: "聊天愉快！", Changes: ch}
@@ -401,7 +402,7 @@ func (p *Pet) Heal() ActionResult {
 	p.Energy = clamp(p.Energy+energyLoss, 0, 100) // energyLoss is negative
 	ch["health"] = [2]int{oldH, p.Health}
 	ch["energy"] = [2]int{oldE, p.Energy}
-	p.AccHealth++
+	p.AccHealth += p.addEvolutionPoints(1, "health")
 	p.LastHealedAt = time.Now()
 	p.TotalInteractions++
 	p.trackTimeOfDay()
@@ -802,4 +803,48 @@ func (p *Pet) UseSkill(skillID string) ActionResult {
 		Animation:         AnimHappy,
 		AnimationDuration: 2 * time.Second,
 	}
+}
+
+// addEvolutionPoints adds evolution accumulation points with modifiers applied.
+// basePoints is the number of points to add.
+// interactionType is one of: "happiness", "health", "playful", "feed", "adventure"
+func (p *Pet) addEvolutionPoints(basePoints int, interactionType string) int {
+	if p.capabilitiesReg == nil {
+		return basePoints
+	}
+
+	modifier := p.capabilitiesReg.GetEvolutionModifier(p.Species)
+	if modifier == nil {
+		return basePoints
+	}
+
+	points := float64(basePoints)
+
+	// Apply time-based modifiers
+	hour := time.Now().Hour()
+	isNight := hour < 6 || hour >= 18
+
+	if isNight && modifier.NightInteractionBonus > 0 {
+		points *= modifier.NightInteractionBonus
+	} else if !isNight && modifier.DayInteractionBonus > 0 {
+		points *= modifier.DayInteractionBonus
+	}
+
+	// Apply interaction-type modifiers
+	switch interactionType {
+	case "feed":
+		if modifier.FeedBonus > 0 {
+			points *= modifier.FeedBonus
+		}
+	case "play":
+		if modifier.PlayBonus > 0 {
+			points *= modifier.PlayBonus
+		}
+	case "adventure":
+		if modifier.AdventureBonus > 0 {
+			points *= modifier.AdventureBonus
+		}
+	}
+
+	return int(points)
 }
