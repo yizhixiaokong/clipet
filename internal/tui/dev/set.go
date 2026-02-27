@@ -190,7 +190,7 @@ func (m *SetModel) View() tea.View {
 	var helpView string
 	if m.Phase == setPhaseInput {
 		// Input phase: show only relevant keys
-		helpView = m.Help.ShortHelpView([]key.Binding{m.KeyMap.Enter, m.KeyMap.Cancel})
+		helpView = m.Help.ShortHelpView([]key.Binding{m.KeyMap.Enter, m.KeyMap.Cancel, m.KeyMap.ToggleHelp})
 	} else {
 		// Select phase: show navigation help
 		helpView = m.Help.View(m.KeyMap)

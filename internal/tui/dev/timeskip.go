@@ -246,7 +246,7 @@ func (m *TimeskipModel) viewInput() string {
 	}
 
 	lines = append(lines, "")
-	lines = append(lines, m.Help.ShortHelpView([]key.Binding{m.KeyMap.Enter, m.KeyMap.Quit}))
+	lines = append(lines, m.Help.ShortHelpView([]key.Binding{m.KeyMap.Enter, m.KeyMap.Quit, m.KeyMap.ToggleHelp}))
 
 	return strings.Join(lines, "\n")
 }
@@ -291,7 +291,7 @@ func (m *TimeskipModel) viewPreview() string {
 
 	lines = append(lines, "")
 	lines = append(lines, tsInputLabelStyle.Render("确认执行?"))
-	lines = append(lines, m.Help.ShortHelpView([]key.Binding{m.KeyMap.Yes, m.KeyMap.Cancel}))
+	lines = append(lines, m.Help.ShortHelpView([]key.Binding{m.KeyMap.Yes, m.KeyMap.Cancel, m.KeyMap.ToggleHelp}))
 
 	return strings.Join(lines, "\n")
 }
