@@ -212,7 +212,8 @@ func (m *PreviewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if rightW < 20 {
 			rightW = 20
 		}
-		m.Tree.SetSize(rightW-2, m.Height-8)
+		// Account for title, help, and padding in right panel
+		m.Tree.SetSize(rightW-2, m.Height-10)
 		return m, nil
 
 	case PreviewTickMsg:
@@ -277,15 +278,11 @@ func (m *PreviewModel) View() tea.View {
 
 	leftPanel := m.renderPreview(leftW)
 	rightPanel := m.renderTreePanel(rightW)
-	helpBar := m.Help.View(m.KeyMap)
 
-	sep := strings.Repeat("│\n", m.Height-4)
+	sep := strings.Repeat("│\n", m.Height-2)
 	content := lipgloss.JoinHorizontal(lipgloss.Top, leftPanel, sep, rightPanel)
 
-	// Add help bar at the bottom
-	fullContent := lipgloss.JoinVertical(lipgloss.Left, content, "", helpBar)
-
-	v := tea.NewView(fullContent)
+	v := tea.NewView(content)
 	v.AltScreen = true
 	return v
 }
@@ -363,23 +360,26 @@ func (m *PreviewModel) renderPreview(width int) string {
 
 	return previewPanelStyle.
 		Width(width - 2).
-		Height(m.Height - 4).
+		Height(m.Height - 1).
 		Render(content)
 }
 
 // renderTreePanel renders the right panel with tree list
 func (m *PreviewModel) renderTreePanel(width int) string {
 	title := previewTitleStyle.Render(" 帧列表 ")
+	helpBar := m.Help.View(m.KeyMap)
 
 	content := lipgloss.JoinVertical(lipgloss.Left,
 		title,
 		"",
 		m.Tree.View(),
+		"",
+		helpBar,
 	)
 
 	return previewPanelStyle.
 		Width(width - 2).
-		Height(m.Height - 4).
+		Height(m.Height - 1).
 		Render(content)
 }
 
