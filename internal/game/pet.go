@@ -128,6 +128,9 @@ type Pet struct {
 	CurrentAnimation      AnimState `json:"current_animation"`
 	LifecycleWarningShown bool      `json:"lifecycle_warning_shown"` // NEW: lifecycle tracking
 
+	// Ending information
+	EndingMessage string `json:"ending_message,omitempty"` // Final message when pet dies
+
 	// Custom attributes (Phase 3)
 	CustomAttributes map[string]int `json:"custom_attributes,omitempty"` // NEW: custom attribute storage
 }
@@ -522,8 +525,22 @@ func (p *Pet) SetField(field string, raw string) (old string, err error) {
 		}
 		p.LifecycleWarningShown = b
 
+	// Age manipulation
+	case "age_hours", "age":
+		currentAge := p.AgeHours()
+		old = strconv.FormatFloat(currentAge, 'f', 1, 64)
+		v, e := strconv.ParseFloat(raw, 64)
+		if e != nil {
+			return "", e
+		}
+		if v < 0 {
+			return "", fmt.Errorf("age cannot be negative")
+		}
+		// Adjust birthday to achieve desired age
+		p.Birthday = time.Now().Add(-time.Duration(v * float64(time.Hour)))
+
 	default:
-		return "", fmt.Errorf("unknown field %q\n\nValid fields:\n  Attributes: hunger, happiness, health, energy (0-100)\n  Info: name, species, stage_id, alive\n  Stats: interactions, feeds, dialogues, adventures, wins\n  Evolution: acc_happiness, acc_health, acc_playful, night, day, feed_regularity\n  Lifecycle: lifecycle_warning", field)
+		return "", fmt.Errorf("unknown field %q\n\nValid fields:\n  Attributes: hunger, happiness, health, energy (0-100)\n  Info: name, species, stage_id, alive, age_hours\n  Stats: interactions, feeds, dialogues, adventures, wins\n  Evolution: acc_happiness, acc_health, acc_playful, night, day, feed_regularity\n  Lifecycle: lifecycle_warning", field)
 	}
 	return old, nil
 }

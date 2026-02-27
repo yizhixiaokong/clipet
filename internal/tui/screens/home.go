@@ -455,8 +455,18 @@ func (h HomeModel) View() string {
 	}
 	rightW := totalInner - leftW
 
-	// 1) Title bar
-	title := h.theme.TitleBar.Width(totalInner).Render("🐾 Clipet")
+	// 1) Title bar - show ending message if pet has died
+	var title string
+	if !h.pet.Alive && h.pet.EndingMessage != "" {
+		// Special title bar for ending with red/gold background
+		title = h.theme.TitleBar.
+			Width(totalInner).
+			Background(lipgloss.Color("#AA3355")).
+			Foreground(lipgloss.Color("#FFFFFF")).
+			Render("💔 " + h.pet.EndingMessage)
+	} else {
+		title = h.theme.TitleBar.Width(totalInner).Render("🐾 Clipet")
+	}
 
 	// 2) Main area: pet art (left) | status panel (right)
 	petArt := h.renderPetPanel(leftW)

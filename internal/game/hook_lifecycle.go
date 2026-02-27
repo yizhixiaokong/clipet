@@ -63,9 +63,8 @@ func (h *LifecycleHook) OnTimeAdvance(elapsed time.Duration, pet *Pet) {
 // applyEnding applies the ending result to the pet
 func (h *LifecycleHook) applyEnding(pet *Pet, result capabilities.EndingResult) {
 	pet.Alive = false
+	pet.EndingMessage = result.Message
 
-	// In a full implementation, we would emit the ending message to the UI
-	// For now, we just set the pet as dead
-	// The UI can check for the ending type and display an appropriate message
+	// The UI can check for pet.EndingMessage and display it appropriately
 	fmt.Printf("[Lifecycle] Pet %s has reached the end: %s\n", pet.Name, result.Message)
 }

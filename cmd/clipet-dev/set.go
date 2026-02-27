@@ -24,6 +24,7 @@ var settableFields = []settableField{
 	{Key: "name", Label: "名字", Kind: "string"},
 	{Key: "species", Label: "物种", Kind: "string"},
 	{Key: "stage_id", Label: "阶段ID", Kind: "string"},
+	{Key: "age_hours", Label: "年龄(小时)", Kind: "float"},
 	{Key: "alive", Label: "存活", Kind: "bool"},
 
 	// Statistics
@@ -58,6 +59,7 @@ func newSetCmd() *cobra.Command {
 
 【基本信息】
   name, species, stage_id, alive
+  age_hours (年龄，以小时为单位)
 
 【统计数据】
   interactions (总互动次数)
@@ -75,6 +77,7 @@ func newSetCmd() *cobra.Command {
 
 示例:
   set hunger 100        # 直接设置饱腹度
+  set age_hours 100     # 设置年龄为100小时
   set interactions 500  # 修改总互动次数
   set adventures 30     # 设置冒险次数
   set night 50          # 设置夜间互动次数`,
