@@ -31,3 +31,6 @@ Thumbs.db
 # Build output
 /dist/
 /bin/
+
+# Temporary reports
+.reports/
