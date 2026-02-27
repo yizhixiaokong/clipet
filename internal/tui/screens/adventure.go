@@ -133,7 +133,11 @@ func (a AdventureModel) View() string {
 	}
 
 	// Split into left (pet) and right (adventure) panels
-	const leftPanelW = 22  // Reduced from 28 to give more space to adventure
+	// 宠物显示占宽度的一半左右
+	leftPanelW := totalInner / 2
+	if leftPanelW < 20 {
+		leftPanelW = 20
+	}
 	rightPanelW := totalInner - leftPanelW
 	if rightPanelW < 30 {
 		rightPanelW = 30

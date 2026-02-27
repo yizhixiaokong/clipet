@@ -426,7 +426,11 @@ func (h HomeModel) View() string {
 	}
 
 	// Right panel shows status (name, stats, etc.)
-	const rightPanelW = 40  // Increased from 30 to give more space for stats
+	// 宠物显示占宽度的一半左右
+	rightPanelW := totalInner / 2
+	if rightPanelW < 30 {
+		rightPanelW = 30
+	}
 	leftW := totalInner - rightPanelW
 	if leftW < 20 {
 		leftW = 20
@@ -473,7 +477,11 @@ func (h HomeModel) renderGameView() string {
 	}
 
 	// Split into left (pet) and right (game) panels
-	const leftPanelW = 22  // Reduced from 28 to give more space to game
+	// 宠物显示占宽度的一半左右
+	leftPanelW := totalInner / 2
+	if leftPanelW < 20 {
+		leftPanelW = 20
+	}
 	rightPanelW := totalInner - leftPanelW
 	if rightPanelW < 30 {
 		rightPanelW = 30

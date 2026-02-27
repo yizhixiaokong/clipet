@@ -191,8 +191,39 @@ func (m *SetModel) View() tea.View {
 
 	title := setHeaderStyle.Render(fmt.Sprintf(" %s [%s] ", m.Pet.Name, m.Pet.StageID))
 
+	// Calculate scroll window for field list
+	// Reserve space for: title (1) + input area (3) + message (1) + help (1) = 6
+	maxFieldLines := m.Height - 6
+	if maxFieldLines < 5 {
+		maxFieldLines = 5
+	}
+
+	// Calculate scroll window start/end
+	startIdx := 0
+	endIdx := len(m.Fields)
+
+	if len(m.Fields) > maxFieldLines {
+		// Need to scroll
+		halfHeight := maxFieldLines / 2
+
+		startIdx = m.Cursor - halfHeight
+		if startIdx < 0 {
+			startIdx = 0
+		}
+
+		endIdx = startIdx + maxFieldLines
+		if endIdx > len(m.Fields) {
+			endIdx = len(m.Fields)
+			startIdx = endIdx - maxFieldLines
+			if startIdx < 0 {
+				startIdx = 0
+			}
+		}
+	}
+
 	var lines []string
-	for i, f := range m.Fields {
+	for i := startIdx; i < endIdx; i++ {
+		f := m.Fields[i]
 		val := m.getFieldDisplay(f)
 		prefix := "  "
 		style := setItemStyle
@@ -204,6 +235,12 @@ func (m *SetModel) View() tea.View {
 
 		line := fmt.Sprintf("%s%-8s %s", prefix, f.Label, val)
 		lines = append(lines, style.Render(line))
+	}
+
+	// Add scroll indicator if needed
+	scrollInfo := ""
+	if len(m.Fields) > maxFieldLines {
+		scrollInfo = fmt.Sprintf(" %d/%d ", m.Cursor+1, len(m.Fields))
 	}
 
 	// Input area
@@ -233,6 +270,7 @@ func (m *SetModel) View() tea.View {
 	content := lipgloss.JoinVertical(lipgloss.Left,
 		title, "",
 		strings.Join(lines, "\n"),
+		scrollInfo,
 		inputArea,
 		msgArea,
 		"", helpView,
