@@ -2,6 +2,7 @@
 package game
 
 import (
+	"clipet/internal/plugin"
 	"fmt"
 	"strconv"
 	"strings"
@@ -133,11 +134,14 @@ type Pet struct {
 
 	// Custom attributes (Phase 3)
 	CustomAttributes map[string]int `json:"custom_attributes,omitempty"` // NEW: custom attribute storage
+
+	// Plugin registry (not serialized)
+	registry *plugin.Registry `json:"-"`
 }
 
 // NewPet creates a new pet with the given name and species.
 // It sets initial attributes from the provided base stats.
-func NewPet(name, species, eggStageID string, hunger, happiness, health, energy int) *Pet {
+func NewPet(name, species, eggStageID string, hunger, happiness, health, energy int, registry *plugin.Registry) *Pet {
 	now := time.Now()
 	return &Pet{
 		Name:             name,
@@ -151,29 +155,47 @@ func NewPet(name, species, eggStageID string, hunger, happiness, health, energy 
 		Energy:           energy,
 		LastFedAt:        now,
 		LastPlayedAt:     now,
+		LastRestedAt:     now,
+		LastHealedAt:     now,
+		LastTalkedAt:     now,
 		LastCheckedAt:    now,
+		LastAdventureAt:  now,
 		Alive:            true,
 		CurrentAnimation: AnimIdle,
+		registry:         registry,
 	}
 }
 
+// SetRegistry sets the plugin registry for the pet.
+// This is needed after loading a pet from save file, as registry is not serialized.
+func (p *Pet) SetRegistry(registry *plugin.Registry) {
+	p.registry = registry
+}
+
 // Feed increases the pet's hunger (fullness) level.
-// Cooldown: 10min. Prerequisite: hunger < 95. Diminishing returns on gain.
+// Dynamic cooldown based on urgency. Prerequisite: hunger < 95. Diminishing returns on gain.
 func (p *Pet) Feed() ActionResult {
 	if !p.Alive {
 		return failResult("宠物已经不在了...")
 	}
-	if left := cooldownLeft(p.LastFedAt, CooldownFeed); left != "" {
+
+	// Calculate dynamic cooldown based on current hunger
+	cooldown := CalculateDynamicCooldown(p.registry, p.Species, "feed", p.Hunger)
+	if left := cooldownLeft(p.LastFedAt, cooldown); left != "" {
 		return failResult(fmt.Sprintf("宠物还不饿，%s后可以再喂", left))
 	}
 	if p.Hunger >= 95 {
 		return failResult("宠物已经很饱了！")
 	}
+
+	// Get effects from plugin or defaults
+	hungerGain, happinessGain, _, _ := GetActionEffects(p.registry, p.Species, "feed")
+
 	ch := make(map[string][2]int)
 	oldH := p.Hunger
 	oldHp := p.Happiness
-	p.Hunger = clamp(p.Hunger+diminish(25, p.Hunger), 0, 100)
-	p.Happiness = clamp(p.Happiness+diminish(5, p.Happiness), 0, 100)
+	p.Hunger = clamp(p.Hunger+diminish(hungerGain, p.Hunger), 0, 100)
+	p.Happiness = clamp(p.Happiness+diminish(happinessGain, p.Happiness), 0, 100)
 	ch["hunger"] = [2]int{oldH, p.Hunger}
 	ch["happiness"] = [2]int{oldHp, p.Happiness}
 	p.LastFedAt = time.Now()
@@ -184,22 +206,35 @@ func (p *Pet) Feed() ActionResult {
 }
 
 // Play increases the pet's happiness and decreases energy.
-// Cooldown: 5min. Prerequisite: energy >= 10. Diminishing returns on happiness gain.
+// Dynamic cooldown based on urgency. Prerequisite: energy >= cost. Diminishing returns on happiness gain.
 func (p *Pet) Play() ActionResult {
 	if !p.Alive {
 		return failResult("宠物已经不在了...")
 	}
-	if left := cooldownLeft(p.LastPlayedAt, CooldownPlay); left != "" {
+
+	// Get energy cost from plugin or default
+	energyCost := GetActionEnergyCost(p.registry, p.Species, "play")
+	if energyCost == 0 {
+		energyCost = 10 // fallback
+	}
+
+	// Calculate dynamic cooldown based on current happiness (urgency)
+	cooldown := CalculateDynamicCooldown(p.registry, p.Species, "play", p.Happiness)
+	if left := cooldownLeft(p.LastPlayedAt, cooldown); left != "" {
 		return failResult(fmt.Sprintf("宠物还在喘气，%s后可以再玩", left))
 	}
-	if p.Energy < 10 {
+	if p.Energy < energyCost {
 		return failResult("宠物太累了，先休息一下吧！")
 	}
+
+	// Get effects from plugin or defaults
+	_, happinessGain, _, energyLoss := GetActionEffects(p.registry, p.Species, "play")
+
 	ch := make(map[string][2]int)
 	oldHp := p.Happiness
 	oldE := p.Energy
-	p.Happiness = clamp(p.Happiness+diminish(20, p.Happiness), 0, 100)
-	p.Energy = clamp(p.Energy-10, 0, 100)
+	p.Happiness = clamp(p.Happiness+diminish(happinessGain, p.Happiness), 0, 100)
+	p.Energy = clamp(p.Energy+energyLoss, 0, 100) // energyLoss is negative
 	ch["happiness"] = [2]int{oldHp, p.Happiness}
 	ch["energy"] = [2]int{oldE, p.Energy}
 	p.AccPlayful++
@@ -210,17 +245,24 @@ func (p *Pet) Play() ActionResult {
 }
 
 // Talk records a dialogue interaction.
-// Cooldown: 2min. Diminishing returns on happiness gain.
+// Dynamic cooldown based on urgency. Diminishing returns on happiness gain.
 func (p *Pet) Talk() ActionResult {
 	if !p.Alive {
 		return failResult("宠物已经不在了...")
 	}
-	if left := cooldownLeft(p.LastTalkedAt, CooldownTalk); left != "" {
+
+	// Calculate dynamic cooldown based on current happiness (urgency)
+	cooldown := CalculateDynamicCooldown(p.registry, p.Species, "talk", p.Happiness)
+	if left := cooldownLeft(p.LastTalkedAt, cooldown); left != "" {
 		return failResult(fmt.Sprintf("宠物需要消化一下，%s后可以再聊", left))
 	}
+
+	// Get effects from plugin or defaults
+	_, happinessGain, _, _ := GetActionEffects(p.registry, p.Species, "talk")
+
 	ch := make(map[string][2]int)
 	oldHp := p.Happiness
-	p.Happiness = clamp(p.Happiness+diminish(5, p.Happiness), 0, 100)
+	p.Happiness = clamp(p.Happiness+diminish(happinessGain, p.Happiness), 0, 100)
 	ch["happiness"] = [2]int{oldHp, p.Happiness}
 	p.DialogueCount++
 	p.TotalInteractions++
@@ -231,24 +273,33 @@ func (p *Pet) Talk() ActionResult {
 }
 
 // Rest lets the pet sleep/rest, recovering energy and a small amount of health.
-// Cooldown: 15min. Prerequisite: energy < 90. Diminishing returns on energy gain.
+// Dynamic cooldown based on urgency. Prerequisite: energy < 90. Diminishing returns on energy gain.
 func (p *Pet) Rest() ActionResult {
 	if !p.Alive {
 		return failResult("宠物已经不在了...")
 	}
-	if left := cooldownLeft(p.LastRestedAt, CooldownRest); left != "" {
+
+	// Calculate dynamic cooldown based on current energy (urgency)
+	// Note: for energy, higher value = less urgent, so we use (100 - Energy)
+	urgencyValue := 100 - p.Energy
+	cooldown := CalculateDynamicCooldown(p.registry, p.Species, "rest", urgencyValue)
+	if left := cooldownLeft(p.LastRestedAt, cooldown); left != "" {
 		return failResult(fmt.Sprintf("宠物还不困，%s后可以再休息", left))
 	}
 	if p.Energy >= 90 {
 		return failResult("宠物精力充沛，不需要休息！")
 	}
+
+	// Get effects from plugin or defaults
+	_, happinessLoss, healthGain, energyGain := GetActionEffects(p.registry, p.Species, "rest")
+
 	ch := make(map[string][2]int)
 	oldE := p.Energy
 	oldH := p.Health
 	oldHp := p.Happiness
-	p.Energy = clamp(p.Energy+diminish(30, p.Energy), 0, 100)
-	p.Health = clamp(p.Health+diminish(5, p.Health), 0, 100)
-	p.Happiness = clamp(p.Happiness-5, 0, 100)
+	p.Energy = clamp(p.Energy+diminish(energyGain, p.Energy), 0, 100)
+	p.Health = clamp(p.Health+diminish(healthGain, p.Health), 0, 100)
+	p.Happiness = clamp(p.Happiness+happinessLoss, 0, 100) // happinessLoss is negative
 	ch["energy"] = [2]int{oldE, p.Energy}
 	ch["health"] = [2]int{oldH, p.Health}
 	ch["happiness"] = [2]int{oldHp, p.Happiness}
@@ -259,22 +310,37 @@ func (p *Pet) Rest() ActionResult {
 }
 
 // Heal treats the pet, recovering health but costing energy.
-// Cooldown: 20min. Prerequisite: energy >= 10. Diminishing returns on health gain.
+// Dynamic cooldown based on urgency. Prerequisite: energy >= cost. Diminishing returns on health gain.
 func (p *Pet) Heal() ActionResult {
 	if !p.Alive {
 		return failResult("宠物已经不在了...")
 	}
-	if left := cooldownLeft(p.LastHealedAt, CooldownHeal); left != "" {
+
+	// Get energy cost from plugin or default
+	energyCost := GetActionEnergyCost(p.registry, p.Species, "heal")
+	if energyCost == 0 {
+		energyCost = 15 // fallback
+	}
+
+	// Calculate dynamic cooldown based on current health (urgency)
+	// Note: for health, higher value = less urgent, so we use (100 - Health)
+	urgencyValue := 100 - p.Health
+	cooldown := CalculateDynamicCooldown(p.registry, p.Species, "heal", urgencyValue)
+	if left := cooldownLeft(p.LastHealedAt, cooldown); left != "" {
 		return failResult(fmt.Sprintf("刚治疗过，%s后可以再治疗", left))
 	}
-	if p.Energy < 10 {
+	if p.Energy < energyCost {
 		return failResult("宠物精力不足，需要先休息！")
 	}
+
+	// Get effects from plugin or defaults
+	_, _, healthGain, energyLoss := GetActionEffects(p.registry, p.Species, "heal")
+
 	ch := make(map[string][2]int)
 	oldH := p.Health
 	oldE := p.Energy
-	p.Health = clamp(p.Health+diminish(25, p.Health), 0, 100)
-	p.Energy = clamp(p.Energy-15, 0, 100)
+	p.Health = clamp(p.Health+diminish(healthGain, p.Health), 0, 100)
+	p.Energy = clamp(p.Energy+energyLoss, 0, 100) // energyLoss is negative
 	ch["health"] = [2]int{oldH, p.Health}
 	ch["energy"] = [2]int{oldE, p.Energy}
 	p.AccHealth++

@@ -88,3 +88,20 @@ func requirePet() error {
 	}
 	return nil
 }
+
+// loadPet loads the pet from store and sets its registry reference.
+func loadPet() (*game.Pet, error) {
+	if err := requirePet(); err != nil {
+		return nil, err
+	}
+
+	pet, err := petStore.Load()
+	if err != nil {
+		return nil, fmt.Errorf("load save: %w", err)
+	}
+
+	// Restore registry reference (not serialized)
+	pet.SetRegistry(registry)
+
+	return pet, nil
+}

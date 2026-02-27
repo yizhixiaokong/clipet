@@ -78,7 +78,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 
 	// Create pet
 	pet := game.NewPet(name, selected.ID, eggStage.ID,
-		baseStats.Hunger, baseStats.Happiness, baseStats.Health, baseStats.Energy)
+		baseStats.Hunger, baseStats.Happiness, baseStats.Health, baseStats.Energy, registry)
 
 	if err := petStore.Save(pet); err != nil {
 		return fmt.Errorf("保存失败: %w", err)

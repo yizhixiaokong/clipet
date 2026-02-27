@@ -35,13 +35,9 @@ func newEvoToCmd() *cobra.Command {
 带参数直接执行：evo to adult.cat.warrior`,
 		Args: cobra.RangeArgs(0, 1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := requirePet(); err != nil {
-				return err
-			}
-
-			pet, err := petStore.Load()
+			pet, err := loadPet()
 			if err != nil {
-				return fmt.Errorf("load pet: %w", err)
+				return err
 			}
 
 			// Direct mode
@@ -108,13 +104,9 @@ func newEvoInfoCmd() *cobra.Command {
 		Short: "[开发] 查看进化信息和条件",
 		Long:  `打印当前宠物的所有进化路径和条件。`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := requirePet(); err != nil {
-				return err
-			}
-
-			pet, err := petStore.Load()
+			pet, err := loadPet()
 			if err != nil {
-				return fmt.Errorf("load pet: %w", err)
+				return err
 			}
 
 			printEvoInfo(pet, registry)

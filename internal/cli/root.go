@@ -79,16 +79,29 @@ func setup() error {
 
 // runTUI launches the Bubble Tea TUI application.
 func runTUI() error {
-	if !petStore.Exists() {
-		fmt.Println("还没有宠物呢！请先运行 clipet init 创建一只。")
-		return nil
-	}
-
-	pet, err := petStore.Load()
+	pet, err := loadPet()
 	if err != nil {
-		return fmt.Errorf("load pet: %w", err)
+		return err
 	}
 
 	// Import TUI package here to avoid circular dependency in the future
 	return startTUI(pet, registry, petStore)
+}
+
+// loadPet loads the pet from store and sets its registry reference.
+func loadPet() (*game.Pet, error) {
+	if !petStore.Exists() {
+		fmt.Println("还没有宠物呢！请先运行 clipet init 创建一只。")
+		return nil, fmt.Errorf("no pet")
+	}
+
+	pet, err := petStore.Load()
+	if err != nil {
+		return nil, fmt.Errorf("load pet: %w", err)
+	}
+
+	// Restore registry reference (not serialized)
+	pet.SetRegistry(registry)
+
+	return pet, nil
 }

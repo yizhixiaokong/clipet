@@ -15,13 +15,9 @@ func newFeedCmd() *cobra.Command {
 }
 
 func runFeed(cmd *cobra.Command, args []string) error {
-	if !petStore.Exists() {
-		return fmt.Errorf("还没有宠物，请先运行 clipet init")
-	}
-
-	pet, err := petStore.Load()
+	pet, err := loadPet()
 	if err != nil {
-		return fmt.Errorf("加载存档失败: %w", err)
+		return err
 	}
 
 	if !pet.Alive {

@@ -22,13 +22,9 @@ func newTimeskipCmd() *cobra.Command {
 带参数直接执行: timeskip --hours 24 或 --days 7
 不带参数进入交互式界面，输入小时数后预览属性变化。`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := requirePet(); err != nil {
-				return err
-			}
-
-			pet, err := petStore.Load()
+			pet, err := loadPet()
 			if err != nil {
-				return fmt.Errorf("load pet: %w", err)
+				return err
 			}
 
 			// Direct mode with flags

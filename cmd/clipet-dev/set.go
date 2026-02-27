@@ -83,13 +83,9 @@ func newSetCmd() *cobra.Command {
   set night 50          # 设置夜间互动次数`,
 		Args: cobra.RangeArgs(0, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := requirePet(); err != nil {
-				return err
-			}
-
-			pet, err := petStore.Load()
+			pet, err := loadPet()
 			if err != nil {
-				return fmt.Errorf("load pet: %w", err)
+				return err
 			}
 
 			// Direct mode
