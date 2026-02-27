@@ -61,7 +61,7 @@ var DefaultPreviewKeyMap = PreviewKeyMap{
 
 // ShortHelp returns keybindings to be shown in the mini help view
 func (k PreviewKeyMap) ShortHelp() []key.Binding {
-	return []key.Binding{k.Quit}
+	return []key.Binding{k.SpeedUp, k.SlowDown, k.Quit}
 }
 
 // FullHelp returns keybindings for the expanded help view
@@ -91,7 +91,7 @@ type PreviewTickMsg time.Time
 // NewPreviewModel creates a new preview TUI model
 func NewPreviewModel(pack *plugin.SpeciesPack, fps int, initStage, initAnim string) *PreviewModel {
 	h := help.New()
-	h.ShowAll = false
+	h.ShowAll = true // Preview needs full help by default (navigation is critical)
 
 	roots := buildPreviewTree(pack)
 	if len(roots) == 0 {
