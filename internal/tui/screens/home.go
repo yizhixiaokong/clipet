@@ -72,6 +72,9 @@ type HomeModel struct {
 	msgIsWarn  bool   // true if message is a warning
 	lastTalkAt time.Time
 
+	successMsg     string // success message with animation
+	successAnimFrame int   // animation frame counter
+
 	activeGame games.MiniGame // non-nil when a game is in progress
 
 	pendingAdventure *plugin.Adventure // set when user triggers adventure
@@ -129,6 +132,19 @@ func (h HomeModel) TickAutoDialogue() HomeModel {
 		h.bubble.UpdateText(line)
 	}
 	h.lastTalkAt = time.Now()
+	return h
+}
+
+// TickSuccessAnimation advances the success animation frame.
+func (h HomeModel) TickSuccessAnimation() HomeModel {
+	if h.successMsg != "" {
+		h.successAnimFrame++
+		// Clear animation after 4 frames (about 2 seconds at 2fps)
+		if h.successAnimFrame >= 4 {
+			h.successMsg = ""
+			h.successAnimFrame = 0
+		}
+	}
 	return h
 }
 
@@ -260,13 +276,15 @@ func (h HomeModel) failMsg(msg string) HomeModel {
 	return h
 }
 
-// okMsg sets a success message and saves pet state.
+// okMsg sets a success message with animation and saves pet state.
 func (h HomeModel) okMsg(msg string) HomeModel {
-	h.message = msg
+	h.successMsg = msg
+	h.successAnimFrame = 0
+	h.message = "" // Clear normal message
 	h.msgIsInfo = false
 	h.msgIsWarn = false
 	if err := h.store.Save(h.pet); err != nil {
-		h.message += " ⚠保存失败"
+		h.successMsg = msg + " ⚠保存失败"
 	}
 	return h
 }
@@ -571,15 +589,16 @@ func (h HomeModel) renderStatusPanel(width int) string {
 		Render(strings.Repeat("-", contentW))
 
 	bars := []string{
-		h.statBar("饱腹", p.Hunger),
-		h.statBar("快乐", p.Happiness),
-		h.statBar("健康", p.Health),
-		h.statBar("精力", p.Energy),
+		h.statBar("🍖", "饱食", p.Hunger),
+		h.statBar("😺", "快乐", p.Happiness),
+		h.statBar("💊", "健康", p.Health),
+		h.statBar("💤", "精力", p.Energy),
 	}
 	statsBlock := strings.Join(bars, "\n")
 
-	summary := lipgloss.NewStyle().Foreground(styles.DimColor()).Render(
-		fmt.Sprintf("互动 %d", p.TotalInteractions))
+	// Add more statistics
+	stats := fmt.Sprintf("🗣 对话 %d  🗺 冒险 %d",
+		p.DialogueCount, p.AdventuresCompleted)
 
 	content := lipgloss.JoinVertical(lipgloss.Left,
 		name,
@@ -589,7 +608,7 @@ func (h HomeModel) renderStatusPanel(width int) string {
 		sep,
 		statsBlock,
 		sep,
-		summary,
+		stats,
 	)
 
 	const minHeight = 10
@@ -621,7 +640,38 @@ func (h HomeModel) moodDisplay() (string, lipgloss.Style) {
 	}
 }
 
-func (h HomeModel) statBar(label string, value int) string {
+// getActionCooldown returns the cooldown remaining for an action (empty string if no cooldown).
+func (h HomeModel) getActionCooldown(action string) string {
+	p := h.pet
+	switch action {
+	case "feed":
+		return cooldownLeft(p.LastFedAt, game.CooldownFeed)
+	case "play":
+		return cooldownLeft(p.LastPlayedAt, game.CooldownPlay)
+	case "rest":
+		return cooldownLeft(p.LastRestedAt, game.CooldownRest)
+	case "heal":
+		return cooldownLeft(p.LastHealedAt, game.CooldownHeal)
+	case "talk":
+		return cooldownLeft(p.LastTalkedAt, game.CooldownTalk)
+	default:
+		return ""
+	}
+}
+
+// cooldownLeft returns remaining cooldown time as a string.
+func cooldownLeft(last time.Time, cd time.Duration) string {
+	remaining := cd - time.Since(last)
+	if remaining <= 0 {
+		return ""
+	}
+	if remaining < time.Minute {
+		return fmt.Sprintf("%ds", int(remaining.Seconds()))
+	}
+	return fmt.Sprintf("%dm", int(remaining.Minutes()))
+}
+
+func (h HomeModel) statBar(icon, label string, value int) string {
 	const barLen = 10
 	filled := value / 10
 	if filled > barLen {
@@ -629,7 +679,7 @@ func (h HomeModel) statBar(label string, value int) string {
 	}
 	empty := barLen - filled
 
-	lab := h.theme.StatLabel.Render(label)
+	lab := h.theme.StatLabel.Render(icon + " " + label)
 	fStr := h.theme.StatFilled.Render(strings.Repeat(" ", filled))
 	eStr := h.theme.StatEmpty.Render(strings.Repeat(" ", empty))
 
@@ -641,6 +691,24 @@ func (h HomeModel) renderMessageArea(width int) string {
 	innerW := width - 6
 	if innerW < 10 {
 		innerW = 10
+	}
+
+	// Render success animation if active
+	if h.successMsg != "" {
+		// Create blinking effect
+		check := "✓"
+		if h.successAnimFrame%2 == 0 {
+			check = "✓" // Bright
+		} else {
+			check = "✓" // Still bright, but we'll change color
+		}
+
+		style := h.theme.MessageBox.Width(innerW).
+			BorderForeground(lipgloss.Color("#04B575")).
+			Foreground(lipgloss.Color("#04B575")).
+			Bold(true)
+
+		return style.Render(check + " " + h.successMsg)
 	}
 
 	if h.message != "" {
@@ -695,11 +763,29 @@ func (h HomeModel) renderActionMenu(totalWidth int) string {
 	}
 	var acts []string
 	for i, act := range cat.actions {
+		// Check if action is on cooldown
+		cooldown := h.getActionCooldown(act.action)
 		label := act.icon + " " + act.label
-		if h.inSubmenu && i == h.actIdx {
-			acts = append(acts, h.theme.ActionCellSelected.Width(actW).Render("▸ "+label))
+
+		if cooldown != "" {
+			// Show grayed out with countdown
+			label = act.icon + " " + act.label + " (" + cooldown + ")"
+			if h.inSubmenu && i == h.actIdx {
+				acts = append(acts, h.theme.ActionCellSelected.Width(actW).
+					Foreground(lipgloss.Color("#555570")).
+					Render("▸ "+label))
+			} else {
+				acts = append(acts, h.theme.ActionCell.Width(actW).
+					Foreground(lipgloss.Color("#555570")).
+					Render("  "+label))
+			}
 		} else {
-			acts = append(acts, h.theme.ActionCell.Width(actW).Render("  "+label))
+			// Normal display
+			if h.inSubmenu && i == h.actIdx {
+				acts = append(acts, h.theme.ActionCellSelected.Width(actW).Render("▸ "+label))
+			} else {
+				acts = append(acts, h.theme.ActionCell.Width(actW).Render("  "+label))
+			}
 		}
 	}
 	actRow := lipgloss.JoinHorizontal(lipgloss.Center, acts...)

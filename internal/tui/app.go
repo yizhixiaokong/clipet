@@ -132,6 +132,7 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		a.home = a.home.UpdatePet(a.pet)
 		a.home = a.home.TickGame()
 		a.home = a.home.TickAutoDialogue()
+		a.home = a.home.TickSuccessAnimation()
 		return a, doTick()
 	}
 
