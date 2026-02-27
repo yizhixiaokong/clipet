@@ -477,11 +477,19 @@ func (h HomeModel) View() string {
 	msgArea := h.renderMessageArea(totalInner)
 
 	// 4) Action menu (category tabs + sub-actions)
-	actionMenu := h.renderActionMenu(totalInner)
+	// Hide menu if pet has died
+	var actionMenu string
+	if !h.pet.Alive && h.pet.EndingMessage != "" {
+		actionMenu = ""
+	} else {
+		actionMenu = h.renderActionMenu(totalInner)
+	}
 
 	// 5) Help bar
 	var helpText string
-	if h.inSubmenu {
+	if !h.pet.Alive && h.pet.EndingMessage != "" {
+		helpText = "q 退出"
+	} else if h.inSubmenu {
 		helpText = "←→ 选择  Enter 确认  ↑/Esc 返回  f喂食 p玩耍 r休息 c治疗 t对话  q退出"
 	} else {
 		helpText = "←→ 切换分类  ↓/Enter 进入  f喂食 p玩耍 r休息 c治疗 t对话  q退出"
@@ -519,16 +527,30 @@ func (h HomeModel) renderGameView() string {
 	leftPanel := h.renderPetPanel(leftPanelW)
 
 	// Right panel: Game content
-	title := h.theme.TitleBar.Width(rightPanelW).Render("🎮 " + h.activeGame.GetConfig().Name)
+	var title string
+	if !h.pet.Alive && h.pet.EndingMessage != "" {
+		// Show ending message instead of game title
+		title = h.theme.TitleBar.
+			Width(rightPanelW).
+			Background(lipgloss.Color("#AA3355")).
+			Foreground(lipgloss.Color("#FFFFFF")).
+			Render("💔 " + h.pet.EndingMessage)
+	} else {
+		title = h.theme.TitleBar.Width(rightPanelW).Render("🎮 " + h.activeGame.GetConfig().Name)
+	}
 
 	gameContent := h.activeGame.View()
 	gameBox := h.theme.GamePanel.
 		Width(rightPanelW - 4).
 		Render(gameContent)
 
-	helpText := "Esc 退出游戏"
-	if h.activeGame.IsFinished() {
+	var helpText string
+	if !h.pet.Alive && h.pet.EndingMessage != "" {
+		helpText = "q 退出"
+	} else if h.activeGame.IsFinished() {
 		helpText = "Enter 继续  Esc 退出"
+	} else {
+		helpText = "Esc 退出游戏"
 	}
 	help := h.theme.HelpBar.Width(rightPanelW).Render(helpText)
 
@@ -701,6 +723,11 @@ func (h HomeModel) renderMessageArea(width int) string {
 	innerW := width - 6
 	if innerW < 10 {
 		innerW = 10
+	}
+
+	// Don't show messages if pet has died (ending is shown in title bar)
+	if !h.pet.Alive && h.pet.EndingMessage != "" {
+		return ""
 	}
 
 	// Render success animation if active
