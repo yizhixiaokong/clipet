@@ -15,13 +15,14 @@ type Theme struct {
 	PetPanel lipgloss.Style
 
 	// Status panel (right)
-	StatusPanel lipgloss.Style
-	StatusName  lipgloss.Style
-	StatusLabel lipgloss.Style
-	StatusValue lipgloss.Style
-	StatFilled  lipgloss.Style
-	StatEmpty   lipgloss.Style
-	StatLabel   lipgloss.Style
+	StatusPanel  lipgloss.Style
+	StatusName   lipgloss.Style
+	StatusLabel  lipgloss.Style
+	StatusValue  lipgloss.Style
+	StatFilled   lipgloss.Style
+	StatEmpty    lipgloss.Style
+	StatLabel    lipgloss.Style
+	SectionTitle lipgloss.Style
 
 	// Dialogue / message area
 	DialogueBox lipgloss.Style
@@ -110,6 +111,10 @@ func DefaultTheme() Theme {
 
 		StatEmpty: lipgloss.NewStyle().
 			Background(colorBarEmpty),
+
+		SectionTitle: lipgloss.NewStyle().
+			Foreground(colorGold).
+			Bold(true),
 
 		DialogueBox: lipgloss.NewStyle().
 			Border(border).

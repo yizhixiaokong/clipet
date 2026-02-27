@@ -667,6 +667,19 @@ func (h HomeModel) renderStatusPanel(width int) string {
 		stats,
 	)
 
+	// Add custom attributes section if any exist (Phase 3)
+	if len(p.CustomAttributes) > 0 {
+		customLines := []string{"", h.theme.SectionTitle.Render("◆ 自定义属性")}
+		for attrName, value := range p.CustomAttributes {
+			bar := h.statBar("●", attrName, value)
+			customLines = append(customLines, bar)
+		}
+		content = lipgloss.JoinVertical(lipgloss.Left,
+			lipgloss.JoinVertical(lipgloss.Left, content),
+			lipgloss.JoinVertical(lipgloss.Left, customLines...),
+		)
+	}
+
 	const minHeight = 10
 	innerW := width - 6
 	if innerW < contentW {

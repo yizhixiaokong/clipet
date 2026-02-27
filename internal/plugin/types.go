@@ -71,14 +71,15 @@ type Evolution struct {
 // EvolutionCondition specifies the requirements for an evolution to occur.
 type EvolutionCondition struct {
 	MinAgeHours       float64        `toml:"min_age_hours"`
-	AttrBias          string         `toml:"attr_bias"` // happiness, health, playful
+	AttrBias          string         `toml:"attr_bias"` // happiness, health, playful (DEPRECATED: use custom_acc instead)
 	MinDialogues      int            `toml:"min_dialogues"`
 	MinAdventures     int            `toml:"min_adventures"`
 	MinFeedRegularity float64        `toml:"min_feed_regularity"`
-	NightBias         bool           `toml:"night_interactions_bias"`
-	DayBias           bool           `toml:"day_interactions_bias"`
+	NightBias         bool           `toml:"night_interactions_bias"`  // DEPRECATED: use custom_acc instead
+	DayBias           bool           `toml:"day_interactions_bias"`    // DEPRECATED: use custom_acc instead
 	MinInteractions   int            `toml:"min_interactions"`
-	MinAttr           map[string]int `toml:"min_attr"`
+	MinAttr           map[string]int `toml:"min_attr"`                 // Core attribute requirements (hunger, happiness, etc.)
+	CustomAcc         map[string]int `toml:"custom_acc"`               // NEW: Custom accumulator requirements (e.g., {"fire_points": 50, "ice_points": 30})
 }
 
 // ActionConfig defines a pet action (feed, play, rest, etc.) - Phase 7

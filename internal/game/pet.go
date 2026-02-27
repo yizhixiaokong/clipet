@@ -672,8 +672,23 @@ func (p *Pet) SetField(field string, raw string) (old string, err error) {
 		// Adjust birthday to achieve desired age
 		p.Birthday = time.Now().Add(-time.Duration(v * float64(time.Hour)))
 
+	// Custom attributes (Phase 1: custom:attr_name or attr_name)
+	case "custom":
+		// Format: "custom:attr_name" or just "attr_name" for custom attributes
+		return "", fmt.Errorf("invalid custom attribute format, use 'custom:attr_name' or 'set custom:attr_name value'")
 	default:
-		return "", fmt.Errorf("unknown field %q\n\nValid fields:\n  Attributes: hunger, happiness, health, energy (0-100)\n  Info: name, species, stage_id, alive, age_hours\n  Stats: interactions, feeds, dialogues, adventures, wins\n  Evolution: acc_happiness, acc_health, acc_playful, night, day, feed_regularity\n  Lifecycle: lifecycle_warning", field)
+		// Check for custom: prefix
+		if strings.HasPrefix(field, "custom:") {
+			attrName := strings.TrimPrefix(field, "custom:")
+			old = strconv.Itoa(p.GetAttr(attrName))
+			v, e := strconv.Atoi(raw)
+			if e != nil {
+				return "", e
+			}
+			p.SetAttr(attrName, v)
+			return old, nil
+		}
+		return "", fmt.Errorf("unknown field %q\n\nValid fields:\n  Attributes: hunger, happiness, health, energy (0-100)\n  Info: name, species, stage_id, alive, age_hours\n  Stats: interactions, feeds, dialogues, adventures, wins\n  Evolution: acc_happiness, acc_health, acc_playful, night, day, feed_regularity\n  Lifecycle: lifecycle_warning\n  Custom: custom:<attr_name>", field)
 	}
 	return old, nil
 }
@@ -875,4 +890,21 @@ func (p *Pet) DevOnlySimulateDecay(elapsed time.Duration) {
 
 	// Update last checked time
 	p.LastCheckedAt = time.Now()
+}
+
+// GetCustomAcc returns a custom accumulator value.
+// This is an alias for GetAttr for semantic clarity when dealing with accumulators.
+func (p *Pet) GetCustomAcc(name string) int {
+	return p.GetAttr(name)
+}
+
+// AddCustomAcc adds a value to a custom accumulator.
+// Initializes the accumulator to 0 if it doesn't exist.
+func (p *Pet) AddCustomAcc(name string, delta int) {
+	if p.CustomAttributes == nil {
+		p.CustomAttributes = make(map[string]int)
+	}
+	key := strings.ToLower(name)
+	current := p.CustomAttributes[key]
+	p.CustomAttributes[key] = current + delta
 }

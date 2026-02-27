@@ -5,6 +5,7 @@ import (
 	"clipet/internal/tui/dev"
 	"fmt"
 	"strconv"
+	"strings"
 
 	tea "charm.land/bubbletea/v2"
 	"github.com/spf13/cobra"
@@ -115,15 +116,8 @@ func newSetCmd() *cobra.Command {
 // ---------- Interactive set TUI ----------
 
 func runSetTUI(pet *game.Pet) error {
-	// Convert to dev.SetField slice
-	fields := make([]dev.SetField, len(settableFields))
-	for i, f := range settableFields {
-		fields[i] = dev.SetField{
-			Key:   f.Key,
-			Label: f.Label,
-			Kind:  f.Kind,
-		}
-	}
+	// Build fields dynamically, including custom attributes
+	fields := buildSettableFields(pet)
 
 	m := dev.NewSetModel(pet, fields)
 
@@ -212,6 +206,38 @@ func getCurrentPetValue(pet *game.Pet, key string) string {
 	// Lifecycle
 	case "lifecycle_warning":
 		return strconv.FormatBool(pet.LifecycleWarningShown)
+
+	// Custom attributes (Phase 4)
+	default:
+		if strings.HasPrefix(key, "custom:") {
+			attrName := strings.TrimPrefix(key, "custom:")
+			return strconv.Itoa(pet.GetAttr(attrName))
+		}
 	}
 	return ""
+}
+
+// buildSettableFields builds the list of settable fields including custom attributes
+func buildSettableFields(pet *game.Pet) []dev.SetField {
+	fields := make([]dev.SetField, len(settableFields))
+	for i, f := range settableFields {
+		fields[i] = dev.SetField{
+			Key:   f.Key,
+			Label: f.Label,
+			Kind:  f.Kind,
+		}
+	}
+
+	// Add custom attributes dynamically (Phase 4)
+	if pet.CustomAttributes != nil {
+		for name := range pet.CustomAttributes {
+			fields = append(fields, dev.SetField{
+				Key:   "custom:" + name,
+				Label: "自定义:" + name,
+				Kind:  "int",
+			})
+		}
+	}
+
+	return fields
 }

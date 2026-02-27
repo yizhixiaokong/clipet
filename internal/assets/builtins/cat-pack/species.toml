@@ -196,76 +196,75 @@ to = "baby"
 min_age_hours = 1.0
 
 # Baby -> Child (3 branches)
+# 使用自定义属性：奥术亲和、狂野亲和、机械亲和
 [[evolutions]]
 from = "baby"
 to = "child_arcane"
 [evolutions.condition]
 min_age_hours = 24.0
-attr_bias = "happiness"
-min_dialogues = 10
+custom_acc = {arcane_affinity = 15}
 
 [[evolutions]]
 from = "baby"
 to = "child_feral"
 [evolutions.condition]
 min_age_hours = 24.0
-attr_bias = "health"
-min_adventures = 5
+custom_acc = {feral_affinity = 15}
 
 [[evolutions]]
 from = "baby"
 to = "child_mech"
 [evolutions.condition]
 min_age_hours = 24.0
-attr_bias = "playful"
-min_feed_regularity = 0.7
+custom_acc = {mech_affinity = 15}
 
 # Child Arcane -> Adult (2 branches)
+# 使用自定义属性：暗影能量 vs 水晶能量
 [[evolutions]]
 from = "child_arcane"
 to = "adult_arcane_shadow"
 [evolutions.condition]
 min_age_hours = 72.0
-night_interactions_bias = true
+custom_acc = {shadow_energy = 30}
 
 [[evolutions]]
 from = "child_arcane"
 to = "adult_arcane_crystal"
 [evolutions.condition]
 min_age_hours = 72.0
-day_interactions_bias = true
+custom_acc = {crystal_energy = 30}
 
 # Child Feral -> Adult (2 branches)
+# 使用自定义属性：火焰力量 vs 冰霜力量
 [[evolutions]]
 from = "child_feral"
 to = "adult_feral_flame"
 [evolutions.condition]
 min_age_hours = 72.0
-attr_bias = "playful"
-night_interactions_bias = true
+custom_acc = {fire_power = 40}
 
 [[evolutions]]
 from = "child_feral"
 to = "adult_feral_frost"
 [evolutions.condition]
 min_age_hours = 72.0
-attr_bias = "health"
-day_interactions_bias = true
+custom_acc = {frost_power = 40}
 
 # Child Mech -> Adult (2 branches)
+# 使用自定义属性：赛博数据 vs 铬合金
 [[evolutions]]
 from = "child_mech"
 to = "adult_mech_cyber"
 [evolutions.condition]
 min_age_hours = 72.0
-min_dialogues = 30
+custom_acc = {cyber_data = 35}
 
 [[evolutions]]
 from = "child_mech"
 to = "adult_mech_chrome"
 [evolutions.condition]
 min_age_hours = 72.0
-min_adventures = 15
+custom_acc = {chrome_alloy = 35}
 
 # Adult -> Legend (6 branches)
 [[evolutions]]

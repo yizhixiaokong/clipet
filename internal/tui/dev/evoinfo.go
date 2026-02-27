@@ -146,6 +146,18 @@ func printConditionChecks(pet *game.Pet, cond plugin.EvolutionCondition) bool {
 		}
 	}
 
+	// custom_acc (Phase 5: custom accumulators)
+	if len(cond.CustomAcc) > 0 {
+		for accName, minVal := range cond.CustomAcc {
+			currentVal := pet.GetCustomAcc(accName)
+			met := currentVal >= minVal
+			fmt.Printf("    %s %s >= %d (当前: %d)\n", CheckMark(met), accName, minVal, currentVal)
+			if !met {
+				allMet = false
+			}
+		}
+	}
+
 	return allMet
 }
 

@@ -90,6 +90,15 @@ func ApplyAdventureOutcome(pet *Pet, outcome plugin.AdventureOutcome) map[string
 			pet.Health = Clamp(pet.Health+delta, 0, 100)
 		case "energy":
 			pet.Energy = Clamp(pet.Energy+delta, 0, 100)
+		default:
+			// Apply to custom attributes (supports custom accumulators)
+			// Record old value before modification
+			oldCustom := pet.GetCustomAcc(attr)
+			pet.AddCustomAcc(attr, delta)
+			newCustom := pet.GetCustomAcc(attr)
+			if newCustom != oldCustom {
+				changes[attr] = [2]int{oldCustom, newCustom}
+			}
 		}
 	}
 

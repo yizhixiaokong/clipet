@@ -126,6 +126,9 @@ type EvolutionCondition struct {
     AttrBias string  // "happiness" or "health"
     NightBias, DayBias bool
     MinFeedRegularity float64
+
+    // Custom accumulators (NEW v3.0)
+    CustomAcc map[string]int  // Plugin-defined: "fire_power": 30
 }
 ```
 

@@ -132,6 +132,15 @@ func evaluateCondition(pet *Pet, cond plugin.EvolutionCondition) (bool, int) {
 		score++
 	}
 
+	// custom_acc - check custom accumulators
+	for accName, minVal := range cond.CustomAcc {
+		val := pet.GetCustomAcc(accName)
+		if val < minVal {
+			return false, 0
+		}
+		score++
+	}
+
 	return true, score
 }
 

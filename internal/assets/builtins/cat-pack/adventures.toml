@@ -1,7 +1,7 @@
 # 猫咪专属冒险事件
 
 # ============================================================
-# 幼年冒险
+# 幼年冒险 - 基础亲和力积累
 # ============================================================
 
 [[adventures]]
@@ -24,9 +24,75 @@ description = "你的猫发现了一个闪着奇怪光芒的鱼塘..."
     { weight = 30, text = "等了半天什么都没发现... 不过晒了个太阳。", effects = { energy = 5 } },
   ]
 
+# 奥术启蒙 - 累积奥术亲和
+[[adventures]]
+id = "baby_arcane_spark"
+name = "魔法火花"
+stage = ["baby"]
+description = "一道神秘的紫色光芒在你眼前闪烁，似乎在召唤你..."
+
+  [[adventures.choices]]
+  text = "触碰魔法火花"
+  outcomes = [
+    { weight = 50, text = "魔法能量涌入体内！感受到了奥术的呼唤。奥术亲和 +10", effects = { arcane_affinity = 10, happiness = 15 } },
+    { weight = 30, text = "火花轻轻环绕着你，温暖而舒适。奥术亲和 +6", effects = { arcane_affinity = 6, energy = 10 } },
+    { weight = 20, text = "魔法稍纵即逝，但留下了一丝印记。奥术亲和 +3", effects = { arcane_affinity = 3 } },
+  ]
+
+  [[adventures.choices]]
+  text = "静静观察"
+  outcomes = [
+    { weight = 60, text = "看到了火花中蕴含的符文图案... 奥术亲和 +5", effects = { arcane_affinity = 5, happiness = 10 } },
+    { weight = 40, text = "火花消散了，但内心平静。奥术亲和 +2", effects = { arcane_affinity = 2 } },
+  ]
+
+# 狂野启蒙 - 累积狂野亲和
+[[adventures]]
+id = "baby_feral_call"
+name = "野性呼唤"
+stage = ["baby"]
+description = "远处传来一声野性的咆哮，让你的血液开始沸腾..."
+
+  [[adventures.choices]]
+  text = "回应咆哮"
+  outcomes = [
+    { weight = 50, text = "你的咆哮得到了回应！野性的力量在觉醒。狂野亲和 +10", effects = { feral_affinity = 10, health = 10, happiness = 10 } },
+    { weight = 30, text = "声音有些稚嫩，但野性的种子已种下。狂野亲和 +6", effects = { feral_affinity = 6, energy = 5 } },
+    { weight = 20, text = "只发出了喵喵声... 但心意已决。狂野亲和 +3", effects = { feral_affinity = 3 } },
+  ]
+
+  [[adventures.choices]]
+  text = "循声而去"
+  outcomes = [
+    { weight = 60, text = "发现了一只强大的野兽留下的痕迹... 狂野亲和 +5", effects = { feral_affinity = 5, happiness = 10 } },
+    { weight = 40, text = "虽然没找到源头，但勇气增长了。狂野亲和 +2", effects = { feral_affinity = 2, health = 5 } },
+  ]
+
+# 机械启蒙 - 累积机械亲和
+[[adventures]]
+id = "baby_mech_glow"
+name = "机械光芒"
+stage = ["baby"]
+description = "一堆废弃的机械零件突然发出了蓝色的光芒，似乎在等待你的触碰..."
+
+  [[adventures.choices]]
+  text = "触碰发光零件"
+  outcomes = [
+    { weight = 50, text = "电流穿过身体，感觉与机械建立了连接！机械亲和 +10", effects = { mech_affinity = 10, happiness = 15 } },
+    { weight = 30, text = "零件在你的触碰下开始运转。机械亲和 +6", effects = { mech_affinity = 6, energy = 10 } },
+    { weight = 20, text = "光芒闪烁了一下，但留下了科技的记忆。机械亲和 +3", effects = { mech_affinity = 3 } },
+  ]
+
+  [[adventures.choices]]
+  text = "仔细研究"
+  outcomes = [
+    { weight = 60, text = "理解了机械的基本原理... 机械亲和 +5", effects = { mech_affinity = 5, happiness = 10 } },
+    { weight = 40, text = "虽然复杂，但对科技产生了兴趣。机械亲和 +2", effects = { mech_affinity = 2, energy = 5 } },
+  ]
+
 [[adventures]]
 id = "cat_cardboard_box"
-name = "mysterious_box"
+name = "神秘纸箱"
 stage = ["baby"]
 description = "路边有一个散发着奇异气息的纸箱..."
 
@@ -91,6 +157,50 @@ description = "在数据流的深处，发现了一座由魔法构成的虚拟�
     { weight = 30, text = "冥想中看到了未来的碎片...", effects = { happiness = 15 } },
   ]
 
+# 暗影试炼 - 累积暗影能量
+[[adventures]]
+id = "arcane_shadow_trial"
+name = "暗影试炼"
+stage = ["child_arcane", "adult_arcane_shadow"]
+description = "一道漆黑的裂缝出现在虚空中，散发着神秘的暗影能量..."
+
+  [[adventures.choices]]
+  text = "踏入暗影裂缝"
+  outcomes = [
+    { weight = 50, text = "暗影能量涌入体内！你感到力量在增长。暗影能量 +15", effects = { shadow_energy = 15, happiness = 10 } },
+    { weight = 30, text = "在黑暗中迷失了一阵，但最终找到了出路。暗影能量 +8", effects = { shadow_energy = 8, energy = -10 } },
+    { weight = 20, text = "暗影之力过于狂暴，受到了一些伤害。", effects = { health = -10, happiness = -5 } },
+  ]
+
+  [[adventures.choices]]
+  text = "在裂缝边缘观察"
+  outcomes = [
+    { weight = 60, text = "静静地吸收着暗影的气息... 暗影能量 +5", effects = { shadow_energy = 5, energy = 10 } },
+    { weight = 40, text = "裂缝突然闭合，但留下了一些暗影残留。暗影能量 +3", effects = { shadow_energy = 3 } },
+  ]
+
+# 水晶试炼 - 累积水晶能量
+[[adventures]]
+id = "arcane_crystal_trial"
+name = "水晶试炼"
+stage = ["child_arcane", "adult_arcane_crystal"]
+description = "一座由纯净水晶构成的祭坛闪耀着神圣的光芒..."
+
+  [[adventures.choices]]
+  text = "触碰水晶祭坛"
+  outcomes = [
+    { weight = 50, text = "神圣的水晶能量流过全身！感觉获得了祝福。水晶能量 +15", effects = { crystal_energy = 15, health = 10, happiness = 10 } },
+    { weight = 30, text = "水晶的光芒温暖而治愈。水晶能量 +8", effects = { crystal_energy = 8, energy = 10 } },
+    { weight = 20, text = "能量过于强烈，被弹开了。", effects = { energy = -10 } },
+  ]
+
+  [[adventures.choices]]
+  text = "在祭坛前祈祷"
+  outcomes = [
+    { weight = 60, text = "虔诚的祈祷得到了回应！水晶能量缓缓增长。水晶能量 +5", effects = { crystal_energy = 5, happiness = 15 } },
+    { weight = 40, text = "冥想中感受到了水晶的脉动。水晶能量 +3", effects = { crystal_energy = 3, energy = 5 } },
+  ]
+
 # ============================================================
 # 少年冒险 - 狂野路线
 # ============================================================
@@ -116,9 +226,97 @@ description = "一座由元素之力构建的竞技场出现在前方..."
     { weight = 40, text = "看了一场精彩的对决，热血沸腾！", effects = { happiness = 15, energy = 5 } },
   ]
 
+# 火焰试炼 - 累积火焰力量
+[[adventures]]
+id = "feral_flame_trial"
+name = "火焰试炼"
+stage = ["child_feral", "adult_feral_flame"]
+description = "前方是一片燃烧的火山地带，空气中充满了灼热的气息..."
+
+  [[adventures.choices]]
+  text = "深入火山口"
+  outcomes = [
+    { weight = 50, text = "找到了火之精华！火焰力量涌遍全身。火焰力量 +18", effects = { fire_power = 18, happiness = 15 } },
+    { weight = 30, text = "在熔岩河流边修炼，吸收了火焰之力。火焰力量 +10", effects = { fire_power = 10, energy = -10 } },
+    { weight = 20, text = "岩浆喷发，勉强逃脱！火焰力量 +5", effects = { fire_power = 5, health = -10, energy = -10 } },
+  ]
+
+  [[adventures.choices]]
+  text = "在火焰边缘修炼"
+  outcomes = [
+    { weight = 60, text = "静静地感受火焰的脉动... 火焰力量 +8", effects = { fire_power = 8, energy = 5 } },
+    { weight = 40, text = "吸收了一些散落的火星。火焰力量 +5", effects = { fire_power = 5, happiness = 5 } },
+  ]
+
+# 冰霜试炼 - 累积冰霜力量
+[[adventures]]
+id = "feral_frost_trial"
+name = "冰霜试炼"
+stage = ["child_feral", "adult_feral_frost"]
+description = "一座被永恒冰雪覆盖的山峰出现在眼前，寒风呼啸..."
+
+  [[adventures.choices]]
+  text = "攀登冰峰"
+  outcomes = [
+    { weight = 50, text = "登顶成功！获得了寒冰之心的祝福。冰霜力量 +18", effects = { frost_power = 18, health = 10, happiness = 15 } },
+    { weight = 30, text = "在山腰发现了冰霜水晶。冰霜力量 +10", effects = { frost_power = 10, energy = -10 } },
+    { weight = 20, text = "遭遇暴风雪，被迫撤退。冰霜力量 +5", effects = { frost_power = 5, health = -5, energy = -15 } },
+  ]
+
+  [[adventures.choices]]
+  text = "在冰洞中冥想"
+  outcomes = [
+    { weight = 60, text = "与冰雪元素融为一体... 冰霜力量 +8", effects = { frost_power = 8, energy = 10, happiness = 10 } },
+    { weight = 40, text = "感受到了冰霜的宁静。冰霜力量 +5", effects = { frost_power = 5, health = 5 } },
+  ]
+
 # ============================================================
 # 少年冒险 - 机械路线
 # ============================================================
+
+# 赛博试炼 - 累积赛博数据
+[[adventures]]
+id = "mech_cyber_trial"
+name = "赛博试炼"
+stage = ["child_mech", "adult_mech_cyber"]
+description = "进入了虚拟数据空间，无数的数据流在周围流动..."
+
+  [[adventures.choices]]
+  text = "潜入数据流"
+  outcomes = [
+    { weight = 50, text = "成功解析了加密数据！赛博数据大幅增加。赛博数据 +16", effects = { cyber_data = 16, happiness = 15 } },
+    { weight = 30, text = "在数据海洋中漂流，吸收了一些信息。赛博数据 +9", effects = { cyber_data = 9, energy = -10 } },
+    { weight = 20, text = "遇到了防火墙，勉强逃脱。赛博数据 +4", effects = { cyber_data = 4, health = -5, energy = -10 } },
+  ]
+
+  [[adventures.choices]]
+  text = "建立数据连接"
+  outcomes = [
+    { weight = 60, text = "建立了稳定的数据通道... 赛博数据 +8", effects = { cyber_data = 8, energy = 10 } },
+    { weight = 40, text = "下载了一些数据包。赛博数据 +5", effects = { cyber_data = 5, happiness = 10 } },
+  ]
+
+# 铬合金试炼 - 累积铬合金
+[[adventures]]
+id = "mech_chrome_trial"
+name = "合金试炼"
+stage = ["child_mech", "adult_mech_chrome"]
+description = "发现了一座由稀有合金构成的废弃空间站..."
+
+  [[adventures.choices]]
+  text = "收集合金材料"
+  outcomes = [
+    { weight = 50, text = "找到了大量高级铬合金！铬合金 +16", effects = { chrome_alloy = 16, health = 10, happiness = 15 } },
+    { weight = 30, text = "回收了一些可用的合金部件。铬合金 +9", effects = { chrome_alloy = 9, energy = -10 } },
+    { weight = 20, text = "合金质量不佳，但聊胜于无。铬合金 +4", effects = { chrome_alloy = 4 } },
+  ]
+
+  [[adventures.choices]]
+  text = "分析合金结构"
+  outcomes = [
+    { weight = 60, text = "理解了合金的配方！铬合金 +8", effects = { chrome_alloy = 8, happiness = 15 } },
+    { weight = 40, text = "扫描了一些样本数据。铬合金 +5", effects = { chrome_alloy = 5, energy = 5 } },
+  ]
 
 [[adventures]]
 id = "mech_scrapyard"

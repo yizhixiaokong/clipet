@@ -56,6 +56,9 @@ MoodName() → "开心", "普通", "饥饿", "生病", etc.
 
 GetAttr(name) → unified interface for core + custom attrs (M7)
 SetAttr(name, value) → set custom attributes (M7)
+GetCustomAcc(name) → alias for GetAttr (semantic clarity) (NEW v3.0)
+AddCustomAcc(name, delta) → add to custom accumulator (NEW v3.0)
+SetField(field, value) → modify any field, supports "custom:attr_name" (NEW v3.0)
 
 ApplyOfflineDecay() → compensate time since last save
 SimulateDecay() → hourly decay rates:
@@ -87,8 +90,11 @@ type EvolutionCondition struct {
     MinFeedRegularity float64
     AttrBias string  // "happiness" or "health"
     NightBias, DayBias bool
+    CustomAcc map[string]int  // Plugin-defined accumulators: "fire_power": 30
 }
 ```
+
+**New in v3.0**: `CustomAcc` field enables plugin-defined evolution paths without framework changes
 
 ### Evolution Flow
 
@@ -99,6 +105,7 @@ For each Evolution from current stage:
   ├─ Check age ≥ MinAgeHours
   ├─ Check all MinAttr requirements
   ├─ Check bias conditions (AttrBias, NightBias)
+  ├─ Check CustomAcc requirements (NEW v3.0)
   └─ If all pass → add to candidates
 
 BestCandidate(candidates) → *Candidate
@@ -146,6 +153,15 @@ SelectChoice(adventure, pet) → Choice
   ↓
 Filter by RequiredAttr
 Weighted random pick
+
+ApplyAdventureOutcome(pet, outcome) → changes map
+  ↓
+For each effect in outcome.Effects:
+  ├─ Core attr (hunger, happiness, health, energy):
+  │   └─ Apply directly to pet
+  └─ Custom attr:
+      └─ Call AddCustomAcc(), record in changes map (NEW v3.0)
+Return changes map (includes custom attrs)
 ```
 
 ## Lifecycle System (M7)
