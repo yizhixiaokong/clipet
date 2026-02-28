@@ -2,6 +2,7 @@ package screens
 
 import (
 	"clipet/internal/game"
+	"clipet/internal/i18n"
 	"clipet/internal/plugin"
 	"clipet/internal/tui/components"
 	"clipet/internal/tui/styles"
@@ -28,6 +29,7 @@ type AdventureModel struct {
 	pet       *game.Pet
 	adventure plugin.Adventure
 	theme     styles.Theme
+	i18n      *i18n.Manager
 	petView   *components.PetView // 新增：宠物视图组件
 	registry  *plugin.Registry    // 新增：用于获取帧数据
 
@@ -42,11 +44,12 @@ type AdventureModel struct {
 }
 
 // NewAdventureModel creates a new adventure screen for the given adventure.
-func NewAdventureModel(pet *game.Pet, adv plugin.Adventure, theme styles.Theme, petView *components.PetView, registry *plugin.Registry) AdventureModel {
+func NewAdventureModel(pet *game.Pet, adv plugin.Adventure, theme styles.Theme, petView *components.PetView, registry *plugin.Registry, i18nMgr *i18n.Manager) AdventureModel {
 	return AdventureModel{
 		pet:       pet,
 		adventure: adv,
 		theme:     theme,
+		i18n:      i18nMgr,
 		petView:   petView,
 		registry:  registry,
 		phase:     AdventureIntro,
@@ -246,7 +249,7 @@ func (a AdventureModel) viewChoosing(w int) string {
 		}
 	}
 
-	help := a.theme.HelpBar.Render("↑↓ 选择  Enter 确认  Esc 返回")
+	help := a.theme.HelpBar.Render(a.i18n.T("ui.adventure.help"))
 
 	return lipgloss.JoinVertical(lipgloss.Left,
 		title,
@@ -273,7 +276,7 @@ func (a AdventureModel) viewResolving(w int) string {
 		Bold(true).
 		Width(w - 4).
 		Align(lipgloss.Center).
-		Render(icon + " 冒险中...")
+		Render(a.i18n.T("ui.adventure.adventuring", "icon", icon))
 
 	progress := a.animTick
 	if progress > 4 {
@@ -297,13 +300,13 @@ func (a AdventureModel) viewResolving(w int) string {
 
 func (a AdventureModel) viewResult(w int) string {
 	if a.outcome == nil {
-		return "冒险结束"
+		return a.i18n.T("ui.adventure.adventure_end")
 	}
 
 	title := a.theme.EvolveTitle.
 		Background(lipgloss.Color("#7D56F4")).
 		Width(w - 2).
-		Render("🗺️ 冒险结果")
+		Render(a.i18n.T("ui.adventure.result_title"))
 
 	outcomeText := lipgloss.NewStyle().
 		Foreground(styles.TextColor()).
@@ -313,10 +316,10 @@ func (a AdventureModel) viewResult(w int) string {
 	// Build effect display
 	var effectLines []string
 	attrNames := map[string]string{
-		"hunger":    "饱腹",
-		"happiness": "快乐",
-		"health":    "健康",
-		"energy":    "精力",
+		"hunger":    a.i18n.T("game.stats.hunger"),
+		"happiness": a.i18n.T("game.stats.happiness"),
+		"health":    a.i18n.T("game.stats.health"),
+		"energy":    a.i18n.T("game.stats.energy"),
 	}
 	for attr, vals := range a.changes {
 		name := attrNames[attr]
@@ -340,14 +343,14 @@ func (a AdventureModel) viewResult(w int) string {
 		effectBlock = lipgloss.NewStyle().
 			Bold(true).
 			Foreground(styles.TextColor()).
-			Render("属性变化：") + "\n" + strings.Join(effectLines, "\n")
+			Render(a.i18n.T("ui.adventure.attr_changes")) + "\n" + strings.Join(effectLines, "\n")
 	} else {
 		effectBlock = lipgloss.NewStyle().
 			Foreground(styles.DimColor()).
-			Render("没有属性变化")
+			Render(a.i18n.T("ui.adventure.no_changes"))
 	}
 
-	help := a.theme.HelpBar.Render("Enter 返回")
+	help := a.theme.HelpBar.Render("Enter " + a.i18n.T("ui.common.back"))
 
 	return lipgloss.JoinVertical(lipgloss.Left,
 		title,

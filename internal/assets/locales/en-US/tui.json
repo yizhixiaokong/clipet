@@ -56,8 +56,18 @@
     },
     "adventure": {
       "title": "🗺 Adventure",
-      "result_title": "Adventure Result",
-      "close_hint": "Press Enter to close"
+      "result_title": "🗺️ Adventure Result",
+      "close_hint": "Press Enter to close",
+      "help": "↑↓ Select  Enter Confirm  Esc Back",
+      "adventuring": "{{.icon}} Adventuring...",
+      "adventure_end": "Adventure End",
+      "attr_changes": "Attribute Changes:",
+      "no_changes": "No attribute changes"
+    },
+    "evolve": {
+      "help": "↑↓ Select  Enter Confirm  Esc Cancel",
+      "can_evolve": "{{.name}} can evolve! Please choose a direction:",
+      "evolved_to": "{{.name}} evolved into:\n\n  {{.stage}} ({{.phase}})"
     },
     "common": {
       "loading": "Loading...",

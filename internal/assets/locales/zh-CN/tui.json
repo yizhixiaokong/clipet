@@ -56,8 +56,18 @@
     },
     "adventure": {
       "title": "🗺 冒险",
-      "result_title": "冒险结果",
-      "close_hint": "按 Enter 关闭"
+      "result_title": "🗺️ 冒险结果",
+      "close_hint": "按 Enter 关闭",
+      "help": "↑↓ 选择  Enter 确认  Esc 返回",
+      "adventuring": "{{.icon}} 冒险中...",
+      "adventure_end": "冒险结束",
+      "attr_changes": "属性变化：",
+      "no_changes": "没有属性变化"
+    },
+    "evolve": {
+      "help": "↑↓ 选择  Enter 确认  Esc 取消",
+      "can_evolve": "{{.name}} 可以进化了！请选择进化方向：",
+      "evolved_to": "{{.name}} 进化为：\n\n  {{.stage}}（{{.phase}}）"
     },
     "common": {
       "loading": "加载中...",

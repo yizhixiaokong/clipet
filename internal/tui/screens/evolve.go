@@ -2,6 +2,7 @@ package screens
 
 import (
 	"clipet/internal/game"
+	"clipet/internal/i18n"
 	"clipet/internal/tui/styles"
 	"fmt"
 	"strings"
@@ -24,6 +25,7 @@ type EvolveModel struct {
 	pet        *game.Pet
 	candidates []game.EvolveCandidate
 	theme      styles.Theme
+	i18n       *i18n.Manager
 
 	phase      EvolvePhase
 	choiceIdx  int
@@ -36,7 +38,7 @@ type EvolveModel struct {
 }
 
 // NewEvolveModel creates a new evolution screen.
-func NewEvolveModel(pet *game.Pet, candidates []game.EvolveCandidate, theme styles.Theme) EvolveModel {
+func NewEvolveModel(pet *game.Pet, candidates []game.EvolveCandidate, theme styles.Theme, i18nMgr *i18n.Manager) EvolveModel {
 	phase := EvolveChoosing
 	if len(candidates) == 1 {
 		phase = EvolveAnimating
@@ -45,6 +47,7 @@ func NewEvolveModel(pet *game.Pet, candidates []game.EvolveCandidate, theme styl
 		pet:        pet,
 		candidates: candidates,
 		theme:      theme,
+		i18n:       i18nMgr,
 		phase:      phase,
 		oldStageID: pet.StageID,
 	}
@@ -135,11 +138,11 @@ func (e EvolveModel) viewChoosing() string {
 		w = 40
 	}
 
-	title := e.theme.EvolveTitle.Width(w - 2).Render("✨ 进化！")
+	title := e.theme.EvolveTitle.Width(w - 2).Render("✨ " + e.i18n.T("game.evolution.evolving"))
 
 	desc := lipgloss.NewStyle().
 		Foreground(styles.TextColor()).
-		Render(fmt.Sprintf("%s 可以进化了！请选择进化方向：", e.pet.Name))
+		Render(e.i18n.T("ui.evolve.can_evolve", "name", e.pet.Name))
 
 	var choices []string
 	for i, c := range e.candidates {
@@ -151,7 +154,7 @@ func (e EvolveModel) viewChoosing() string {
 		}
 	}
 
-	help := e.theme.HelpBar.Render("↑↓ 选择  Enter 确认  Esc 取消")
+	help := e.theme.HelpBar.Render(e.i18n.T("ui.evolve.help"))
 
 	return lipgloss.JoinVertical(lipgloss.Left,
 		title,
@@ -189,7 +192,7 @@ func (e EvolveModel) viewAnimating() string {
 		w = 40
 	}
 
-	title := e.theme.EvolveTitle.Width(w - 2).Render("✨ 进化中...")
+	title := e.theme.EvolveTitle.Width(w - 2).Render("✨ " + e.i18n.T("game.evolution.evolving"))
 
 	sparkle := e.theme.EvolveArt.Width(w - 4).Render(art)
 
@@ -224,7 +227,7 @@ func (e EvolveModel) viewAnimating() string {
 
 func (e EvolveModel) viewDone() string {
 	if e.result == nil {
-		return "进化完成"
+		return e.i18n.T("game.evolution.evolution_complete", "oldStage", "", "newStage", "")
 	}
 
 	w := e.width
@@ -232,18 +235,16 @@ func (e EvolveModel) viewDone() string {
 		w = 40
 	}
 
-	title := e.theme.EvolveTitle.Width(w - 2).Render("🎉 进化完成！")
+	title := e.theme.EvolveTitle.Width(w - 2).Render("🎉 " + e.i18n.T("game.evolution.evolution_complete", "oldStage", "", "newStage", ""))
 
 	info := lipgloss.NewStyle().
 		Foreground(styles.TextColor()).
-		Render(fmt.Sprintf(
-			"%s 进化为：\n\n  %s（%s）",
-			e.pet.Name,
-			e.result.ToStage.Name,
-			e.result.ToStage.Phase,
-		))
+		Render(e.i18n.T("ui.evolve.evolved_to",
+			"name", e.pet.Name,
+			"stage", e.result.ToStage.Name,
+			"phase", e.result.ToStage.Phase))
 
-	help := e.theme.HelpBar.Render("Enter 继续")
+	help := e.theme.HelpBar.Render("Enter " + e.i18n.T("ui.common.continue"))
 
 	return lipgloss.JoinVertical(lipgloss.Left,
 		title,

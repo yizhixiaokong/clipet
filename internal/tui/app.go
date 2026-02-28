@@ -171,7 +171,7 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Check if home wants to start an adventure
 		if adv := a.home.PendingAdventure(); adv != nil {
 			a.home = a.home.ClearPendingAdventure()
-			a.adventure = screens.NewAdventureModel(a.pet, *adv, a.theme, a.petView, a.registry)
+			a.adventure = screens.NewAdventureModel(a.pet, *adv, a.theme, a.petView, a.registry, a.i18n)
 			a.adventure = a.adventure.SetSize(a.width, a.height)
 			a.active = screenAdventure
 			return a, cmd
@@ -214,7 +214,7 @@ func (a *App) checkEvolution() {
 	if len(candidates) == 0 {
 		return
 	}
-	a.evolve = screens.NewEvolveModel(a.pet, candidates, a.theme)
+	a.evolve = screens.NewEvolveModel(a.pet, candidates, a.theme, a.i18n)
 	a.evolve = a.evolve.SetSize(a.width, a.height)
 	a.active = screenEvolve
 }
