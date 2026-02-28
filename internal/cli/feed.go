@@ -25,7 +25,7 @@ func runFeed(cmd *cobra.Command, args []string) error {
 	}
 
 	// Apply offline decay first
-	pet.ApplyOfflineDecay()
+	pet.AccumulateOfflineTime()
 
 	res := pet.Feed()
 	if !res.OK {

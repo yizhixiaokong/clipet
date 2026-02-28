@@ -25,7 +25,7 @@ func runStatus(cmd *cobra.Command, args []string) error {
 	}
 
 	// Apply offline decay
-	pet.ApplyOfflineDecay()
+	pet.AccumulateOfflineTime()
 	_ = petStore.Save(pet)
 
 	// Check and trigger evolution

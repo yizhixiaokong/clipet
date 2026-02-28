@@ -98,11 +98,10 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case tickMsg:
-		// Apply offline decay on first tick
+		// Offline time accumulation is handled in loadPet
+		// Just mark that we've started ticking
 		if !a.decayApplied {
 			a.decayApplied = true
-			a.pet.ApplyOfflineDecay()
-			_ = a.store.Save(a.pet)
 		}
 
 		a.pet.UpdateAnimation()

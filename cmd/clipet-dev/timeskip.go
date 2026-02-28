@@ -45,9 +45,9 @@ func newTimeskipCmd() *cobra.Command {
 }
 
 func doTimeskip(pet *game.Pet, dur time.Duration) error {
-	// Accumulate skip duration instead of applying immediately
+	// Accumulate to offline duration instead of applying immediately
 	// This prevents multiple small skips from not triggering decay
-	pet.AccumulatedSkipDuration += dur
+	pet.AccumulatedOfflineDuration += dur
 
 	if err := petStore.Save(pet); err != nil {
 		return fmt.Errorf("save: %w", err)
@@ -55,11 +55,11 @@ func doTimeskip(pet *game.Pet, dur time.Duration) error {
 
 	fmt.Println("timeskip cached")
 	fmt.Printf("  added:    %.1f hours\n", dur.Hours())
-	fmt.Printf("  total:    %.1f hours\n", pet.AccumulatedSkipDuration.Hours())
+	fmt.Printf("  total offline: %.1f hours\n", pet.AccumulatedOfflineDuration.Hours())
 	fmt.Printf("  age:      %.1f hours (current)\n", pet.AgeHours())
-	fmt.Printf("  will be:  %.1f hours (when TUI starts)\n", pet.AgeHours()+pet.AccumulatedSkipDuration.Hours())
+	fmt.Printf("  will be:  %.1f hours (when TUI starts)\n", pet.AgeHours()+pet.AccumulatedOfflineDuration.Hours())
 	fmt.Println()
-	fmt.Println("Note: Accumulated time will be applied when you start the TUI.")
+	fmt.Println("Note: Offline time will be applied when you start the TUI.")
 
 	return nil
 }

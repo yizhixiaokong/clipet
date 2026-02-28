@@ -96,8 +96,9 @@ type Pet struct {
 
 	Birthday time.Time `json:"birthday"`
 
-	// Dev tools: accumulated skip duration (applied when TUI starts)
-	AccumulatedSkipDuration time.Duration `json:"accumulated_skip_duration,omitempty"`
+	// Accumulated offline time (from natural offline + dev timeskip)
+	// Applied when TUI starts, then cleared
+	AccumulatedOfflineDuration time.Duration `json:"accumulated_offline_duration,omitempty"`
 
 	// Attributes (0-100)
 	Hunger    int `json:"hunger"` // fullness, higher = less hungry
@@ -746,10 +747,10 @@ func (p *Pet) UpdateFeedRegularity() {
 	}
 }
 
-// ApplyOfflineDecay calculates the time elapsed since LastCheckedAt
-// and applies the corresponding attribute decay. Should be called
-// when loading a pet from a save file.
-func (p *Pet) ApplyOfflineDecay() {
+// AccumulateOfflineTime calculates the time elapsed since LastCheckedAt
+// and accumulates it to AccumulatedOfflineDuration for later application.
+// This should be called when loading a pet from a save file.
+func (p *Pet) AccumulateOfflineTime() {
 	if !p.Alive {
 		return
 	}
@@ -757,7 +758,10 @@ func (p *Pet) ApplyOfflineDecay() {
 	if elapsed < time.Minute {
 		return
 	}
-	p.SimulateDecay(elapsed)
+	// Accumulate offline time for later application (when TUI starts)
+	p.AccumulatedOfflineDuration += elapsed
+	// Update LastCheckedAt to now so we don't double-count this time
+	p.LastCheckedAt = time.Now()
 }
 
 // UseSkill uses an active skill/ability.

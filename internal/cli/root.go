@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/spf13/cobra"
 )
@@ -97,16 +98,17 @@ func runTUI() error {
 		return err
 	}
 
-	// Apply accumulated skip duration before starting TUI
-	if pet.AccumulatedSkipDuration > 0 {
-		dur := pet.AccumulatedSkipDuration
+	// Apply accumulated offline duration (natural offline + dev timeskip)
+	if pet.AccumulatedOfflineDuration > 0 {
+		dur := pet.AccumulatedOfflineDuration
 		pet.Birthday = pet.Birthday.Add(-dur)
 		pet.DevOnlySimulateDecay(dur)
-		pet.AccumulatedSkipDuration = 0 // Clear cache
+		pet.AccumulatedOfflineDuration = 0 // Clear cache
+		pet.LastCheckedAt = time.Now()     // Reset check time
 
 		// Save the updated pet state
 		if err := petStore.Save(pet); err != nil {
-			return fmt.Errorf("save after applying skip duration: %w", err)
+			return fmt.Errorf("save after applying offline duration: %w", err)
 		}
 	}
 
@@ -129,6 +131,9 @@ func loadPet() (*game.Pet, error) {
 	// Restore registry references (not serialized)
 	pet.SetRegistry(registry)
 	pet.SetCapabilitiesRegistry(capabilitiesReg)
+
+	// Accumulate natural offline time (time since last check)
+	pet.AccumulateOfflineTime()
 
 	return pet, nil
 }

@@ -240,14 +240,14 @@ func (m *TimeskipModel) updatePreview(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) 
 }
 
 func (m *TimeskipModel) computePreview() {
-	// Calculate total accumulated time (existing + new)
-	totalHours := m.Pet.AccumulatedSkipDuration.Hours() + m.PreviewHours
+	// Calculate total offline time (existing + new)
+	totalHours := m.Pet.AccumulatedOfflineDuration.Hours() + m.PreviewHours
 
 	m.OldAge = m.Pet.AgeHours()
 	m.NewAge = m.OldAge + totalHours
 	m.OldStats = [4]int{m.Pet.Hunger, m.Pet.Happiness, m.Pet.Health, m.Pet.Energy}
 
-	// Get decay config from plugin (same as AttrDecayHook)
+	// Get decay config from plugin (same as DevOnlySimulateDecay)
 	var decayConfig capabilities.DecayConfig
 	if m.Registry != nil {
 		decayConfig = m.Registry.GetDecayConfig(m.Pet.Species)
@@ -255,7 +255,7 @@ func (m *TimeskipModel) computePreview() {
 		decayConfig = capabilities.DecayConfig{}.Defaults()
 	}
 
-	// Simulate decay using plugin-controlled rates (based on TOTAL accumulated time)
+	// Simulate decay using plugin-controlled rates (based on TOTAL offline time)
 	hunger := clamp(m.Pet.Hunger-int(decayConfig.Hunger*totalHours), 0, 100)
 	happiness := clamp(m.Pet.Happiness-int(decayConfig.Happiness*totalHours), 0, 100)
 	energy := clamp(m.Pet.Energy-int(decayConfig.Energy*totalHours), 0, 100)
@@ -275,9 +275,9 @@ func (m *TimeskipModel) viewInput() string {
 	var lines []string
 	lines = append(lines, tsInfoStyle.Render(fmt.Sprintf("当前年龄: %.1f 小时", m.Pet.AgeHours())))
 
-	// Show accumulated skip time if any
-	if m.Pet.AccumulatedSkipDuration > 0 {
-		lines = append(lines, tsInfoStyle.Render(fmt.Sprintf("缓存时间: %.1f 小时 (将在 TUI 启动时应用)", m.Pet.AccumulatedSkipDuration.Hours())))
+	// Show accumulated offline time if any
+	if m.Pet.AccumulatedOfflineDuration > 0 {
+		lines = append(lines, tsInfoStyle.Render(fmt.Sprintf("离线时间: %.1f 小时 (将在 TUI 启动时结算)", m.Pet.AccumulatedOfflineDuration.Hours())))
 	}
 
 	lines = append(lines, "")
@@ -310,12 +310,12 @@ func (m *TimeskipModel) viewPreview() string {
 
 	var lines []string
 
-	// Show breakdown of accumulated time
-	totalHours := m.Pet.AccumulatedSkipDuration.Hours() + m.PreviewHours
+	// Show breakdown of offline time
+	totalHours := m.Pet.AccumulatedOfflineDuration.Hours() + m.PreviewHours
 	lines = append(lines, tsInputLabelStyle.Render(fmt.Sprintf("跳过 %.1f 小时后的变化:", m.PreviewHours)))
-	if m.Pet.AccumulatedSkipDuration > 0 {
-		lines = append(lines, tsInfoStyle.Render(fmt.Sprintf("  (缓存: %.1fh + 新增: %.1fh = 总计: %.1fh)",
-			m.Pet.AccumulatedSkipDuration.Hours(), m.PreviewHours, totalHours)))
+	if m.Pet.AccumulatedOfflineDuration > 0 {
+		lines = append(lines, tsInfoStyle.Render(fmt.Sprintf("  (已累积: %.1fh + 新增: %.1fh = 总计: %.1fh)",
+			m.Pet.AccumulatedOfflineDuration.Hours(), m.PreviewHours, totalHours)))
 	}
 	lines = append(lines, "")
 	lines = append(lines, fmt.Sprintf("  年龄   %.1fh → %.1fh", m.OldAge, m.NewAge))
