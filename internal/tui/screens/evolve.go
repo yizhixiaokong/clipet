@@ -98,6 +98,12 @@ func (e EvolveModel) Tick() EvolveModel {
 func (e EvolveModel) Update(msg tea.Msg) (EvolveModel, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
+		// Global keys work in all phases
+		if key.Matches(msg, e.keyMap.Global.ToggleHelp) {
+			e.help.ShowAll = !e.help.ShowAll
+			return e, nil
+		}
+
 		switch e.phase {
 		case EvolveChoosing:
 			switch {

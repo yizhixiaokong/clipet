@@ -89,6 +89,8 @@ func (m OfflineSettlementModel) Update(msg tea.Msg) (OfflineSettlementModel, tea
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
 		switch {
+		case key.Matches(msg, m.keyMap.Global.ToggleHelp):
+			m.help.ShowAll = !m.help.ShowAll
 		case key.Matches(msg, m.keyMap.Quit):
 			m.done = true
 		case key.Matches(msg, m.keyMap.Up):

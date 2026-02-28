@@ -96,6 +96,12 @@ func (a AdventureModel) Tick() AdventureModel {
 func (a AdventureModel) Update(msg tea.Msg) (AdventureModel, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
+		// Global keys work in all phases
+		if key.Matches(msg, a.keyMap.Global.ToggleHelp) {
+			a.help.ShowAll = !a.help.ShowAll
+			return a, nil
+		}
+
 		switch a.phase {
 		case AdventureIntro:
 			switch {

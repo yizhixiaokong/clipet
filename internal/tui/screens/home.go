@@ -239,6 +239,11 @@ func (h HomeModel) Update(msg tea.Msg) (HomeModel, tea.Cmd) {
 	case tea.KeyPressMsg:
 		// Global shortcut keys always work
 		switch {
+		case key.Matches(msg, h.keyMap.Global.Quit):
+			return h, tea.Quit
+		case key.Matches(msg, h.keyMap.Global.ToggleHelp):
+			h.help.ShowAll = !h.help.ShowAll
+			return h, nil
 		case key.Matches(msg, h.keyMap.Actions.Feed):
 			return h.executeAction("feed"), nil
 		case key.Matches(msg, h.keyMap.Actions.Play):
@@ -280,6 +285,8 @@ func (h HomeModel) Update(msg tea.Msg) (HomeModel, tea.Cmd) {
 			// Level 1: sub-actions
 			actions := h.getCurrentActions()
 			switch {
+			case key.Matches(msg, h.keyMap.Navigation.Up), key.Matches(msg, h.keyMap.Navigation.Back):
+				h.inSubmenu = false
 			case key.Matches(msg, h.keyMap.Navigation.Left):
 				if h.actIdx > 0 {
 					h.actIdx--
@@ -288,8 +295,6 @@ func (h HomeModel) Update(msg tea.Msg) (HomeModel, tea.Cmd) {
 				if h.actIdx < len(actions)-1 {
 					h.actIdx++
 				}
-			case key.Matches(msg, h.keyMap.Navigation.Back):
-				h.inSubmenu = false
 			case key.Matches(msg, h.keyMap.Navigation.Enter):
 				return h.executeAction(actions[h.actIdx].action), nil
 			}

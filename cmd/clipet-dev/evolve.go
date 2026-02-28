@@ -77,7 +77,7 @@ func doEvolve(pet *game.Pet, toStageID string) error {
 }
 
 func runEvoTUI(pet *game.Pet, registry *plugin.Registry) error {
-	m := dev.NewEvolveModel(pet, pet.Species, registry)
+	m := dev.NewEvolveModel(pet, pet.Species, registry, i18nMgr)
 
 	m.OnEvolve = func(toStageID string) error {
 		return doEvolve(pet, toStageID)

@@ -2,8 +2,10 @@ package main
 
 import (
 	"clipet/internal/assets"
+	"clipet/internal/config"
 	"clipet/internal/game"
 	"clipet/internal/game/capabilities"
+	"clipet/internal/i18n"
 	"clipet/internal/plugin"
 	"clipet/internal/store"
 	"fmt"
@@ -18,6 +20,7 @@ var (
 	capabilitiesReg  *capabilities.Registry
 	petStore         *store.JSONStore
 	packDir          string
+	i18nMgr          *i18n.Manager
 )
 
 func main() {
@@ -26,10 +29,16 @@ func main() {
 		Short: "Clipet developer tool",
 		Long:  "clipet-dev is a Clipet plugin developer tool for timeskip, set, evolve, validate, and preview.",
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-			if cmd.Name() == "validate" || cmd.Name() == "preview" {
-				return nil
+			// Always initialize i18n
+			if err := setupI18n(); err != nil {
+				return err
 			}
-			return setup()
+
+			// Full setup for commands that need it
+			if cmd.Name() != "validate" && cmd.Name() != "preview" {
+				return setup()
+			}
+			return nil
 		},
 		SilenceUsage:  true,
 		SilenceErrors: true,
@@ -47,6 +56,28 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
+}
+
+func setupI18n() error {
+	// Load config for i18n
+	cfg, err := config.Load()
+	if err != nil {
+		// Log warning but continue with defaults
+		fmt.Fprintf(os.Stderr, "Warning: failed to load config: %v\n", err)
+		cfg = &config.Config{
+			Language:         config.DefaultLanguage,
+			FallbackLanguage: config.DefaultFallbackLanguage,
+		}
+	}
+
+	// Initialize i18n
+	bundle := i18n.NewBundle()
+	loader := i18n.NewLoader(assets.LocalesFS, "locales")
+	if err := loader.LoadAll(bundle); err != nil {
+		fmt.Fprintf(os.Stderr, "Warning: failed to load translations: %v\n", err)
+	}
+	i18nMgr = i18n.NewManager(cfg.Language, cfg.FallbackLanguage, bundle)
+	return nil
 }
 
 func setup() error {

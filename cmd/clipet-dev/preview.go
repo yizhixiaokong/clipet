@@ -61,7 +61,7 @@ func newPreviewCmd() *cobra.Command {
 }
 
 func runPreviewTUI(pack *plugin.SpeciesPack, fps int, initStage, initAnim string) error {
-	m := dev.NewPreviewModel(pack, fps, initStage, initAnim)
+	m := dev.NewPreviewModel(pack, fps, initStage, initAnim, i18nMgr)
 	p := tea.NewProgram(m)
 	_, err := p.Run()
 	return err

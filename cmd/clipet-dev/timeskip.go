@@ -65,7 +65,7 @@ func doTimeskip(pet *game.Pet, dur time.Duration) error {
 }
 
 func runTimeskipTUI(pet *game.Pet) error {
-	m := dev.NewTimeskipModel(pet, registry)
+	m := dev.NewTimeskipModel(pet, registry, i18nMgr)
 
 	p := tea.NewProgram(m)
 	finalModel, err := p.Run()

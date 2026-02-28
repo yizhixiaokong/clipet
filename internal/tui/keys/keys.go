@@ -130,6 +130,7 @@ func (k HomeKeyMap) ShortHelp() []key.Binding {
 		k.Actions.Heal,
 		k.Actions.Talk,
 		k.Global.Quit,
+		k.Global.ToggleHelp,
 	}
 }
 
@@ -174,6 +175,7 @@ func (k TreeKeyMap) ShortHelp() []key.Binding {
 		k.Navigation.Enter,
 		k.Navigation.Back,
 		k.Global.Quit,
+		k.Global.ToggleHelp,
 	}
 }
 
@@ -207,6 +209,7 @@ func (k AdventureKeyMap) ShortHelp() []key.Binding {
 		k.Navigation.Enter,
 		k.Navigation.Back,
 		k.Global.Quit,
+		k.Global.ToggleHelp,
 	}
 }
 
@@ -240,6 +243,7 @@ func (k EvolveKeyMap) ShortHelp() []key.Binding {
 		k.Navigation.Enter,
 		k.Navigation.Back,
 		k.Global.Quit,
+		k.Global.ToggleHelp,
 	}
 }
 
@@ -296,6 +300,7 @@ func (k OfflineSettlementKeyMap) ShortHelp() []key.Binding {
 		k.Quit,
 		k.Top,
 		k.Bottom,
+		k.Global.ToggleHelp,
 	}
 }
 
@@ -339,6 +344,7 @@ func (k PreviewKeyMap) ShortHelp() []key.Binding {
 		k.SpeedUp,
 		k.SlowDown,
 		k.Global.Quit,
+		k.Global.ToggleHelp,
 	}
 }
 
@@ -372,6 +378,7 @@ func (k SetKeyMap) ShortHelp() []key.Binding {
 		k.Navigation.Enter,
 		k.Navigation.Back,
 		k.Global.Quit,
+		k.Global.ToggleHelp,
 	}
 }
 
@@ -405,6 +412,7 @@ func (k TimeskipKeyMap) ShortHelp() []key.Binding {
 		k.Navigation.Enter,
 		k.Navigation.Back,
 		k.Global.Quit,
+		k.Global.ToggleHelp,
 	}
 }
 

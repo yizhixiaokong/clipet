@@ -119,7 +119,7 @@ func runSetTUI(pet *game.Pet) error {
 	// Build fields dynamically, including custom attributes
 	fields := buildSettableFields(pet)
 
-	m := dev.NewSetModel(pet, fields)
+	m := dev.NewSetModel(pet, fields, i18nMgr)
 
 	// Set callbacks
 	m.GetCurrentValue = func(field dev.SetField) string {
