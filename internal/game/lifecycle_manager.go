@@ -65,8 +65,8 @@ func (m *LifecycleManager) TriggerEnding(pet *Pet) capabilities.EndingResult {
 	species := m.pluginRegistry.GetSpecies(pet.Species)
 	if species == nil {
 		return capabilities.EndingResult{
-			Type:    "peaceful_rest",
-			Message: "平静地度过了这一生，它已经离开了...",
+			Type: "peaceful_rest",
+			// Message will be localized by UI layer
 		}
 	}
 
@@ -75,7 +75,7 @@ func (m *LifecycleManager) TriggerEnding(pet *Pet) capabilities.EndingResult {
 		if m.matchesEndingCondition(pet, ending.Condition) {
 			return capabilities.EndingResult{
 				Type:    ending.Type,
-				Message: ending.Message,
+				Message: ending.Message, // Plugin-provided message (may be localized by plugin)
 			}
 		}
 	}
@@ -86,18 +86,18 @@ func (m *LifecycleManager) TriggerEnding(pet *Pet) capabilities.EndingResult {
 	switch {
 	case happiness > 90 && pet.TotalInteractions > 500:
 		return capabilities.EndingResult{
-			Type:    "blissful_passing",
-			Message: "带着满满的幸福，你的宠物安详地离开了...",
+			Type: "blissful_passing",
+			// Message will be localized by UI layer
 		}
 	case pet.AdventuresCompleted > 30:
 		return capabilities.EndingResult{
-			Type:    "heroic_tale",
-			Message: "它度过了充满冒险的一生，成为了传奇...",
+			Type: "heroic_tale",
+			// Message will be localized by UI layer
 		}
 	default:
 		return capabilities.EndingResult{
-			Type:    "peaceful_rest",
-			Message: "平静地度过了这一生，它已经离开了...",
+			Type: "peaceful_rest",
+			// Message will be localized by UI layer
 		}
 	}
 }

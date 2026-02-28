@@ -133,6 +133,11 @@
       "skill_system": "Skill system not initialized",
       "skill_unknown": "Unknown skill",
       "skill_not_active": "This is not an active skill"
+    },
+    "endings": {
+      "peaceful_rest": "After a peaceful life, your pet has departed...",
+      "blissful_passing": "Filled with happiness, your pet peacefully passed away...",
+      "heroic_tale": "After a life full of adventures, your pet became a legend..."
     }
   },
   "cli": {

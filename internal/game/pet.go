@@ -180,7 +180,8 @@ type Pet struct {
 	LifecycleWarningShown bool          `json:"lifecycle_warning_shown"` // NEW: lifecycle tracking
 
 	// Ending information
-	EndingMessage string `json:"ending_message,omitempty"` // Final message when pet dies
+	EndingType    string `json:"ending_type,omitempty"`    // Ending type for i18n lookup
+	EndingMessage string `json:"ending_message,omitempty"` // Plugin-provided message (optional)
 
 	// Custom attributes (Phase 3)
 	CustomAttributes map[string]int `json:"custom_attributes,omitempty"` // NEW: custom attribute storage

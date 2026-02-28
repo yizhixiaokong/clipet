@@ -63,8 +63,9 @@ func (h *LifecycleHook) OnTimeAdvance(elapsed time.Duration, pet *Pet) {
 // applyEnding applies the ending result to the pet
 func (h *LifecycleHook) applyEnding(pet *Pet, result capabilities.EndingResult) {
 	pet.Alive = false
-	pet.EndingMessage = result.Message
+	pet.EndingType = result.Type
+	pet.EndingMessage = result.Message // Plugin-provided message (may be empty)
 
-	// The UI can check for pet.EndingMessage and display it appropriately
-	fmt.Printf("[Lifecycle] Pet %s has reached the end: %s\n", pet.Name, result.Message)
+	// The UI can use pet.EndingType for i18n lookup, or pet.EndingMessage if provided
+	fmt.Printf("[Lifecycle] Pet %s has reached the end: [%s] %s\n", pet.Name, result.Type, result.Message)
 }

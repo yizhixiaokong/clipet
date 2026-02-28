@@ -601,13 +601,13 @@ func (h HomeModel) View() string {
 
 	// 1) Title bar - show ending message if pet has died
 	var title string
-	if !h.pet.Alive && h.pet.EndingMessage != "" {
+	if h.hasEnding() {
 		// Special title bar for ending with red/gold background
 		title = h.theme.TitleBar.
 			Width(totalInner).
 			Background(lipgloss.Color("#AA3355")).
 			Foreground(lipgloss.Color("#FFFFFF")).
-			Render("💔 " + h.pet.EndingMessage)
+			Render("💔 " + h.getLocalizedEndingMessage())
 	} else {
 		title = h.theme.TitleBar.Width(totalInner).Render("🐾 Clipet")
 	}
@@ -623,7 +623,7 @@ func (h HomeModel) View() string {
 	// 4) Action menu (category tabs + sub-actions)
 	// Hide menu if pet has died
 	var actionMenu string
-	if !h.pet.Alive && h.pet.EndingMessage != "" {
+	if h.hasEnding() {
 		actionMenu = ""
 	} else {
 		actionMenu = h.renderActionMenu(totalInner)
@@ -631,7 +631,7 @@ func (h HomeModel) View() string {
 
 	// 5) Help bar
 	var helpText string
-	if !h.pet.Alive && h.pet.EndingMessage != "" {
+	if h.hasEnding() {
 		helpText = "q " + h.i18n.T("ui.common.quit")
 	} else if h.inSubmenu {
 		helpText = h.i18n.T("ui.home.help_submenu")
@@ -672,13 +672,13 @@ func (h HomeModel) renderGameView() string {
 
 	// Right panel: Game content
 	var title string
-	if !h.pet.Alive && h.pet.EndingMessage != "" {
+	if h.hasEnding() {
 		// Show ending message instead of game title
 		title = h.theme.TitleBar.
 			Width(rightPanelW).
 			Background(lipgloss.Color("#AA3355")).
 			Foreground(lipgloss.Color("#FFFFFF")).
-			Render("💔 " + h.pet.EndingMessage)
+			Render("💔 " + h.getLocalizedEndingMessage())
 	} else {
 		title = h.theme.TitleBar.Width(rightPanelW).Render("🎮 " + h.activeGame.GetConfig().Name)
 	}
@@ -689,7 +689,7 @@ func (h HomeModel) renderGameView() string {
 		Render(gameContent)
 
 	var helpText string
-	if !h.pet.Alive && h.pet.EndingMessage != "" {
+	if h.hasEnding() {
 		helpText = "q " + h.i18n.T("ui.common.quit")
 	} else if h.activeGame.IsFinished() {
 		helpText = "Enter " + h.i18n.T("ui.common.continue") + "  Esc " + h.i18n.T("ui.common.quit")
@@ -919,6 +919,40 @@ func (h HomeModel) statBar(icon, label string, value int) string {
 	return fmt.Sprintf("%s%s%s %3d", lab, fStr, eStr, value)
 }
 
+// getLocalizedEndingMessage returns the localized ending message.
+// Priority: 1) Plugin locale, 2) Core i18n, 3) Plugin-provided message
+func (h HomeModel) getLocalizedEndingMessage() string {
+	if h.pet.EndingType == "" {
+		return ""
+	}
+
+	// 1. Try plugin locale first (if plugin provided custom ending)
+	if msg := h.registry.GetEndingMessage(h.pet.Species, h.pet.EndingType); msg != "" {
+		return msg
+	}
+
+	// 2. Try core i18n (for default endings: peaceful_rest, blissful_passing, heroic_tale)
+	if msg := h.i18n.T("game.endings." + h.pet.EndingType); msg != "" {
+		// Check if i18n returned the key itself (meaning not found)
+		if !strings.HasPrefix(msg, "game.endings.") {
+			return msg
+		}
+	}
+
+	// 3. Fallback to plugin-provided message (already localized by plugin)
+	if h.pet.EndingMessage != "" {
+		return h.pet.EndingMessage
+	}
+
+	// 4. Ultimate fallback
+	return h.i18n.T("game.endings.peaceful_rest")
+}
+
+// hasEnding returns true if the pet has an ending (either type or message).
+func (h HomeModel) hasEnding() bool {
+	return !h.pet.Alive && (h.pet.EndingType != "" || h.pet.EndingMessage != "")
+}
+
 // renderMessageArea renders the action feedback area.
 func (h HomeModel) renderMessageArea(width int) string {
 	innerW := width - 6
@@ -927,7 +961,7 @@ func (h HomeModel) renderMessageArea(width int) string {
 	}
 
 	// Don't show messages if pet has died (ending is shown in title bar)
-	if !h.pet.Alive && h.pet.EndingMessage != "" {
+	if h.hasEnding() {
 		return ""
 	}
 

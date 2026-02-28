@@ -402,6 +402,32 @@ func (r *Registry) GetAttributeInteractionConfig(speciesID string) capabilities.
 	return pack.Interactions.Defaults()
 }
 
+// GetEndingMessage returns the localized ending message for a given ending type.
+// Uses locale if available, falls back to inline TOML message.
+func (r *Registry) GetEndingMessage(speciesID, endingType string) string {
+	pack := r.GetSpecies(speciesID)
+	if pack == nil {
+		return ""
+	}
+
+	// Try locale first
+	if pack.Locale != nil {
+		endingKey := "endings." + endingType
+		if msg := getLocaleValue(pack.Locale.Data, endingKey); msg != "" {
+			return msg
+		}
+	}
+
+	// Fallback to inline TOML endings
+	for _, ending := range pack.Endings {
+		if ending.Type == endingType {
+			return ending.Message
+		}
+	}
+
+	return ""
+}
+
 // Count returns the number of registered species.
 func (r *Registry) Count() int {
 	r.mu.RLock()

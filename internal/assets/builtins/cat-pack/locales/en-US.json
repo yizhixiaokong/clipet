@@ -749,5 +749,10 @@
         "1_1": "All data was corrupted... but the scanning system got calibrated."
       }
     }
+  },
+  "endings": {
+    "blissful_passing": "With a contented smile, your cat peacefully departed...",
+    "adventurous_life": "After a life full of adventures, it became a legend...",
+    "peaceful_rest": "After a peaceful life, it has departed..."
   }
 }
