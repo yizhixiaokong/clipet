@@ -33,7 +33,10 @@
       "dialogue_stats": "🗣 对话 {{.talk}}  🗺 冒险 {{.adventure}}",
       "help_submenu": "←→ 选择  Enter 确认  ↑/Esc 返回  f喂食 p玩耍 r休息 c治疗 t对话  q退出",
       "help_main": "←→ 切换分类  ↓/Enter 进入  f喂食 p玩耍 r休息 c治疗 t对话  q退出",
-      "help_game": "Esc 退出游戏"
+      "help_game": "Esc 退出游戏",
+      "game_won": "🎉 胜利！{{.message}} 快乐度 +{{.happiness}}",
+      "game_lost": "💔 失败... {{.message}} 快乐度 {{.happiness}}",
+      "save_failed": "⚠保存失败"
     },
     "cooldown": {
       "action_cooldown": "{{.action}}需要休整，还需等待 {{.time}}"

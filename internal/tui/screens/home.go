@@ -332,7 +332,7 @@ func (h HomeModel) okMsg(msg string) HomeModel {
 	h.msgIsInfo = false
 	h.msgIsWarn = false
 	if err := h.store.Save(h.pet); err != nil {
-		h.successMsg = msg + " ⚠保存失败"
+		h.successMsg = msg + " " + h.i18n.T("ui.home.save_failed")
 	}
 	return h
 }
@@ -496,17 +496,17 @@ func (h HomeModel) processGameResult() HomeModel {
 	if result.Won {
 		h.pet.Happiness = game.Clamp(h.pet.Happiness+config.WinHappiness, 0, 100)
 		h.pet.GamesWon++
-		h.message = fmt.Sprintf("🎉 胜利！%s 快乐度 +%d", result.Message, config.WinHappiness)
+		h.message = h.i18n.T("ui.home.game_won", "message", result.Message, "happiness", config.WinHappiness)
 	} else {
 		h.pet.Happiness = game.Clamp(h.pet.Happiness+config.LoseHappiness, 0, 100)
-		h.message = fmt.Sprintf("💔 失败... %s 快乐度 %d", result.Message, config.LoseHappiness)
+		h.message = h.i18n.T("ui.home.game_lost", "message", result.Message, "happiness", config.LoseHappiness)
 	}
 	h.pet.TotalInteractions++
 	h.msgIsWarn = false
 	h.msgIsInfo = false
 
 	if err := h.store.Save(h.pet); err != nil {
-		h.message += " ⚠保存失败"
+		h.message += " " + h.i18n.T("ui.home.save_failed")
 	}
 	return h
 }

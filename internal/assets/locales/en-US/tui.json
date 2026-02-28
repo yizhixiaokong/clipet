@@ -33,7 +33,10 @@
       "dialogue_stats": "🗣 Talk {{.talk}}  🗺 Adventure {{.adventure}}",
       "help_submenu": "←→ Select  Enter Confirm  ↑/Esc Back  f=feed p=play r=rest c=heal t=talk  q=quit",
       "help_main": "←→ Switch Category  ↓/Enter Enter  f=feed p=play r=rest c=heal t=talk  q=quit",
-      "help_game": "Esc to quit game"
+      "help_game": "Esc to quit game",
+      "game_won": "🎉 Victory! {{.message}} Happiness +{{.happiness}}",
+      "game_lost": "💔 Defeat... {{.message}} Happiness {{.happiness}}",
+      "save_failed": "⚠Save failed"
     },
     "cooldown": {
       "action_cooldown": "{{.action}} needs rest, wait {{.time}}"
