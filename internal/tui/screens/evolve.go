@@ -103,7 +103,7 @@ func (e EvolveModel) Update(msg tea.Msg) (EvolveModel, tea.Cmd) {
 				e.result = &e.candidates[e.choiceIdx]
 				e.phase = EvolveAnimating
 				e.animTick = 0
-			case "escape":
+			case "esc":
 				e.done = true // 取消进化，返回主屏幕
 			}
 

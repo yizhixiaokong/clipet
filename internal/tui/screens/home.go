@@ -278,7 +278,7 @@ func (h HomeModel) Update(msg tea.Msg) (HomeModel, tea.Cmd) {
 				if h.actIdx < len(actions)-1 {
 					h.actIdx++
 				}
-			case "up", "k", "escape":
+			case "up", "k", "esc":
 				h.inSubmenu = false
 			case "enter", " ":
 				return h.executeAction(actions[h.actIdx].action), nil
@@ -294,10 +294,10 @@ func (h HomeModel) updateGame(msg tea.Msg) (HomeModel, tea.Cmd) {
 	case tea.KeyPressMsg:
 		key := msg.String()
 
-		// Escape cancels an unfinished game
-		if key == "escape" && !h.activeGame.IsFinished() {
+		// Esc cancels an unfinished game
+		if key == "esc" && !h.activeGame.IsFinished() {
 			h.activeGame = nil
-			h.message = "游戏已取消"
+			h.message = h.i18n.T("ui.home.game_cancelled")
 			h.msgIsWarn = false
 			h.msgIsInfo = false
 			return h, nil
@@ -416,10 +416,10 @@ func (h HomeModel) executeAction(action string) HomeModel {
 
 	case "extra_attrs":
 		if len(h.pet.CustomAttributes) == 0 {
-			return h.infoMsg("暂无额外属性")
+			return h.infoMsg(h.i18n.T("ui.home.no_extra_attrs"))
 		}
 		var lines []string
-		lines = append(lines, "额外属性:")
+		lines = append(lines, h.i18n.T("ui.home.extra_attrs_title"))
 		for attrName, value := range h.pet.CustomAttributes {
 			lines = append(lines, fmt.Sprintf("  %s: %d", attrName, value))
 		}
@@ -438,11 +438,11 @@ func (h HomeModel) executeAction(action string) HomeModel {
 		}
 		if time.Since(h.pet.LastAdventureAt) < game.CooldownAdventure {
 			remain := game.CooldownAdventure - time.Since(h.pet.LastAdventureAt)
-			return h.failMsg(fmt.Sprintf("冒险需要休整，还需等待 %d 分钟", int(remain.Minutes())+1))
+			return h.failMsg(h.i18n.T("ui.home.adventure_cooldown", "minutes", int(remain.Minutes())+1))
 		}
 		adv := game.PickAdventure(h.pet, h.registry)
 		if adv == nil {
-			return h.failMsg("当前阶段没有可用的冒险事件")
+			return h.failMsg(h.i18n.T("ui.home.no_adventures"))
 		}
 		h.pendingAdventure = adv
 		return h
@@ -468,10 +468,10 @@ func (h HomeModel) executeAction(action string) HomeModel {
 func (h HomeModel) startGame(gt games.GameType) HomeModel {
 	config, ok := h.gameMgr.GetConfig(gt)
 	if !ok {
-		return h.failMsg("游戏不可用")
+		return h.failMsg(h.i18n.T("ui.home.game_unavailable"))
 	}
 	if h.pet.Energy < config.MinEnergy {
-		return h.failMsg(fmt.Sprintf("精力不足！需要 %d 精力", config.MinEnergy))
+		return h.failMsg(h.i18n.T("game.errors.not_enough_energy"))
 	}
 
 	// Deduct energy upfront
@@ -627,11 +627,11 @@ func (h HomeModel) renderGameView() string {
 
 	var helpText string
 	if !h.pet.Alive && h.pet.EndingMessage != "" {
-		helpText = "q 退出"
+		helpText = "q " + h.i18n.T("ui.common.quit")
 	} else if h.activeGame.IsFinished() {
-		helpText = "Enter 继续  Esc 退出"
+		helpText = "Enter " + h.i18n.T("ui.common.continue") + "  Esc " + h.i18n.T("ui.common.quit")
 	} else {
-		helpText = "Esc 退出游戏"
+		helpText = h.i18n.T("ui.home.help_game")
 	}
 	help := h.theme.HelpBar.Width(rightPanelW).Render(helpText)
 

@@ -63,7 +63,7 @@ func NewApp(pet *game.Pet, reg *plugin.Registry, st store.Store, i18nMgr *i18n.M
 	var offlineSettlement screens.OfflineSettlementModel
 	activeScreen := screenHome
 	if len(offlineResults) > 0 {
-		offlineSettlement = screens.NewOfflineSettlementModel(offlineResults, theme)
+		offlineSettlement = screens.NewOfflineSettlementModel(offlineResults, theme, i18nMgr)
 		activeScreen = screenOfflineSettlement
 	}
 

@@ -91,7 +91,7 @@ func (a AdventureModel) Update(msg tea.Msg) (AdventureModel, tea.Cmd) {
 			switch msg.String() {
 			case "enter", " ":
 				a.phase = AdventureChoosing
-			case "escape":
+			case "esc":
 				a.done = true
 			}
 
@@ -108,7 +108,7 @@ func (a AdventureModel) Update(msg tea.Msg) (AdventureModel, tea.Cmd) {
 			case "enter":
 				a.phase = AdventureResolving
 				a.animTick = 0
-			case "escape":
+			case "esc":
 				a.phase = AdventureIntro
 			}
 

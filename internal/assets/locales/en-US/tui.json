@@ -45,6 +45,15 @@
       "mood_hungry": "Hungry",
       "mood_tired": "Tired"
     },
+    "offline_settlement": {
+      "title": "📊 Offline Settlement Report",
+      "no_data": "\n  No offline settlement data\n",
+      "summary": "Total Rounds: {{.rounds}} | Critical: {{.critical}} rounds",
+      "round_header": "━━━ Round {{.round}} ({{.duration}}h) ━━━",
+      "attr_line": "    Attrs: [{{.before}}] → [{{.after}}]",
+      "footer": "↑/k Up  ↓/j Down  Enter/Space/q Confirm  g/Home Top  G/End Bottom",
+      "critical_warning": "  ⚠️  Detected {{.count}} critical rounds, please monitor pet health!"
+    },
     "adventure": {
       "title": "🗺 Adventure",
       "result_title": "Adventure Result",

@@ -45,6 +45,15 @@
       "mood_hungry": "饥饿",
       "mood_tired": "疲惫"
     },
+    "offline_settlement": {
+      "title": "📊 离线结算报告",
+      "no_data": "\n  没有离线结算数据\n",
+      "summary": "总轮次: {{.rounds}} 轮 | 临界状态: {{.critical}} 轮",
+      "round_header": "━━━ 第 {{.round}} 轮 ({{.duration}}h) ━━━",
+      "attr_line": "    属性: [{{.before}}] → [{{.after}}]",
+      "footer": "↑/k 上滚  ↓/j 下滚  Enter/Space/q 确认  g/Home 顶部  G/End 底部",
+      "critical_warning": "  ⚠️  检测到 {{.count}} 轮临界状态，请关注宠物健康！"
+    },
     "adventure": {
       "title": "🗺 冒险",
       "result_title": "冒险结果",

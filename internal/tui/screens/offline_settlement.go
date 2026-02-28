@@ -2,6 +2,7 @@ package screens
 
 import (
 	"clipet/internal/game"
+	"clipet/internal/i18n"
 	"clipet/internal/tui/styles"
 	"fmt"
 	"strings"
@@ -14,6 +15,7 @@ import (
 type OfflineSettlementModel struct {
 	results []game.DecayRoundResult
 	theme   styles.Theme
+	i18n    *i18n.Manager
 
 	scrollOffset int // Current scroll position
 	maxVisible   int // Max visible lines (calculated from height)
@@ -48,10 +50,11 @@ var (
 )
 
 // NewOfflineSettlementModel creates a new offline settlement screen.
-func NewOfflineSettlementModel(results []game.DecayRoundResult, theme styles.Theme) OfflineSettlementModel {
+func NewOfflineSettlementModel(results []game.DecayRoundResult, theme styles.Theme, i18nMgr *i18n.Manager) OfflineSettlementModel {
 	return OfflineSettlementModel{
 		results: results,
 		theme:   theme,
+		i18n:    i18nMgr,
 	}
 }
 
@@ -79,7 +82,7 @@ func (m OfflineSettlementModel) Update(msg tea.Msg) (OfflineSettlementModel, tea
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
 		switch msg.String() {
-		case "enter", " ", "q", "escape":
+		case "enter", " ", "q", "esc":
 			m.done = true
 		case "up", "k":
 			m.scrollOffset = clamp(m.scrollOffset-1, 0, m.maxScroll())
@@ -97,13 +100,13 @@ func (m OfflineSettlementModel) Update(msg tea.Msg) (OfflineSettlementModel, tea
 // View renders the offline settlement report.
 func (m OfflineSettlementModel) View() string {
 	if len(m.results) == 0 {
-		return "\n  没有离线结算数据\n"
+		return m.i18n.T("ui.offline_settlement.no_data")
 	}
 
 	var b strings.Builder
 
 	// Header
-	title := titleStyle.Render("📊 离线结算报告")
+	title := titleStyle.Render(m.i18n.T("ui.offline_settlement.title"))
 	b.WriteString(title + "\n\n")
 
 	// Summary line
@@ -114,7 +117,7 @@ func (m OfflineSettlementModel) View() string {
 		}
 	}
 
-	summaryText := fmt.Sprintf("总轮次: %d 轮 | 临界状态: %d 轮", len(m.results), criticalCount)
+	summaryText := m.i18n.T("ui.offline_settlement.summary", "rounds", len(m.results), "critical", criticalCount)
 	if criticalCount > 0 {
 		summaryText = warningStyle.Render(summaryText)
 	}
@@ -125,7 +128,7 @@ func (m OfflineSettlementModel) View() string {
 
 	for i, r := range m.results {
 		// Round header
-		roundHeader := fmt.Sprintf("━━━ 第 %d 轮 (%.1fh) ━━━", r.Round, r.Duration.Hours())
+		roundHeader := m.i18n.T("ui.offline_settlement.round_header", "round", r.Round, "duration", fmt.Sprintf("%.1f", r.Duration.Hours()))
 		if r.CriticalState {
 			roundHeader = dangerStyle.Render(roundHeader)
 		} else {
@@ -173,7 +176,7 @@ func (m OfflineSettlementModel) View() string {
 
 	// Footer with navigation hints
 	b.WriteString("\n")
-	footer := mutedStyle.Render("↑/k 上滚  ↓/j 下滚  Enter/Space/q 确认  g/Home 顶部  G/End 底部")
+	footer := mutedStyle.Render(m.i18n.T("ui.offline_settlement.footer"))
 
 	// Scroll indicator
 	if totalLines > m.maxVisible {
@@ -191,7 +194,7 @@ func (m OfflineSettlementModel) View() string {
 	// Warning if critical states detected
 	if criticalCount > 0 {
 		b.WriteString("\n")
-		warning := warningStyle.Render(fmt.Sprintf("  ⚠️  检测到 %d 轮临界状态，请关注宠物健康！", criticalCount))
+		warning := warningStyle.Render(m.i18n.T("ui.offline_settlement.critical_warning", "count", criticalCount))
 		b.WriteString(warning + "\n")
 	}
 
