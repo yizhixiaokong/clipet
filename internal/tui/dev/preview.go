@@ -2,8 +2,10 @@
 package dev
 
 import (
+	"clipet/internal/i18n"
 	"clipet/internal/plugin"
 	"clipet/internal/tui/components"
+	"clipet/internal/tui/keys"
 	"clipet/internal/tui/styles"
 	"fmt"
 	"sort"
@@ -16,67 +18,6 @@ import (
 	"charm.land/lipgloss/v2"
 )
 
-// PreviewKeyMap defines keybindings for preview command
-type PreviewKeyMap struct {
-	Up         key.Binding
-	Down       key.Binding
-	Left       key.Binding
-	Right      key.Binding
-	SpeedUp    key.Binding
-	SlowDown   key.Binding
-	Quit       key.Binding
-	ToggleHelp key.Binding
-}
-
-// DefaultPreviewKeyMap returns default keybindings for preview command
-var DefaultPreviewKeyMap = PreviewKeyMap{
-	Up: key.NewBinding(
-		key.WithKeys("up", "k"),
-		key.WithHelp("↑/k", "上移"),
-	),
-	Down: key.NewBinding(
-		key.WithKeys("down", "j"),
-		key.WithHelp("↓/j", "下移"),
-	),
-	Left: key.NewBinding(
-		key.WithKeys("left", "h"),
-		key.WithHelp("←/h", "折叠"),
-	),
-	Right: key.NewBinding(
-		key.WithKeys("right", "l"),
-		key.WithHelp("→/l", "展开"),
-	),
-	SpeedUp: key.NewBinding(
-		key.WithKeys("+", "="),
-		key.WithHelp("+", "加速"),
-	),
-	SlowDown: key.NewBinding(
-		key.WithKeys("-", "_"),
-		key.WithHelp("-", "减速"),
-	),
-	Quit: key.NewBinding(
-		key.WithKeys("q", "ctrl+c", "esc"),
-		key.WithHelp("q/Ctrl+C/Esc", "退出"),
-	),
-	ToggleHelp: key.NewBinding(
-		key.WithKeys("?"),
-		key.WithHelp("?", "帮助"),
-	),
-}
-
-// ShortHelp returns keybindings to be shown in the mini help view
-func (k PreviewKeyMap) ShortHelp() []key.Binding {
-	return []key.Binding{k.SpeedUp, k.SlowDown, k.Quit, k.ToggleHelp}
-}
-
-// FullHelp returns keybindings for the expanded help view
-func (k PreviewKeyMap) FullHelp() [][]key.Binding {
-	return [][]key.Binding{
-		{k.Up, k.Down, k.Left, k.Right},
-		{k.SpeedUp, k.SlowDown, k.Quit, k.ToggleHelp},
-	}
-}
-
 // PreviewModel is the Bubble Tea model for interactive preview.
 type PreviewModel struct {
 	Pack     *plugin.SpeciesPack
@@ -86,21 +27,22 @@ type PreviewModel struct {
 	Width    int
 	Height   int
 	Quitting bool
-	KeyMap   PreviewKeyMap
+	KeyMap   keys.PreviewKeyMap
 	Help     help.Model
+	i18n     *i18n.Manager
 }
 
 // PreviewTickMsg drives animation.
 type PreviewTickMsg time.Time
 
 // NewPreviewModel creates a new preview TUI model
-func NewPreviewModel(pack *plugin.SpeciesPack, fps int, initStage, initAnim string) *PreviewModel {
+func NewPreviewModel(pack *plugin.SpeciesPack, fps int, initStage, initAnim string, i18nMgr *i18n.Manager) *PreviewModel {
 	h := help.New()
 	h.ShowAll = false // Consistent with other commands
 
 	roots := buildPreviewTree(pack)
 	if len(roots) == 0 {
-		return &PreviewModel{Pack: pack, Fps: fps, KeyMap: DefaultPreviewKeyMap, Help: h}
+		return &PreviewModel{Pack: pack, Fps: fps, KeyMap: keys.NewPreviewKeyMap(i18nMgr), Help: h, i18n: i18nMgr}
 	}
 
 	// Create TreeList component
@@ -113,8 +55,9 @@ func NewPreviewModel(pack *plugin.SpeciesPack, fps int, initStage, initAnim stri
 		Pack:   pack,
 		Tree:   tree,
 		Fps:    fps,
-		KeyMap: DefaultPreviewKeyMap,
+		KeyMap: keys.NewPreviewKeyMap(i18nMgr),
 		Help:   h,
+		i18n:   i18nMgr,
 	}
 
 	// Set initial cursor position
@@ -223,7 +166,7 @@ func (m *PreviewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyPressMsg:
 		// Handle global keys
 		switch {
-		case key.Matches(msg, m.KeyMap.Quit):
+		case key.Matches(msg, m.KeyMap.Global.Quit):
 			m.Quitting = true
 			return m, tea.Quit
 		case key.Matches(msg, m.KeyMap.SpeedUp):
@@ -236,7 +179,7 @@ func (m *PreviewModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.Fps--
 			}
 			return m, nil
-		case key.Matches(msg, m.KeyMap.ToggleHelp):
+		case key.Matches(msg, m.KeyMap.Global.ToggleHelp):
 			m.Help.ShowAll = !m.Help.ShowAll
 			return m, nil
 		}

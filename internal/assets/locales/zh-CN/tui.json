@@ -16,7 +16,9 @@
       "talk": "对话",
       "mark": "标记",
       "top": "顶部",
-      "bottom": "底部"
+      "bottom": "底部",
+      "speed_up": "加速",
+      "slow_down": "减速"
     },
     "home": {
       "categories": {

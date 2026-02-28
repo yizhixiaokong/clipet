@@ -306,3 +306,112 @@ func (k OfflineSettlementKeyMap) FullHelp() [][]key.Binding {
 		{k.Quit},
 	}
 }
+
+// PreviewKeyMap contains keys for preview command (dev tool).
+type PreviewKeyMap struct {
+	Global    GlobalKeyMap
+	Navigation NavigationKeyMap
+	SpeedUp   key.Binding
+	SlowDown  key.Binding
+}
+
+// NewPreviewKeyMap creates a preview keymap.
+func NewPreviewKeyMap(i18n *i18n.Manager) PreviewKeyMap {
+	return PreviewKeyMap{
+		Global:     NewGlobalKeyMap(i18n),
+		Navigation: NewNavigationKeyMap(i18n),
+		SpeedUp: key.NewBinding(
+			key.WithKeys("+", "="),
+			key.WithHelp("+", i18n.T("ui.keys.speed_up")),
+		),
+		SlowDown: key.NewBinding(
+			key.WithKeys("-", "_"),
+			key.WithHelp("-", i18n.T("ui.keys.slow_down")),
+		),
+	}
+}
+
+// ShortHelp returns keybindings for the short help.
+func (k PreviewKeyMap) ShortHelp() []key.Binding {
+	return []key.Binding{
+		k.Navigation.Up,
+		k.Navigation.Down,
+		k.SpeedUp,
+		k.SlowDown,
+		k.Global.Quit,
+	}
+}
+
+// FullHelp returns keybindings for the full help.
+func (k PreviewKeyMap) FullHelp() [][]key.Binding {
+	return [][]key.Binding{
+		{k.Navigation.Up, k.Navigation.Down, k.Navigation.Left, k.Navigation.Right},
+		{k.SpeedUp, k.SlowDown, k.Global.Quit, k.Global.ToggleHelp},
+	}
+}
+
+// SetKeyMap contains keys for set command (dev tool).
+type SetKeyMap struct {
+	Global     GlobalKeyMap
+	Navigation NavigationKeyMap
+}
+
+// NewSetKeyMap creates a set keymap.
+func NewSetKeyMap(i18n *i18n.Manager) SetKeyMap {
+	return SetKeyMap{
+		Global:     NewGlobalKeyMap(i18n),
+		Navigation: NewNavigationKeyMap(i18n),
+	}
+}
+
+// ShortHelp returns keybindings for the short help.
+func (k SetKeyMap) ShortHelp() []key.Binding {
+	return []key.Binding{
+		k.Navigation.Up,
+		k.Navigation.Down,
+		k.Navigation.Enter,
+		k.Navigation.Back,
+		k.Global.Quit,
+	}
+}
+
+// FullHelp returns keybindings for the full help.
+func (k SetKeyMap) FullHelp() [][]key.Binding {
+	return [][]key.Binding{
+		{k.Navigation.Up, k.Navigation.Down, k.Navigation.Enter, k.Navigation.Back},
+		{k.Global.Quit, k.Global.ToggleHelp},
+	}
+}
+
+// TimeskipKeyMap contains keys for timeskip command (dev tool).
+type TimeskipKeyMap struct {
+	Global     GlobalKeyMap
+	Navigation NavigationKeyMap
+}
+
+// NewTimeskipKeyMap creates a timeskip keymap.
+func NewTimeskipKeyMap(i18n *i18n.Manager) TimeskipKeyMap {
+	return TimeskipKeyMap{
+		Global:     NewGlobalKeyMap(i18n),
+		Navigation: NewNavigationKeyMap(i18n),
+	}
+}
+
+// ShortHelp returns keybindings for the short help.
+func (k TimeskipKeyMap) ShortHelp() []key.Binding {
+	return []key.Binding{
+		k.Navigation.Up,
+		k.Navigation.Down,
+		k.Navigation.Enter,
+		k.Navigation.Back,
+		k.Global.Quit,
+	}
+}
+
+// FullHelp returns keybindings for the full help.
+func (k TimeskipKeyMap) FullHelp() [][]key.Binding {
+	return [][]key.Binding{
+		{k.Navigation.Up, k.Navigation.Down, k.Navigation.Enter, k.Navigation.Back},
+		{k.Global.Quit, k.Global.ToggleHelp},
+	}
+}

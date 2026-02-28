@@ -16,7 +16,9 @@
       "talk": "Talk",
       "mark": "Mark",
       "top": "Top",
-      "bottom": "Bottom"
+      "bottom": "Bottom",
+      "speed_up": "Speed Up",
+      "slow_down": "Slow Down"
     },
     "home": {
       "categories": {
