@@ -11,19 +11,19 @@ import (
 func newInitCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "init",
-		Short: "创建一只新宠物",
+		Short: i18nMgr.T("cli.init.short_desc"),
 		RunE:  runInit,
 	}
 }
 
 func runInit(cmd *cobra.Command, args []string) error {
 	if petStore.Exists() {
-		return fmt.Errorf("已经有一只宠物了！如需重新开始，请删除存档：%s", petStore.Path())
+		return fmt.Errorf(i18nMgr.T("cli.init.pet_exists", "path", petStore.Path()))
 	}
 
 	species := registry.ListSpecies()
 	if len(species) == 0 {
-		return fmt.Errorf("没有可用的物种包，请安装至少一个物种插件")
+		return fmt.Errorf(i18nMgr.T("cli.init.no_species"))
 	}
 
 	// Sort species by name
@@ -32,13 +32,13 @@ func runInit(cmd *cobra.Command, args []string) error {
 	})
 
 	// Display available species
-	fmt.Println("🐾 欢迎来到 Clipet！让我们创建你的宠物。")
+	fmt.Println(i18nMgr.T("cli.init.welcome"))
 	fmt.Println()
-	fmt.Println("可选物种：")
+	fmt.Println(i18nMgr.T("cli.init.available_species"))
 	for i, s := range species {
 		source := ""
 		if s.Source == "external" {
-			source = " [外部插件]"
+			source = i18nMgr.T("cli.init.external_plugin")
 		}
 		fmt.Printf("  %d. %s — %s%s\n", i+1, s.Name, s.Description, source)
 	}
@@ -47,10 +47,10 @@ func runInit(cmd *cobra.Command, args []string) error {
 	// Get species choice
 	var choice int
 	for {
-		fmt.Printf("请选择物种 (1-%d): ", len(species))
+		fmt.Printf(i18nMgr.T("cli.init.select_species", "count", len(species)))
 		_, err := fmt.Scanln(&choice)
 		if err != nil || choice < 1 || choice > len(species) {
-			fmt.Println("无效选择，请重试。")
+			fmt.Println(i18nMgr.T("cli.init.invalid_selection"))
 			continue
 		}
 		break
@@ -60,10 +60,10 @@ func runInit(cmd *cobra.Command, args []string) error {
 	// Get pet name
 	var name string
 	for {
-		fmt.Print("给你的宠物取个名字: ")
+		fmt.Print(i18nMgr.T("cli.init.enter_name"))
 		_, err := fmt.Scanln(&name)
 		if err != nil || name == "" {
-			fmt.Println("名字不能为空，请重试。")
+			fmt.Println(i18nMgr.T("cli.init.name_empty"))
 			continue
 		}
 		break
@@ -73,7 +73,7 @@ func runInit(cmd *cobra.Command, args []string) error {
 	baseStats := registry.GetBaseStats(selected.ID)
 	eggStage := registry.GetEggStage(selected.ID)
 	if baseStats == nil || eggStage == nil {
-		return fmt.Errorf("物种 %q 数据不完整", selected.ID)
+		return fmt.Errorf(i18nMgr.T("cli.init.incomplete_species", "species", selected.ID))
 	}
 
 	// Create pet
@@ -82,15 +82,15 @@ func runInit(cmd *cobra.Command, args []string) error {
 	pet.SetCapabilitiesRegistry(capabilitiesReg)
 
 	if err := petStore.Save(pet); err != nil {
-		return fmt.Errorf("保存失败: %w", err)
+		return fmt.Errorf(i18nMgr.T("cli.init.save_failed", "error", err.Error()))
 	}
 
 	fmt.Println()
-	fmt.Printf("🥚 %s 的 %s 已诞生！\n", name, eggStage.Name)
-	fmt.Printf("   物种: %s\n", selected.Name)
-	fmt.Printf("   阶段: %s\n", eggStage.Name)
+	fmt.Println(i18nMgr.T("cli.init.pet_created", "name", name, "stage", eggStage.Name))
+	fmt.Println(i18nMgr.T("cli.init.species_label", "species", selected.Name))
+	fmt.Println(i18nMgr.T("cli.init.stage_label", "stage", eggStage.Name))
 	fmt.Println()
-	fmt.Println("运行 clipet 启动交互界面，或使用 clipet status 查看状态。")
+	fmt.Println(i18nMgr.T("cli.init.run_hint"))
 
 	return nil
 }

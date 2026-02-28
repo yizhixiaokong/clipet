@@ -102,15 +102,32 @@
   },
   "cli": {
     "init": {
-      "welcome": "欢迎来到 Clipet！",
-      "choose_species": "选择你的宠物物种",
-      "pet_name_prompt": "给你的宠物起个名字",
-      "setup_complete": "设置完成！",
-      "loading": "加载中..."
+      "short_desc": "创建一只新宠物",
+      "pet_exists": "已经有一只宠物了！如需重新开始，请删除存档：{{.path}}",
+      "no_species": "没有可用的物种包，请安装至少一个物种插件",
+      "welcome": "🐾 欢迎来到 Clipet！让我们创建你的宠物。",
+      "available_species": "可选物种：",
+      "external_plugin": " [外部插件]",
+      "select_species": "请选择物种 (1-{{.count}}): ",
+      "invalid_selection": "无效选择，请重试。",
+      "enter_name": "给你的宠物取个名字: ",
+      "name_empty": "名字不能为空，请重试。",
+      "incomplete_species": "物种 {{.species}} 数据不完整",
+      "save_failed": "保存失败: {{.error}}",
+      "pet_created": "🥚 {{.name}} 的 {{.stage}} 已诞生！",
+      "species_label": "   物种: {{.species}}",
+      "stage_label": "   阶段: {{.stage}}",
+      "run_hint": "运行 clipet 启动交互界面，或使用 clipet status 查看状态。"
     },
     "status": {
+      "short_desc": "查看宠物状态",
+      "json_flag_desc": "以 JSON 格式输出",
       "title": "宠物状态",
-      "no_pet": "未找到宠物存档"
+      "no_pet": "还没有宠物呢！请先运行 clipet init 创建一只。",
+      "no_pet_short": "未找到宠物存档",
+      "format_days_hours": "{{.days}}天 {{.hours}}小时",
+      "format_hours_minutes": "{{.hours}}小时 {{.minutes}}分钟",
+      "format_minutes": "{{.minutes}}分钟"
     },
     "errors": {
       "save_not_found": "未找到存档",

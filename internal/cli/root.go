@@ -155,7 +155,7 @@ func runTUI() error {
 // loadPet loads the pet from store and sets its registry reference.
 func loadPet() (*game.Pet, error) {
 	if !petStore.Exists() {
-		fmt.Println("还没有宠物呢！请先运行 clipet init 创建一只。")
+		fmt.Println(i18nMgr.T("cli.status.no_pet"))
 		return nil, fmt.Errorf("no pet")
 	}
 

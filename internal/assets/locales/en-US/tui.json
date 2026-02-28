@@ -102,15 +102,32 @@
   },
   "cli": {
     "init": {
-      "welcome": "Welcome to Clipet!",
-      "choose_species": "Choose your pet species",
-      "pet_name_prompt": "Name your pet",
-      "setup_complete": "Setup complete!",
-      "loading": "Loading..."
+      "short_desc": "Create a new pet",
+      "pet_exists": "A pet already exists! To start over, delete the save file: {{.path}}",
+      "no_species": "No species packs available, please install at least one species plugin",
+      "welcome": "🐾 Welcome to Clipet! Let's create your pet.",
+      "available_species": "Available species:",
+      "external_plugin": " [External Plugin]",
+      "select_species": "Select species (1-{{.count}}): ",
+      "invalid_selection": "Invalid selection, please try again.",
+      "enter_name": "Name your pet: ",
+      "name_empty": "Name cannot be empty, please try again.",
+      "incomplete_species": "Species {{.species}} data is incomplete",
+      "save_failed": "Save failed: {{.error}}",
+      "pet_created": "🥚 {{.name}}'s {{.stage}} has been born!",
+      "species_label": "   Species: {{.species}}",
+      "stage_label": "   Stage: {{.stage}}",
+      "run_hint": "Run 'clipet' to start the interactive interface, or 'clipet status' to view status."
     },
     "status": {
+      "short_desc": "View pet status",
+      "json_flag_desc": "Output in JSON format",
       "title": "Pet Status",
-      "no_pet": "No pet save found"
+      "no_pet": "No pet yet! Please run 'clipet init' to create one.",
+      "no_pet_short": "No pet save found",
+      "format_days_hours": "{{.days}}d {{.hours}}h",
+      "format_hours_minutes": "{{.hours}}h {{.minutes}}m",
+      "format_minutes": "{{.minutes}}m"
     },
     "errors": {
       "save_not_found": "Save not found",

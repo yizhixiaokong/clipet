@@ -11,10 +11,10 @@ import (
 func newStatusCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "status",
-		Short: "查看宠物状态",
+		Short: i18nMgr.T("cli.status.short_desc"),
 		RunE:  runStatus,
 	}
-	cmd.Flags().BoolP("json", "j", false, "以 JSON 格式输出")
+	cmd.Flags().BoolP("json", "j", false, i18nMgr.T("cli.status.json_flag_desc"))
 	return cmd
 }
 
@@ -71,10 +71,10 @@ func formatDuration(d time.Duration) string {
 	days := int(d.Hours()) / 24
 	hours := int(d.Hours()) % 24
 	if days > 0 {
-		return fmt.Sprintf("%d天 %d小时", days, hours)
+		return i18nMgr.T("cli.status.format_days_hours", "days", days, "hours", hours)
 	}
 	if hours > 0 {
-		return fmt.Sprintf("%d小时 %d分钟", hours, int(d.Minutes())%60)
+		return i18nMgr.T("cli.status.format_hours_minutes", "hours", hours, "minutes", int(d.Minutes())%60)
 	}
-	return fmt.Sprintf("%d分钟", int(d.Minutes()))
+	return i18nMgr.T("cli.status.format_minutes", "minutes", int(d.Minutes()))
 }
