@@ -1,0 +1,60 @@
+{
+  "species": {
+    "cat": {
+      "name": "Cat",
+      "description": "A lively little kitty to accompany you through every coding moment"
+    }
+  },
+  "stages": {
+    "egg": "Mysterious Egg",
+    "baby": "Little Kitten",
+    "child_arcane": "Arcane Kitten",
+    "child_feral": "Feral Kitten",
+    "child_mech": "Mech Kitten",
+    "adult_arcane_crystal": "Arcane Crystal Cat",
+    "adult_arcane_shadow": "Arcane Shadow Cat",
+    "adult_feral_flame": "Feral Flame Cat",
+    "adult_feral_frost": "Feral Frost Cat",
+    "adult_mech_chrome": "Mech Chrome Cat",
+    "adult_mech_cyber": "Mech Cyber Cat",
+    "legend_arcane_crystal": "Legendary Arcane Crystal Cat",
+    "legend_arcane_shadow": "Legendary Arcane Shadow Cat",
+    "legend_feral_flame": "Legendary Feral Flame Cat",
+    "legend_feral_frost": "Legendary Feral Frost Cat",
+    "legend_mech_chrome": "Legendary Mech Chrome Cat",
+    "legend_mech_cyber": "Legendary Mech Cyber Cat"
+  },
+  "dialogues": {
+    "egg": {
+      "happy": [
+        "Click... (shell rustles)",
+        "Thump... (light tapping)",
+        "Creak... (vibration inside)",
+        "... (quiet waiting)"
+      ]
+    },
+    "baby": {
+      "happy": ["Meow~", "Meow meow~", "Meow uh~", "Purr~", "Meow?", "Purr~"],
+      "sad": ["Meow...", "Meow...", "Woo...", "Woo..."],
+      "unhappy": ["Meow...", "Meow uh~", "Purr~"]
+    }
+  },
+  "adventures": {
+    "explore_garden": {
+      "name": "Explore the Garden",
+      "description": "The kitten wants to explore the garden...",
+      "choices": {
+        "follow": "Follow quietly",
+        "call_back": "Call back"
+      },
+      "outcomes": {
+        "found_butterfly": "The cat chased butterflies around happily!",
+        "found_treat": "Found a bag of treats in the garden!"
+      }
+    },
+    "chase_laser": {
+      "name": "Chase the Laser",
+      "description": "A mysterious laser dot appears on the floor..."
+    }
+  }
+}
