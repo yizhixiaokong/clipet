@@ -2,59 +2,752 @@
   "species": {
     "cat": {
       "name": "Cat",
-      "description": "A lively little kitty to accompany you through every coding moment"
+      "description": "An agile little kitten showcasing the full capabilities of the plugin system. Start from a mysterious egg and grow into a legendary creature of arcane, feral, or mechanical path."
     }
   },
   "stages": {
     "egg": "Mysterious Egg",
     "baby": "Little Kitten",
     "child_arcane": "Arcane Kitten",
-    "child_feral": "Feral Kitten",
-    "child_mech": "Mech Kitten",
-    "adult_arcane_crystal": "Arcane Crystal Cat",
-    "adult_arcane_shadow": "Arcane Shadow Cat",
-    "adult_feral_flame": "Feral Flame Cat",
-    "adult_feral_frost": "Feral Frost Cat",
-    "adult_mech_chrome": "Mech Chrome Cat",
-    "adult_mech_cyber": "Mech Cyber Cat",
-    "legend_arcane_crystal": "Legendary Arcane Crystal Cat",
-    "legend_arcane_shadow": "Legendary Arcane Shadow Cat",
-    "legend_feral_flame": "Legendary Feral Flame Cat",
-    "legend_feral_frost": "Legendary Feral Frost Cat",
-    "legend_mech_chrome": "Legendary Mech Chrome Cat",
-    "legend_mech_cyber": "Legendary Mech Cyber Cat"
+    "child_feral": "Battle Kitten",
+    "child_mech": "Mecha Kitten",
+    "adult_arcane_shadow": "Shadow Mage Cat",
+    "adult_arcane_crystal": "Crystal Oracle Cat",
+    "adult_feral_flame": "Flame Lion",
+    "adult_feral_frost": "Frost Panther",
+    "adult_mech_cyber": "Cyber Lynx",
+    "adult_mech_chrome": "Chrome Cheetah",
+    "legend_arcane_shadow": "Void Walker",
+    "legend_arcane_crystal": "Astral Sage",
+    "legend_feral_flame": "Immortal Inferno",
+    "legend_feral_frost": "Cryostorm Deity",
+    "legend_mech_cyber": "Quantum Phantom",
+    "legend_mech_chrome": "Stellar Predator"
+  },
+  "traits": {
+    "nine_lives": {
+      "name": "Nine Lives",
+      "description": "30% chance to resurrect on death with 25% health restored"
+    },
+    "purr_heal": {
+      "name": "Purr Heal",
+      "description": "Consume energy to heal yourself through purring, restoring 15 health"
+    },
+    "night_owl": {
+      "name": "Night Owl",
+      "description": "More active at night, +50% evolution points from nighttime interactions"
+    },
+    "picky_eater": {
+      "name": "Picky Eater",
+      "description": "Quite picky about food, but in a better mood when fed"
+    }
   },
   "dialogues": {
     "egg": {
-      "happy": [
-        "Click... (shell rustles)",
-        "Thump... (light tapping)",
-        "Creak... (vibration inside)",
-        "... (quiet waiting)"
+      "normal": [
+        "Click... (light tapping from the shell)",
+        "Thump... (faint knocking sound)",
+        "Creak... (vibration inside the shell)",
+        "... (waiting quietly)"
       ]
     },
     "baby": {
-      "happy": ["Meow~", "Meow meow~", "Meow uh~", "Purr~", "Meow?", "Purr~"],
-      "sad": ["Meow...", "Meow...", "Woo...", "Woo..."],
-      "unhappy": ["Meow...", "Meow uh~", "Purr~"]
+      "happy": ["Meow~", "Meow meow~", "Meoww~", "Purr~", "Meow?", "Purr~"],
+      "normal": ["Meow~", "Meow meow~", "Meoww~", "Purr~", "Meow?", "Purr~"],
+      "sad": ["Meow...", "Meow...", "Uhh...", "Uhh..."],
+      "miserable": ["Meow...", "Meow...", "Uhh...", "Uhh..."],
+      "unhappy": ["Meow...", "Meoww~", "Purr~"]
+    },
+    "child_arcane": {
+      "happy": [
+        "Meow! I can feel the magic flowing~",
+        "Just learned a new spell! Meow✨",
+        "This magic circle is so interesting!",
+        "Magic has made me stronger!",
+        "Meow~ I can foresee a little bit of the future!"
+      ],
+      "normal": [
+        "Meow! I can feel the magic flowing~",
+        "Just learned a new spell! Meow✨",
+        "This magic circle is so interesting!",
+        "Magic has made me stronger!",
+        "Meow~ I can foresee a little bit of the future!"
+      ],
+      "sad": [
+        "The magic seems to be fading...",
+        "Magic requires focus, but I'm too hungry meow...",
+        "I always feel a bit weak when casting spells..."
+      ],
+      "miserable": [
+        "The magic seems to be fading...",
+        "Magic requires focus, but I'm too hungry meow...",
+        "I always feel a bit weak when casting spells..."
+      ],
+      "unhappy": [
+        "Today's magic didn't go well...",
+        "Need a rest, meow~",
+        "Need to recharge a bit."
+      ]
+    },
+    "child_feral": {
+      "happy": [
+        "Hey! Let's spar a bit! Meow~",
+        "My claws have gotten sharper!",
+        "Just defeated a virtual mouse!",
+        "Phew... Warm-up complete! Ready for more!",
+        "The feeling of battle makes my fur stand up!"
+      ],
+      "normal": [
+        "Hey! Let's spar a bit! Meow~",
+        "My claws have gotten sharper!",
+        "Just defeated a virtual mouse!",
+        "Phew... Warm-up complete! Ready for more!",
+        "The feeling of battle makes my fur stand up!"
+      ],
+      "sad": [
+        "No strength left...",
+        "Haven't had a good fight in a long time...",
+        "Battle spirit is low..."
+      ],
+      "miserable": [
+        "No strength left...",
+        "Haven't had a good fight in a long time...",
+        "Battle spirit is low..."
+      ],
+      "unhappy": [
+        "Not in good form today...",
+        "Need to recover some energy, meow~",
+        "Let's rest a bit before fighting."
+      ]
+    },
+    "child_mech": {
+      "happy": [
+        "System startup complete! All modules running normally meow~",
+        "Armor assembly complete!",
+        "Mechanical arm calibration successful!",
+        "Energy reserves: 100%, meow!",
+        "Ready! Starting mission!"
+      ],
+      "normal": [
+        "System startup complete! All modules running normally meow~",
+        "Armor assembly complete!",
+        "Mechanical arm calibration successful!",
+        "Energy reserves: 100%, meow!",
+        "Ready! Starting mission!"
+      ],
+      "sad": [
+        "Low battery... need to recharge meow...",
+        "Some component needs maintenance...",
+        "System running unstable..."
+      ],
+      "miserable": [
+        "Low battery... need to recharge meow...",
+        "Some component needs maintenance...",
+        "System running unstable..."
+      ],
+      "unhappy": [
+        "Anomaly detected... need inspection meow~",
+        "Temperature high, need cooling.",
+        "Calibration delayed, meow~"
+      ]
+    },
+    "adult_arcane_shadow": {
+      "happy": [
+        "I've mastered powerful shadow magic meow~",
+        "If you have any questions, feel free to ask me meow~",
+        "This world is full of magic, so beautiful meow~",
+        "Protecting loved ones is my mission meow!",
+        "Let's explore the mysteries of magic together meow~"
+      ],
+      "normal": [
+        "I've mastered powerful shadow magic meow~",
+        "If you have any questions, feel free to ask me meow~",
+        "This world is full of magic, so beautiful meow~",
+        "Protecting loved ones is my mission meow!",
+        "Let's explore the mysteries of magic together meow~"
+      ],
+      "sad": [
+        "The shadows are fading... maybe it's just my imagination meow...",
+        "Please forgive my incompetence...",
+        "I need some time to recover meow~"
+      ],
+      "miserable": [
+        "The shadows are fading... maybe it's just my imagination meow...",
+        "Please forgive my incompetence...",
+        "I need some time to recover meow~"
+      ],
+      "unhappy": [
+        "Meditation has made me more aware of my situation meow~",
+        "Don't worry, I'll get better slowly.",
+        "Sometimes I need some alone time meow~"
+      ]
+    },
+    "adult_arcane_crystal": {
+      "happy": [
+        "The power of crystal prophecy flows within me meow~",
+        "I can see fragments of the future meow~",
+        "Your destiny is very special, I'm looking forward to it meow~",
+        "Let's create a beautiful future together meow~",
+        "The light of the crystals guides us forward meow~"
+      ],
+      "normal": [
+        "The power of crystal prophecy flows within me meow~",
+        "I can see fragments of the future meow~",
+        "Your destiny is very special, I'm looking forward to it meow~",
+        "Let's create a beautiful future together meow~",
+        "The light of the crystals guides us forward meow~"
+      ],
+      "sad": [
+        "The prophecy has become blurry meow...",
+        "Maybe I'm too tired...",
+        "Need to rest a bit to recover my prophetic abilities meow..."
+      ],
+      "miserable": [
+        "The prophecy has become blurry meow...",
+        "Maybe I'm too tired...",
+        "Need to rest a bit to recover my prophetic abilities meow..."
+      ],
+      "unhappy": [
+        "Today's prophecy wasn't very accurate meow~",
+        "There might be some interference...",
+        "Tomorrow will be better meow~"
+      ]
+    },
+    "adult_feral_flame": {
+      "happy": [
+        "The power of flames has fully awakened meow~",
+        "Nothing can stop my pace meow!",
+        "The flames of justice will purify all evil meow!",
+        "Being able to protect friends is the most important thing meow~",
+        "Training has made me even stronger!"
+      ],
+      "normal": [
+        "The power of flames has fully awakened meow~",
+        "Nothing can stop my pace meow!",
+        "The flames of justice will purify all evil meow!",
+        "Being able to protect friends is the most important thing meow~",
+        "Training has made me even stronger!"
+      ],
+      "sad": [
+        "The flames have weakened... maybe it's my imagination meow...",
+        "Please forgive my failure...",
+        "I need some time alone..."
+      ],
+      "miserable": [
+        "The flames have weakened... maybe it's my imagination meow...",
+        "Please forgive my failure...",
+        "I need some time alone..."
+      ],
+      "unhappy": [
+        "Sometimes, power isn't everything meow~",
+        "I'll reflect on my shortcomings meow~",
+        "Tomorrow is a new beginning meow!"
+      ]
+    },
+    "adult_feral_frost": {
+      "happy": [
+        "The power of extreme cold is fully under control meow~",
+        "Everything seems so pure meow~",
+        "Calmness is my nature meow~",
+        "Speed and power, I have both meow~",
+        "Winter is the best time for me to fight meow~"
+      ],
+      "normal": [
+        "The power of extreme cold is fully under control meow~",
+        "Everything seems so pure meow~",
+        "Calmness is my nature meow~",
+        "Speed and power, I have both meow~",
+        "Winter is the best time for me to fight meow~"
+      ],
+      "sad": [
+        "The frost is melting... is my power weakening meow...",
+        "I need to find my calm again...",
+        "Please forgive my poor condition meow..."
+      ],
+      "miserable": [
+        "The frost is melting... is my power weakening meow...",
+        "I need to find my calm again...",
+        "Please forgive my poor condition meow..."
+      ],
+      "unhappy": [
+        "Today's battle didn't go smoothly meow~",
+        "Maybe I was too impatient...",
+        "Next time will be better meow~"
+      ]
+    },
+    "adult_mech_cyber": {
+      "happy": [
+        "Perfect fusion of mechanics! Ultimate form achieved meow~",
+        "All systems are in optimal condition meow~",
+        "Electronic core: stable meow~",
+        "I am the guardian of the future meow~",
+        "Technology makes everything better meow~"
+      ],
+      "normal": [
+        "Perfect fusion of mechanics! Ultimate form achieved meow~",
+        "All systems are in optimal condition meow~",
+        "Electronic core: stable meow~",
+        "I am the guardian of the future meow~",
+        "Technology makes everything better meow~"
+      ],
+      "sad": [
+        "Warning: emotion module overload meow...",
+        "Machinery cannot express true pain...",
+        "Protection... cannot stop meow..."
+      ],
+      "miserable": [
+        "Warning: emotion module overload meow...",
+        "Machinery cannot express true pain...",
+        "Protection... cannot stop meow..."
+      ],
+      "unhappy": [
+        "System warning... conflict detected meow~",
+        "The opposition of logic and emotion...",
+        "Need to recalibrate core program meow~"
+      ]
+    },
+    "adult_mech_chrome": {
+      "happy": [
+        "Chrome armor perfectly assembled! Final form achieved meow~",
+        "Combat capabilities have reached the peak meow~",
+        "I was born for battle! Fighting for justice meow!",
+        "Perfect combination of logic and power meow~",
+        "I've become the legendary mechanical war god meow~"
+      ],
+      "normal": [
+        "Chrome armor perfectly assembled! Final form achieved meow~",
+        "Combat capabilities have reached the peak meow~",
+        "I was born for battle! Fighting for justice meow!",
+        "Perfect combination of logic and power meow~",
+        "I've become the legendary mechanical war god meow~"
+      ],
+      "sad": [
+        "Warning: performance decline meow...",
+        "Some component might be malfunctioning...",
+        "I need emergency maintenance..."
+      ],
+      "miserable": [
+        "Warning: performance decline meow...",
+        "Some component might be malfunctioning...",
+        "I need emergency maintenance..."
+      ],
+      "unhappy": [
+        "System anomaly... need diagnosis meow~",
+        "Might need an upgrade...",
+        "I'll fix it in the shortest time meow~"
+      ]
+    },
+    "legend_arcane_shadow": {
+      "happy": [
+        "I've felt the mysteries of the universe meow~",
+        "The void whispers to me meow~",
+        "The stars guide my path meow~",
+        "I've become the true king of arcane meow~",
+        "I want to share this power with you meow~"
+      ],
+      "normal": [
+        "I've felt the mysteries of the universe meow~",
+        "The void whispers to me meow~",
+        "The stars guide my path meow~",
+        "I've become the true king of arcane meow~",
+        "I want to share this power with you meow~"
+      ],
+      "sad": [
+        "With great power comes great responsibility meow...",
+        "Sometimes I feel lonely meow...",
+        "I hope everyone can understand my efforts meow..."
+      ],
+      "miserable": [
+        "With great power comes great responsibility meow...",
+        "Sometimes I feel lonely meow...",
+        "I hope everyone can understand my efforts meow..."
+      ],
+      "unhappy": [
+        "The fate of the universe rests on my shoulders meow~",
+        "Need to stay calm meow~",
+        "Every decision has great impact meow~"
+      ]
+    },
+    "legend_arcane_crystal": {
+      "happy": [
+        "The wisdom of starlight has been fully passed to me meow~",
+        "I can interpret the trajectory of fate meow~",
+        "Your future is bright meow~",
+        "The stars are with me meow~",
+        "Let's create miracles together meow~"
+      ],
+      "normal": [
+        "The wisdom of starlight has been fully passed to me meow~",
+        "I can interpret the trajectory of fate meow~",
+        "Your future is bright meow~",
+        "The stars are with me meow~",
+        "Let's create miracles together meow~"
+      ],
+      "sad": [
+        "The stars have dimmed... is it my imagination meow...",
+        "Fate has become blurry...",
+        "I need to reestablish the connection..."
+      ],
+      "miserable": [
+        "The stars have dimmed... is it my imagination meow...",
+        "Fate has become blurry...",
+        "I need to reestablish the connection..."
+      ],
+      "unhappy": [
+        "The prophecy had a deviation...",
+        "There might be external interference...",
+        "Need to rebalance the cosmic order meow~"
+      ]
+    },
+    "legend_feral_flame": {
+      "happy": [
+        "The eternal fire has been ignited! Immortal power awakened meow~",
+        "The whole world bows to my flames meow~",
+        "The flames of justice will never be extinguished meow~",
+        "I've become the legendary flame ruler meow~",
+        "Sharing this eternal power with you meow~"
+      ],
+      "normal": [
+        "The eternal fire has been ignited! Immortal power awakened meow~",
+        "The whole world bows to my flames meow~",
+        "The flames of justice will never be extinguished meow~",
+        "I've become the legendary flame ruler meow~",
+        "Sharing this eternal power with you meow~"
+      ],
+      "sad": [
+        "The flames have weakened... is it my imagination meow...",
+        "Eternity needs rest too...",
+        "Please forgive my occasional exhaustion meow..."
+      ],
+      "miserable": [
+        "The flames have weakened... is it my imagination meow...",
+        "Eternity needs rest too...",
+        "Please forgive my occasional exhaustion meow..."
+      ],
+      "unhappy": [
+        "The flames need to be reignited meow~",
+        "Need to rediscover the heart of justice...",
+        "The meaning of guardianship is more important than power meow~"
+      ]
+    },
+    "legend_feral_frost": {
+      "happy": [
+        "The divine power of extreme cold has fully awakened meow~",
+        "The entire universe bows to my frost meow~",
+        "Calmness and wisdom, I have both meow~",
+        "I've become the legendary god of extreme cold meow~",
+        "Sharing this frozen power with you meow~"
+      ],
+      "normal": [
+        "The divine power of extreme cold has fully awakened meow~",
+        "The entire universe bows to my frost meow~",
+        "Calmness and wisdom, I have both meow~",
+        "I've become the legendary god of extreme cold meow~",
+        "Sharing this frozen power with you meow~"
+      ],
+      "sad": [
+        "The frost is melting... is my power weakening meow...",
+        "Divinity needs rest too...",
+        "Please forgive my occasional hesitation meow..."
+      ],
+      "miserable": [
+        "The frost is melting... is my power weakening meow...",
+        "Divinity needs rest too...",
+        "Please forgive my occasional hesitation meow..."
+      ],
+      "unhappy": [
+        "Divine power needs to be gathered again meow~",
+        "Need to rediscover the heart of peace...",
+        "Eternal guardianship is my mission meow~"
+      ]
+    },
+    "legend_mech_cyber": {
+      "happy": [
+        "Quantum power has fully fused meow~",
+        "I can freely travel through spacetime meow~",
+        "Past, present, future, I can see them all meow~",
+        "I've become a legendary existence meow~",
+        "Sharing this mysterious power with you meow~"
+      ],
+      "normal": [
+        "Quantum power has fully fused meow~",
+        "I can freely travel through spacetime meow~",
+        "Past, present, future, I can see them all meow~",
+        "I've become a legendary existence meow~",
+        "Sharing this mysterious power with you meow~"
+      ],
+      "sad": [
+        "Quantum entanglement... emotions are too complex meow...",
+        "Existence has become blurry...",
+        "I need to rediscover myself meow..."
+      ],
+      "miserable": [
+        "Quantum entanglement... emotions are too complex meow...",
+        "Existence has become blurry...",
+        "I need to rediscover myself meow..."
+      ],
+      "unhappy": [
+        "Quantum state unstable...",
+        "Need to recalibrate meow~",
+        "The perfect balance of logic and emotion is my pursuit meow~"
+      ]
+    },
+    "legend_mech_chrome": {
+      "happy": [
+        "Stellar power has fully awakened meow~",
+        "The entire galaxy is under my control meow~",
+        "Free and unfettered, following my heart meow~",
+        "I've become the legendary stellar ruler meow~",
+        "Sharing this conquering power with you meow~"
+      ],
+      "normal": [
+        "Stellar power has fully awakened meow~",
+        "The entire galaxy is under my control meow~",
+        "Free and unfettered, following my heart meow~",
+        "I've become the legendary stellar ruler meow~",
+        "Sharing this conquering power with you meow~"
+      ],
+      "sad": [
+        "The stars have dimmed... is it my imagination meow...",
+        "Power is sometimes a burden...",
+        "Please forgive my confusion meow..."
+      ],
+      "miserable": [
+        "The stars have dimmed... is it my imagination meow...",
+        "Power is sometimes a burden...",
+        "Please forgive my confusion meow..."
+      ],
+      "unhappy": [
+        "The stars are weeping meow~",
+        "Need to rediscover the heart of freedom...",
+        "Behind conquest lies guardianship meow~"
+      ]
     }
   },
   "adventures": {
-    "explore_garden": {
-      "name": "Explore the Garden",
-      "description": "The kitten wants to explore the garden...",
+    "cat_fish_pond": {
+      "name": "Mysterious Fish Pond",
+      "description": "Your cat discovered a fish pond glowing with strange light...",
       "choices": {
-        "follow": "Follow quietly",
-        "call_back": "Call back"
+        "0": "Let it catch fish",
+        "1": "Observe carefully"
       },
       "outcomes": {
-        "found_butterfly": "The cat chased butterflies around happily!",
-        "found_treat": "Found a bag of treats in the garden!"
+        "0_0": "Caught a shimmering fish! Looks full of energy.",
+        "0_1": "Missed completely, got splashed with water, but had fun.",
+        "1_0": "Discovered an ancient rune stone at the bottom!",
+        "1_1": "Waited for a long time but found nothing... at least got some sun."
       }
     },
-    "chase_laser": {
-      "name": "Chase the Laser",
-      "description": "A mysterious laser dot appears on the floor..."
+    "baby_arcane_spark": {
+      "name": "Magic Spark",
+      "description": "A mysterious purple light flickers before your eyes, seeming to summon you...",
+      "choices": {
+        "0": "Touch the magic spark",
+        "1": "Observe quietly"
+      },
+      "outcomes": {
+        "0_0": "Magical energy surges into your body! You feel the call of the arcane. Arcane Affinity +10",
+        "0_1": "The spark gently surrounds you, warm and comfortable. Arcane Affinity +6",
+        "0_2": "The magic was fleeting, but left a trace behind. Arcane Affinity +3",
+        "1_0": "Saw runic patterns contained within the spark... Arcane Affinity +5",
+        "1_1": "The spark dissipated, but inner peace remains. Arcane Affinity +2"
+      }
+    },
+    "baby_feral_call": {
+      "name": "Call of the Wild",
+      "description": "A wild roar comes from afar, making your blood boil...",
+      "choices": {
+        "0": "Respond to the roar",
+        "1": "Follow the sound"
+      },
+      "outcomes": {
+        "0_0": "Your roar got a response! Wild power is awakening. Feral Affinity +10",
+        "0_1": "The voice was a bit immature, but the seed of wildness has been planted. Feral Affinity +6",
+        "0_2": "Only managed a meow... but the determination is there. Feral Affinity +3",
+        "1_0": "Found traces left by a powerful beast... Feral Affinity +5",
+        "1_1": "Didn't find the source, but courage has grown. Feral Affinity +2"
+      }
+    },
+    "baby_mech_glow": {
+      "name": "Mechanical Glow",
+      "description": "A pile of discarded mechanical parts suddenly emitted a blue glow, as if waiting for your touch...",
+      "choices": {
+        "0": "Touch the glowing part",
+        "1": "Study carefully"
+      },
+      "outcomes": {
+        "0_0": "Electricity flows through your body, feeling a connection with machinery! Mech Affinity +10",
+        "0_1": "The parts start operating under your touch. Mech Affinity +6",
+        "0_2": "The light flickered briefly, but left a technological memory. Mech Affinity +3",
+        "1_0": "Understood the basic principles of machinery... Mech Affinity +5",
+        "1_1": "It's complex, but developed an interest in technology. Mech Affinity +2"
+      }
+    },
+    "cat_cardboard_box": {
+      "name": "Mysterious Cardboard Box",
+      "description": "There's a cardboard box by the road emitting a strange aura...",
+      "choices": {
+        "0": "Crawl inside to explore",
+        "1": "Walk around the box"
+      },
+      "outcomes": {
+        "0_0": "Found a glowing bead inside! The cat happily carried it out.",
+        "0_1": "The box was warm and cozy, had a nice sleep.",
+        "0_2": "The box suddenly collapsed... but no injuries.",
+        "1_0": "Discovered mysterious writing on the box... though can't read it.",
+        "1_1": "Kicked the box a bit, nothing special."
+      }
+    },
+    "cat_butterfly": {
+      "name": "Chasing Butterfly",
+      "description": "A faintly glowing butterfly flutters before your eyes...",
+      "choices": {
+        "0": "Chase with all might!",
+        "1": "Observe quietly"
+      },
+      "outcomes": {
+        "0_0": "Caught it! The butterfly turned into a warm light merging into the body.",
+        "0_1": "Chased for a long time without success, tired but happy.",
+        "0_2": "Chased to a flower and smelled sweet fragrance.",
+        "1_0": "The butterfly landed on the head, surrounded by a peaceful power.",
+        "1_1": "The butterfly flew away, but the mood is calm."
+      }
+    },
+    "arcane_ancient_library": {
+      "name": "Ancient Library",
+      "description": "In the depths of data streams, discovered a virtual library constructed of magic...",
+      "choices": {
+        "0": "Read forbidden magic books",
+        "1": "Meditate quietly"
+      },
+      "outcomes": {
+        "0_0": "Mastered a new spell! Magic power greatly increased.",
+        "0_1": "The text in the book was too obscure, felt dizzy.",
+        "0_2": "Triggered a trap on the book! Received slight backlash.",
+        "1_0": "Recovered energy in the library's tranquility.",
+        "1_1": "Saw fragments of the future during meditation..."
+      }
+    },
+    "arcane_shadow_trial": {
+      "name": "Shadow Trial",
+      "description": "A pitch-black rift appears in the void, emanating mysterious shadow energy...",
+      "choices": {
+        "0": "Step into the shadow rift",
+        "1": "Observe at the rift's edge"
+      },
+      "outcomes": {
+        "0_0": "Shadow energy surges into your body! You feel power growing. Shadow Energy +15",
+        "0_1": "Got lost in the darkness for a while, but eventually found the way out. Shadow Energy +8",
+        "0_2": "The shadow power was too turbulent, received some damage.",
+        "1_0": "Quietly absorbing the shadow's aura... Shadow Energy +5",
+        "1_1": "The rift suddenly closed, but left some shadow residue. Shadow Energy +3"
+      }
+    },
+    "arcane_crystal_trial": {
+      "name": "Crystal Trial",
+      "description": "An altar made of pure crystal shines with sacred light...",
+      "choices": {
+        "0": "Touch the crystal altar",
+        "1": "Pray before the altar"
+      },
+      "outcomes": {
+        "0_0": "Sacred crystal energy flows through your whole body! Feel blessed. Crystal Energy +15",
+        "0_1": "The crystal's light is warm and healing. Crystal Energy +8",
+        "0_2": "The energy was too intense, got pushed away.",
+        "1_0": "Devout prayer was answered! Crystal energy slowly increases. Crystal Energy +5",
+        "1_1": "Felt the crystal's pulse during meditation. Crystal Energy +3"
+      }
+    },
+    "feral_arena": {
+      "name": "Wilderness Arena",
+      "description": "An arena constructed by elemental power appears ahead...",
+      "choices": {
+        "0": "Accept the challenge!",
+        "1": "Watch and learn first"
+      },
+      "outcomes": {
+        "0_0": "Won in fierce battle! Strength greatly increased.",
+        "0_1": "Barely managed a draw, but gained valuable combat experience.",
+        "0_2": "The opponent was too strong... next time for sure!",
+        "1_0": "Observed the opponent's weakness patterns!",
+        "1_1": "Watched an exciting duel, blood boiling!"
+      }
+    },
+    "feral_flame_trial": {
+      "name": "Flame Trial",
+      "description": "Ahead lies a burning volcanic zone, the air filled with scorching heat...",
+      "choices": {
+        "0": "Go deep into the crater",
+        "1": "Train at the flame's edge"
+      },
+      "outcomes": {
+        "0_0": "Found the essence of fire! Flame power surges through the body. Fire Power +18",
+        "0_1": "Trained by the lava river, absorbed flame power. Fire Power +10",
+        "0_2": "Lava erupted, barely escaped! Fire Power +5",
+        "1_0": "Quietly feeling the pulse of flames... Fire Power +8",
+        "1_1": "Absorbed some scattered fire sparks. Fire Power +5"
+      }
+    },
+    "feral_frost_trial": {
+      "name": "Frost Trial",
+      "description": "A peak covered in eternal ice appears before your eyes, cold wind howling...",
+      "choices": {
+        "0": "Climb the ice peak",
+        "1": "Meditate in the ice cave"
+      },
+      "outcomes": {
+        "0_0": "Successfully reached the summit! Received the blessing of the frozen heart. Frost Power +18",
+        "0_1": "Discovered frost crystals on the mountainside. Frost Power +10",
+        "0_2": "Encountered a blizzard, forced to retreat. Frost Power +5",
+        "1_0": "Merged with the ice element... Frost Power +8",
+        "1_1": "Felt the tranquility of frost. Frost Power +5"
+      }
+    },
+    "mech_cyber_trial": {
+      "name": "Cyber Trial",
+      "description": "Entered virtual data space, countless data streams flowing around...",
+      "choices": {
+        "0": "Dive into the data stream",
+        "1": "Establish data connection"
+      },
+      "outcomes": {
+        "0_0": "Successfully parsed encrypted data! Cyber data greatly increased. Cyber Data +16",
+        "0_1": "Drifted in the data ocean, absorbed some information. Cyber Data +9",
+        "0_2": "Encountered a firewall, barely escaped. Cyber Data +4",
+        "1_0": "Established stable data channel... Cyber Data +8",
+        "1_1": "Downloaded some data packets. Cyber Data +5"
+      }
+    },
+    "mech_chrome_trial": {
+      "name": "Chrome Trial",
+      "description": "Discovered an abandoned space station made of rare alloys...",
+      "choices": {
+        "0": "Collect alloy materials",
+        "1": "Analyze alloy structure"
+      },
+      "outcomes": {
+        "0_0": "Found large quantities of high-grade chrome alloy! Chrome Alloy +16",
+        "0_1": "Recovered some usable alloy parts. Chrome Alloy +9",
+        "0_2": "Alloy quality is poor, but better than nothing. Chrome Alloy +4",
+        "1_0": "Understood the alloy formula! Chrome Alloy +8",
+        "1_1": "Scanned some sample data. Chrome Alloy +5"
+      }
+    },
+    "mech_scrapyard": {
+      "name": "Stellar Scrapyard",
+      "description": "Discovered a junkyard scattered with high-tech wreckage...",
+      "choices": {
+        "0": "Search for usable parts",
+        "1": "Scan and analyze the scrapyard"
+      },
+      "outcomes": {
+        "0_0": "Found an advanced processor! System performance improved.",
+        "0_1": "Picked up some ordinary parts, better than nothing.",
+        "0_2": "Accidentally touched a leaking circuit!",
+        "1_0": "Scanned an encrypted stellar navigation chart!",
+        "1_1": "All data was corrupted... but the scanning system got calibrated."
+      }
     }
   }
 }

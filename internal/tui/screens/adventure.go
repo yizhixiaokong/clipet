@@ -127,7 +127,7 @@ func (a AdventureModel) Update(msg tea.Msg) (AdventureModel, tea.Cmd) {
 // View renders the adventure screen with pet on the left.
 func (a AdventureModel) View() string {
 	if a.width == 0 {
-		return "加载中..."
+		return a.i18n.T("ui.common.loading")
 	}
 
 	totalInner := a.width - 2
@@ -213,9 +213,9 @@ func (a AdventureModel) viewIntro(w int) string {
 	hint := lipgloss.NewStyle().
 		Foreground(styles.DimColor()).
 		Italic(true).
-		Render("精力消耗: -10")
+		Render(a.i18n.T("ui.adventure.energy_cost", "cost", -10))
 
-	help := a.theme.HelpBar.Render("Enter 继续  Esc 放弃")
+	help := a.theme.HelpBar.Render(a.i18n.T("ui.adventure.hint_continue_cancel"))
 
 	return lipgloss.JoinVertical(lipgloss.Left,
 		title,
@@ -237,7 +237,7 @@ func (a AdventureModel) viewChoosing(w int) string {
 	prompt := lipgloss.NewStyle().
 		Foreground(styles.TextColor()).
 		Bold(true).
-		Render("你要怎么做？")
+		Render(a.i18n.T("ui.adventure.prompt"))
 
 	var choices []string
 	for i, c := range a.adventure.Choices {

@@ -9,23 +9,38 @@ import (
 // Adventure cooldown.
 const CooldownAdventure = 10 * time.Minute
 
+// AdventureCheckResult holds the result of CanAdventure check.
+type AdventureCheckResult struct {
+	OK        bool
+	ErrorType string // standardized error type for i18n
+	Message   string // human-readable feedback (for internal logs)
+}
+
 // AdventureResult holds the outcome of a completed adventure.
 type AdventureResult struct {
-	Adventure plugin.Adventure       // the adventure that was played
-	Choice    plugin.AdventureChoice // the player's chosen option
+	Adventure plugin.Adventure        // the adventure that was played
+	Choice    plugin.AdventureChoice  // the player's chosen option
 	Outcome   plugin.AdventureOutcome // the weighted random outcome
 	Changes   map[string][2]int       // attr name -> {old, new}
 }
 
 // CanAdventure checks whether the pet is in a state to go on an adventure.
-func CanAdventure(pet *Pet) (bool, string) {
+func CanAdventure(pet *Pet) AdventureCheckResult {
 	if !pet.Alive {
-		return false, "宠物已经不在了..."
+		return AdventureCheckResult{
+			OK:        false,
+			ErrorType: ErrDead,
+			Message:   "宠物已经不在了...",
+		}
 	}
 	if pet.Energy < 15 {
-		return false, "精力不足，需要至少15点精力才能冒险！"
+		return AdventureCheckResult{
+			OK:        false,
+			ErrorType: ErrEnergyLow,
+			Message:   "精力不足，需要至少15点精力才能冒险！",
+		}
 	}
-	return true, ""
+	return AdventureCheckResult{OK: true}
 }
 
 // PickAdventure selects a random adventure available for the pet's current stage.

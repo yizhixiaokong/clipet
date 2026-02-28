@@ -75,17 +75,93 @@ func (r *Registry) GetSpecies(id string) *SpeciesPack {
 	return r.packs[id]
 }
 
+// GetTraitName returns the localized name for a trait, with fallback to inline TOML name.
+func (r *Registry) GetTraitName(speciesID, traitID string) string {
+	pack := r.GetSpecies(speciesID)
+	if pack == nil {
+		return traitID
+	}
+
+	// Find trait definition
+	var trait *capabilities.PersonalityTrait
+	for i := range pack.Traits {
+		if pack.Traits[i].ID == traitID {
+			trait = &pack.Traits[i]
+			break
+		}
+	}
+	if trait == nil {
+		return traitID
+	}
+
+	// Try locale first
+	if pack.Locale != nil {
+		key := fmt.Sprintf("traits.%s.name", traitID)
+		if localized := getLocaleValue(pack.Locale.Data, key); localized != "" {
+			return localized
+		}
+	}
+
+	// Fallback to inline TOML name
+	return trait.Name
+}
+
+// GetTraitDescription returns the localized description for a trait, with fallback to inline TOML description.
+func (r *Registry) GetTraitDescription(speciesID, traitID string) string {
+	pack := r.GetSpecies(speciesID)
+	if pack == nil {
+		return ""
+	}
+
+	// Find trait definition
+	var trait *capabilities.PersonalityTrait
+	for i := range pack.Traits {
+		if pack.Traits[i].ID == traitID {
+			trait = &pack.Traits[i]
+			break
+		}
+	}
+	if trait == nil {
+		return ""
+	}
+
+	// Try locale first
+	if pack.Locale != nil {
+		key := fmt.Sprintf("traits.%s.description", traitID)
+		if localized := getLocaleValue(pack.Locale.Data, key); localized != "" {
+			return localized
+		}
+	}
+
+	// Fallback to inline TOML description
+	return trait.Description
+}
+
 // ListSpecies returns all registered species IDs and names.
+// Uses locale if available, falls back to inline TOML names.
 func (r *Registry) ListSpecies() []SpeciesInfo {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
 	var list []SpeciesInfo
 	for _, pack := range r.packs {
+		name := pack.Species.Name
+		description := pack.Species.Description
+
+		// Try locale first
+		if pack.Locale != nil {
+			if localized := getLocaleValue(pack.Locale.Data, "species."+pack.Species.ID+".name"); localized != "" {
+				name = localized
+			}
+			if localized := getLocaleValue(pack.Locale.Data, "species."+pack.Species.ID+".description"); localized != "" {
+				description = localized
+			}
+		}
+
 		list = append(list, SpeciesInfo{
 			ID:          pack.Species.ID,
-			Name:        pack.Species.Name,
-			Description: pack.Species.Description,
+			Name:        name,
+			Description: description,
 			Author:      pack.Species.Author,
 			Version:     pack.Species.Version,
 			Source:      pack.Source,
@@ -105,6 +181,7 @@ type SpeciesInfo struct {
 }
 
 // GetStage returns the Stage definition for a given species and stage ID.
+// Localizes the stage name if locale is available.
 func (r *Registry) GetStage(speciesID, stageID string) *Stage {
 	pack := r.GetSpecies(speciesID)
 	if pack == nil {
@@ -112,7 +189,16 @@ func (r *Registry) GetStage(speciesID, stageID string) *Stage {
 	}
 	for _, s := range pack.Stages {
 		if s.ID == stageID {
-			return &s
+			stage := s // copy
+
+			// Try locale for stage name
+			if pack.Locale != nil {
+				if localized := getLocaleValue(pack.Locale.Data, "stages."+stageID); localized != "" {
+					stage.Name = localized
+				}
+			}
+
+			return &stage
 		}
 	}
 	return nil
@@ -169,12 +255,29 @@ func (r *Registry) GetFrames(speciesID, stageID, animState string) *Frame {
 }
 
 // GetDialogue returns a random dialogue line matching the stage and mood.
+// Uses locale if available, falls back to inline TOML dialogues.
 func (r *Registry) GetDialogue(speciesID, stageID, mood string) string {
 	pack := r.GetSpecies(speciesID)
 	if pack == nil {
 		return ""
 	}
 
+	// Try locale first
+	if pack.Locale != nil {
+		dialogueKey := fmt.Sprintf("dialogues.%s.%s", stageID, mood)
+		if lines := getLocaleArray(pack.Locale.Data, dialogueKey); len(lines) > 0 {
+			return lines[rand.Intn(len(lines))]
+		}
+		// Try "normal" as fallback mood
+		if mood != "normal" {
+			dialogueKey = fmt.Sprintf("dialogues.%s.normal", stageID)
+			if lines := getLocaleArray(pack.Locale.Data, dialogueKey); len(lines) > 0 {
+				return lines[rand.Intn(len(lines))]
+			}
+		}
+	}
+
+	// Fallback to inline TOML dialogues
 	var candidates []string
 	for _, dg := range pack.Dialogues {
 		if !matchesStage(dg.Stage, stageID) {
@@ -193,6 +296,7 @@ func (r *Registry) GetDialogue(speciesID, stageID, mood string) string {
 }
 
 // GetAdventures returns adventures available for the given stage.
+// Uses locale if available, falls back to inline TOML adventures.
 func (r *Registry) GetAdventures(speciesID, stageID string) []Adventure {
 	pack := r.GetSpecies(speciesID)
 	if pack == nil {
@@ -202,7 +306,43 @@ func (r *Registry) GetAdventures(speciesID, stageID string) []Adventure {
 	var result []Adventure
 	for _, adv := range pack.Adventures {
 		if matchesStage(adv.Stage, stageID) {
-			result = append(result, adv)
+			// Create a copy for localization
+			localizedAdv := adv
+
+			// Try locale for adventure name and description
+			if pack.Locale != nil {
+				advKey := "adventures." + adv.ID
+				if localized := getLocaleValue(pack.Locale.Data, advKey+".name"); localized != "" {
+					localizedAdv.Name = localized
+				}
+				if localized := getLocaleValue(pack.Locale.Data, advKey+".description"); localized != "" {
+					localizedAdv.Description = localized
+				}
+
+				// Localize choice texts
+				for i := range localizedAdv.Choices {
+					choiceKey := advKey + ".choices." + fmt.Sprintf("%d", i)
+					if localized := getLocaleValue(pack.Locale.Data, choiceKey); localized != "" {
+						localizedAdv.Choices[i].Text = localized
+					} else {
+						// Try by choice ID if available
+						choiceIDKey := advKey + ".choices." + localizedAdv.Choices[i].Text
+						if locText := getLocaleValue(pack.Locale.Data, choiceIDKey); locText != "" {
+							localizedAdv.Choices[i].Text = locText
+						}
+					}
+
+					// Localize outcome texts
+					for j := range localizedAdv.Choices[i].Outcomes {
+						outcomeKey := advKey + ".outcomes." + fmt.Sprintf("%d_%d", i, j)
+						if localized := getLocaleValue(pack.Locale.Data, outcomeKey); localized != "" {
+							localizedAdv.Choices[i].Outcomes[j].Text = localized
+						}
+					}
+				}
+			}
+
+			result = append(result, localizedAdv)
 		}
 	}
 	return result
@@ -321,4 +461,66 @@ func (r *Registry) InstallFromFS(fsys fs.FS, dir string) (*SpeciesPack, error) {
 	}
 	r.Register(pack)
 	return pack, nil
+}
+
+// getLocaleValue navigates a nested map using dot notation key (e.g., "species.cat.name").
+// Returns empty string if key not found.
+func getLocaleValue(data map[string]interface{}, key string) string {
+	parts := strings.Split(key, ".")
+	var current interface{} = data
+
+	for i, part := range parts {
+		switch v := current.(type) {
+		case map[string]interface{}:
+			var ok bool
+			current, ok = v[part]
+			if !ok {
+				return ""
+			}
+			// If this is the last part, return the string value
+			if i == len(parts)-1 {
+				if str, ok := current.(string); ok {
+					return str
+				}
+				return ""
+			}
+		default:
+			return ""
+		}
+	}
+	return ""
+}
+
+// getLocaleArray navigates a nested map and returns a string array.
+// Returns empty array if key not found or not an array.
+func getLocaleArray(data map[string]interface{}, key string) []string {
+	parts := strings.Split(key, ".")
+	var current interface{} = data
+
+	for i, part := range parts {
+		switch v := current.(type) {
+		case map[string]interface{}:
+			var ok bool
+			current, ok = v[part]
+			if !ok {
+				return nil
+			}
+			// If this is the last part, return the array value
+			if i == len(parts)-1 {
+				if arr, ok := current.([]interface{}); ok {
+					var result []string
+					for _, item := range arr {
+						if str, ok := item.(string); ok {
+							result = append(result, str)
+						}
+					}
+					return result
+				}
+				return nil
+			}
+		default:
+			return nil
+		}
+	}
+	return nil
 }

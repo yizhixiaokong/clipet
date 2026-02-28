@@ -3,7 +3,7 @@ id = "cat"
 name = "猫"
 description = "灵动的小猫咪，展示插件系统的完整能力。从一颗神秘之蛋开始，成长为奥术、狂野或机械方向的传奇生物。"
 author = "clipet-builtin"
-version = "2.0.0"
+version = "3.1.0"
 
 [species.base_stats]
 hunger = 50

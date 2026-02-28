@@ -23,6 +23,7 @@
       "play_success": "玩耍愉快！快乐度 {{.oldHappiness}} → {{.newHappiness}}",
       "rest_success": "休息一下～精力 {{.oldEnergy}}→{{.newEnergy}}  健康 {{.oldHealth}}→{{.newHealth}}",
       "heal_success": "治疗完成！健康 {{.oldHealth}}→{{.newHealth}}  精力 {{.oldEnergy}}→{{.newEnergy}}",
+      "talk_success": "聊天愉快！",
       "stats_interactions": "互动 {{.interact}}  喂食 {{.feed}}  玩耍 {{.play}}  对话 {{.talk}}  冒险 {{.adventure}}",
       "no_extra_attrs": "暂无额外属性",
       "extra_attrs_title": "额外属性:",
@@ -67,7 +68,10 @@
       "adventuring": "{{.icon}} 冒险中...",
       "adventure_end": "冒险结束",
       "attr_changes": "属性变化：",
-      "no_changes": "没有属性变化"
+      "no_changes": "没有属性变化",
+      "energy_cost": "精力消耗: {{.cost}}",
+      "hint_continue_cancel": "Enter 继续  Esc 放弃",
+      "prompt": "你要怎么做？"
     },
     "evolve": {
       "help": "↑↓ 选择  Enter 确认  Esc 取消",
@@ -120,8 +124,15 @@
     "errors": {
       "action_failed": "操作失败",
       "invalid_action": "无效操作",
-      "not_enough_energy": "精力不足",
-      "not_enough_health": "健康值过低"
+      "energy_low": "精力不足！",
+      "health_low": "健康值过低！",
+      "cooldown": "操作冷却中",
+      "dead": "宠物已经不在了...",
+      "full_hunger": "宠物已经很饱了！",
+      "full_energy": "宠物精力充沛！",
+      "skill_system": "技能系统未初始化",
+      "skill_unknown": "未知技能",
+      "skill_not_active": "这不是一个主动技能"
     }
   },
   "cli": {

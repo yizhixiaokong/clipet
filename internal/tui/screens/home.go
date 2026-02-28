@@ -208,9 +208,11 @@ func (h HomeModel) getCurrentActions() []actionItem {
 	if h.catIdx == 1 && h.pet.CapabilitiesRegistry() != nil {
 		skills := h.pet.CapabilitiesRegistry().GetActiveTraits(h.pet.Species)
 		for _, skill := range skills {
+			// Use localized skill name from plugin registry
+			skillName := h.registry.GetTraitName(h.pet.Species, skill.ID)
 			actions = append(actions, actionItem{
 				icon:   "✨",
-				label:  skill.Name,
+				label:  skillName,
 				action: "skill:" + skill.ID,
 			})
 		}
@@ -324,6 +326,64 @@ func (h HomeModel) failMsg(msg string) HomeModel {
 	return h
 }
 
+// localizeGameError converts a game.ActionResult with ErrorType to localized message.
+// Falls back to res.Message if ErrorType is empty or unknown.
+func (h HomeModel) localizeGameError(res game.ActionResult) string {
+	if res.ErrorType == "" {
+		// No ErrorType, use original message (backward compatibility)
+		return res.Message
+	}
+
+	// Map ErrorType to i18n key
+	var i18nKey string
+	switch res.ErrorType {
+	case game.ErrEnergyLow:
+		i18nKey = "game.errors.energy_low"
+	case game.ErrHealthLow:
+		i18nKey = "game.errors.health_low"
+	case game.ErrCooldown:
+		i18nKey = "game.errors.cooldown"
+	case game.ErrDead:
+		i18nKey = "game.errors.dead"
+	case game.ErrInvalidAction:
+		i18nKey = "game.errors.invalid_action"
+	case game.ErrFullHunger:
+		i18nKey = "game.errors.full_hunger"
+	case game.ErrFullEnergy:
+		i18nKey = "game.errors.full_energy"
+	case game.ErrSkillSystem:
+		i18nKey = "game.errors.skill_system"
+	case game.ErrSkillUnknown:
+		i18nKey = "game.errors.skill_unknown"
+	case game.ErrSkillNotActive:
+		i18nKey = "game.errors.skill_not_active"
+	default:
+		// Unknown ErrorType, fallback to Message
+		return res.Message
+	}
+
+	return h.i18n.T(i18nKey)
+}
+
+// localizeAdventureError converts a game.AdventureCheckResult with ErrorType to localized message.
+func (h HomeModel) localizeAdventureError(check game.AdventureCheckResult) string {
+	if check.ErrorType == "" {
+		return check.Message
+	}
+
+	var i18nKey string
+	switch check.ErrorType {
+	case game.ErrEnergyLow:
+		i18nKey = "game.errors.energy_low"
+	case game.ErrDead:
+		i18nKey = "game.errors.dead"
+	default:
+		return check.Message
+	}
+
+	return h.i18n.T(i18nKey)
+}
+
 // okMsg sets a success message with animation and saves pet state.
 func (h HomeModel) okMsg(msg string) HomeModel {
 	h.successMsg = msg
@@ -360,7 +420,7 @@ func (h HomeModel) executeAction(action string) HomeModel {
 	case "feed":
 		res := h.pet.Feed()
 		if !res.OK {
-			return h.failMsg(res.Message)
+			return h.failMsg(h.localizeGameError(res))
 		}
 		ch := res.Changes["hunger"]
 		return h.applyActionResult(res, h.i18n.T("ui.home.feed_success", "oldHunger", ch[0], "newHunger", ch[1]))
@@ -368,7 +428,7 @@ func (h HomeModel) executeAction(action string) HomeModel {
 	case "play":
 		res := h.pet.Play()
 		if !res.OK {
-			return h.failMsg(res.Message)
+			return h.failMsg(h.localizeGameError(res))
 		}
 		ch := res.Changes["happiness"]
 		return h.applyActionResult(res, h.i18n.T("ui.home.play_success", "oldHappiness", ch[0], "newHappiness", ch[1]))
@@ -376,7 +436,7 @@ func (h HomeModel) executeAction(action string) HomeModel {
 	case "talk":
 		res := h.pet.Talk()
 		if !res.OK {
-			return h.failMsg(res.Message)
+			return h.failMsg(h.localizeGameError(res))
 		}
 		line := h.registry.GetDialogue(h.pet.Species, h.pet.StageID, h.pet.MoodName())
 		if line == "" {
@@ -384,12 +444,12 @@ func (h HomeModel) executeAction(action string) HomeModel {
 		}
 		h.bubble.UpdateText(line)
 		h.lastTalkAt = time.Now()
-		return h.okMsg("聊天愉快！")
+		return h.okMsg(h.i18n.T("ui.home.talk_success"))
 
 	case "rest":
 		res := h.pet.Rest()
 		if !res.OK {
-			return h.failMsg(res.Message)
+			return h.failMsg(h.localizeGameError(res))
 		}
 		chE := res.Changes["energy"]
 		chH := res.Changes["health"]
@@ -398,20 +458,19 @@ func (h HomeModel) executeAction(action string) HomeModel {
 	case "heal":
 		res := h.pet.Heal()
 		if !res.OK {
-			return h.failMsg(res.Message)
+			return h.failMsg(h.localizeGameError(res))
 		}
 		chH := res.Changes["health"]
 		chE := res.Changes["energy"]
 		return h.okMsg(h.i18n.T("ui.home.heal_success", "oldHealth", chH[0], "newHealth", chH[1], "oldEnergy", chE[0], "newEnergy", chE[1]))
 
 	case "info":
-		return h.infoMsg(fmt.Sprintf(
-			"互动 %d  喂食 %d  玩耍 %d  对话 %d  冒险 %d",
-			h.pet.TotalInteractions,
-			h.pet.FeedCount,
-			h.pet.AccPlayful,
-			h.pet.DialogueCount,
-			h.pet.AdventuresCompleted,
+		return h.infoMsg(h.i18n.T("ui.home.stats_interactions",
+			"interact", h.pet.TotalInteractions,
+			"feed", h.pet.FeedCount,
+			"play", h.pet.AccPlayful,
+			"talk", h.pet.DialogueCount,
+			"adventure", h.pet.AdventuresCompleted,
 		))
 
 	case "extra_attrs":
@@ -432,9 +491,9 @@ func (h HomeModel) executeAction(action string) HomeModel {
 		return h.startGame(games.GameGuessNumber)
 
 	case "adventure":
-		ok, reason := game.CanAdventure(h.pet)
-		if !ok {
-			return h.failMsg(reason)
+		check := game.CanAdventure(h.pet)
+		if !check.OK {
+			return h.failMsg(h.localizeAdventureError(check))
 		}
 		if time.Since(h.pet.LastAdventureAt) < game.CooldownAdventure {
 			remain := game.CooldownAdventure - time.Since(h.pet.LastAdventureAt)
@@ -453,7 +512,7 @@ func (h HomeModel) executeAction(action string) HomeModel {
 			skillID := strings.TrimPrefix(action, "skill:")
 			res := h.pet.UseSkill(skillID)
 			if !res.OK {
-				return h.failMsg(res.Message)
+				return h.failMsg(h.localizeGameError(res))
 			}
 			chH := res.Changes["health"]
 			chE := res.Changes["energy"]

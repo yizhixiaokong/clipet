@@ -71,10 +71,25 @@ const (
 	DefaultTalkHappiness = 1
 )
 
+// Error type constants for ActionResult
+const (
+	ErrEnergyLow      = "energy_low"
+	ErrHealthLow      = "health_low"
+	ErrCooldown       = "cooldown"
+	ErrDead           = "dead"
+	ErrInvalidAction  = "invalid_action"
+	ErrFullHunger     = "full_hunger"
+	ErrFullEnergy     = "full_energy"
+	ErrSkillSystem    = "skill_system"
+	ErrSkillUnknown   = "skill_unknown"
+	ErrSkillNotActive = "skill_not_active"
+)
+
 // ActionResult holds the outcome of a pet action.
 type ActionResult struct {
 	OK                bool              // whether the action succeeded
-	Message           string            // human-readable feedback
+	ErrorType         string            // standardized error type for i18n (empty if OK)
+	Message           string            // human-readable feedback (for internal logs)
 	Changes           map[string][2]int // attr name -> {old, new}
 	Animation         AnimState         // animation to play (empty = no change)
 	AnimationDuration time.Duration     // how long the animation should last
@@ -90,9 +105,14 @@ func diminish(base, current int) int {
 	return gain
 }
 
-// failResult is a convenience helper for failed actions.
+// failResult is a convenience helper for failed actions (without ErrorType).
 func failResult(msg string) ActionResult {
 	return ActionResult{OK: false, Message: msg}
+}
+
+// failResultWithType is a convenience helper for failed actions with ErrorType.
+func failResultWithType(errorType, msg string) ActionResult {
+	return ActionResult{OK: false, ErrorType: errorType, Message: msg}
 }
 
 // cooldownLeft returns a human-readable remaining cooldown string.
@@ -225,16 +245,16 @@ func (p *Pet) CapabilitiesRegistry() *capabilities.Registry {
 // Dynamic cooldown based on urgency. Prerequisite: hunger < 95. Diminishing returns on gain.
 func (p *Pet) Feed() ActionResult {
 	if !p.Alive {
-		return failResult("宠物已经不在了...")
+		return failResultWithType(ErrDead, "宠物已经不在了...")
 	}
 
 	// Calculate dynamic cooldown based on current hunger
 	cooldown := CalculateDynamicCooldown(p.registry, p.Species, "feed", p.Hunger)
 	if left := cooldownLeft(p.LastFedAt, cooldown); left != "" {
-		return failResult(fmt.Sprintf("宠物还不饿，%s后可以再喂", left))
+		return failResultWithType(ErrCooldown, fmt.Sprintf("宠物还不饿，%s后可以再喂", left))
 	}
 	if p.Hunger >= 95 {
-		return failResult("宠物已经很饱了！")
+		return failResultWithType(ErrFullHunger, "宠物已经很饱了！")
 	}
 
 	// Get effects from plugin or defaults
@@ -271,7 +291,7 @@ func (p *Pet) Feed() ActionResult {
 // Dynamic cooldown based on urgency. Prerequisite: energy >= cost. Diminishing returns on happiness gain.
 func (p *Pet) Play() ActionResult {
 	if !p.Alive {
-		return failResult("宠物已经不在了...")
+		return failResultWithType(ErrDead, "宠物已经不在了...")
 	}
 
 	// Get energy cost from plugin or default
@@ -283,10 +303,10 @@ func (p *Pet) Play() ActionResult {
 	// Calculate dynamic cooldown based on current happiness (urgency)
 	cooldown := CalculateDynamicCooldown(p.registry, p.Species, "play", p.Happiness)
 	if left := cooldownLeft(p.LastPlayedAt, cooldown); left != "" {
-		return failResult(fmt.Sprintf("宠物还在喘气，%s后可以再玩", left))
+		return failResultWithType(ErrCooldown, fmt.Sprintf("宠物还在喘气，%s后可以再玩", left))
 	}
 	if p.Energy < energyCost {
-		return failResult("宠物太累了，先休息一下吧！")
+		return failResultWithType(ErrEnergyLow, "宠物太累了，先休息一下吧！")
 	}
 
 	// Get effects from plugin or defaults
@@ -322,13 +342,13 @@ func (p *Pet) Play() ActionResult {
 // Dynamic cooldown based on urgency. Diminishing returns on happiness gain.
 func (p *Pet) Talk() ActionResult {
 	if !p.Alive {
-		return failResult("宠物已经不在了...")
+		return failResultWithType(ErrDead, "宠物已经不在了...")
 	}
 
 	// Calculate dynamic cooldown based on current happiness (urgency)
 	cooldown := CalculateDynamicCooldown(p.registry, p.Species, "talk", p.Happiness)
 	if left := cooldownLeft(p.LastTalkedAt, cooldown); left != "" {
-		return failResult(fmt.Sprintf("宠物需要消化一下，%s后可以再聊", left))
+		return failResultWithType(ErrCooldown, fmt.Sprintf("宠物需要消化一下，%s后可以再聊", left))
 	}
 
 	// Get effects from plugin or defaults
@@ -350,17 +370,17 @@ func (p *Pet) Talk() ActionResult {
 // Dynamic cooldown based on urgency. Prerequisite: energy < 90. Diminishing returns on energy gain.
 func (p *Pet) Rest() ActionResult {
 	if !p.Alive {
-		return failResult("宠物已经不在了...")
+		return failResultWithType(ErrDead, "宠物已经不在了...")
 	}
 
 	// Calculate dynamic cooldown based on current energy (urgency)
 	// Low energy = urgent (short cooldown), high energy = not urgent (long cooldown)
 	cooldown := CalculateDynamicCooldown(p.registry, p.Species, "rest", p.Energy)
 	if left := cooldownLeft(p.LastRestedAt, cooldown); left != "" {
-		return failResult(fmt.Sprintf("宠物还不困，%s后可以再休息", left))
+		return failResultWithType(ErrCooldown, fmt.Sprintf("宠物还不困，%s后可以再休息", left))
 	}
 	if p.Energy >= 90 {
-		return failResult("宠物精力充沛，不需要休息！")
+		return failResultWithType(ErrFullEnergy, "宠物精力充沛，不需要休息！")
 	}
 
 	// Get effects from plugin or defaults
@@ -398,7 +418,7 @@ func (p *Pet) Rest() ActionResult {
 // Dynamic cooldown based on urgency. Prerequisite: energy >= cost. Diminishing returns on health gain.
 func (p *Pet) Heal() ActionResult {
 	if !p.Alive {
-		return failResult("宠物已经不在了...")
+		return failResultWithType(ErrDead, "宠物已经不在了...")
 	}
 
 	// Get energy cost from plugin or default
@@ -411,10 +431,10 @@ func (p *Pet) Heal() ActionResult {
 	// Low health = urgent (short cooldown), high health = not urgent (long cooldown)
 	cooldown := CalculateDynamicCooldown(p.registry, p.Species, "heal", p.Health)
 	if left := cooldownLeft(p.LastHealedAt, cooldown); left != "" {
-		return failResult(fmt.Sprintf("刚治疗过，%s后可以再治疗", left))
+		return failResultWithType(ErrCooldown, fmt.Sprintf("刚治疗过，%s后可以再治疗", left))
 	}
 	if p.Energy < energyCost {
-		return failResult("宠物精力不足，需要先休息！")
+		return failResultWithType(ErrEnergyLow, "宠物精力不足，需要先休息！")
 	}
 
 	// Get effects from plugin or defaults
@@ -797,21 +817,21 @@ func (p *Pet) MarkAsChecked() {
 // Returns an ActionResult indicating success or failure.
 func (p *Pet) UseSkill(skillID string) ActionResult {
 	if !p.Alive {
-		return failResult("宠物已经不在了...")
+		return failResultWithType(ErrDead, "宠物已经不在了...")
 	}
 
 	// Get the skill from capabilities registry
 	if p.capabilitiesReg == nil {
-		return failResult("技能系统未初始化")
+		return failResultWithType(ErrSkillSystem, "技能系统未初始化")
 	}
 
 	trait, exists := p.capabilitiesReg.GetTrait(p.Species, skillID)
 	if !exists {
-		return failResult("未知技能")
+		return failResultWithType(ErrSkillUnknown, "未知技能")
 	}
 
 	if trait.Type != "active" || trait.ActiveEffect == nil {
-		return failResult("这不是一个主动技能")
+		return failResultWithType(ErrSkillNotActive, "这不是一个主动技能")
 	}
 
 	effect := trait.ActiveEffect
@@ -824,12 +844,12 @@ func (p *Pet) UseSkill(skillID string) ActionResult {
 
 	// Check cooldown
 	if left := cooldownLeft(p.LastSkillUsedAt, cooldown); left != "" {
-		return failResult(fmt.Sprintf("技能冷却中，%s后可再次使用", left))
+		return failResultWithType(ErrCooldown, fmt.Sprintf("技能冷却中，%s后可再次使用", left))
 	}
 
 	// Check energy cost
 	if p.Energy < effect.EnergyCost {
-		return failResult(fmt.Sprintf("精力不足，需要 %d 精力", effect.EnergyCost))
+		return failResultWithType(ErrEnergyLow, fmt.Sprintf("精力不足，需要 %d 精力", effect.EnergyCost))
 	}
 
 	// Apply skill effect

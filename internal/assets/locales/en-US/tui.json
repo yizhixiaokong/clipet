@@ -23,6 +23,7 @@
       "play_success": "Playtime! Happiness {{.oldHappiness}} → {{.newHappiness}}",
       "rest_success": "Taking a rest~ Energy {{.oldEnergy}}→{{.newEnergy}}  Health {{.oldHealth}}→{{.newHealth}}",
       "heal_success": "Healing complete! Health {{.oldHealth}}→{{.newHealth}}  Energy {{.oldEnergy}}→{{.newEnergy}}",
+      "talk_success": "Chat successful!",
       "stats_interactions": "Interact {{.interact}}  Feed {{.feed}}  Play {{.play}}  Talk {{.talk}}  Adventure {{.adventure}}",
       "no_extra_attrs": "No extra attributes",
       "extra_attrs_title": "Extra Attributes:",
@@ -67,7 +68,10 @@
       "adventuring": "{{.icon}} Adventuring...",
       "adventure_end": "Adventure End",
       "attr_changes": "Attribute Changes:",
-      "no_changes": "No attribute changes"
+      "no_changes": "No attribute changes",
+      "energy_cost": "Energy Cost: {{.cost}}",
+      "hint_continue_cancel": "Enter Continue  Esc Cancel",
+      "prompt": "What will you do?"
     },
     "evolve": {
       "help": "↑↓ Select  Enter Confirm  Esc Cancel",
@@ -120,8 +124,15 @@
     "errors": {
       "action_failed": "Action failed",
       "invalid_action": "Invalid action",
-      "not_enough_energy": "Not enough energy",
-      "not_enough_health": "Health too low"
+      "energy_low": "Not enough energy!",
+      "health_low": "Health too low!",
+      "cooldown": "Action is on cooldown",
+      "dead": "Your pet has passed away...",
+      "full_hunger": "Your pet is already full!",
+      "full_energy": "Your pet has plenty of energy!",
+      "skill_system": "Skill system not initialized",
+      "skill_unknown": "Unknown skill",
+      "skill_not_active": "This is not an active skill"
     }
   },
   "cli": {

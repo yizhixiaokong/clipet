@@ -150,9 +150,11 @@ func (m OfflineSettlementModel) View() string {
 		}
 
 		// Attribute changes
-		attrLine := fmt.Sprintf("    属性: [%2d,%2d,%2d,%2d] → [%2d,%2d,%2d,%2d]",
-			r.StartAttrs[0], r.StartAttrs[1], r.StartAttrs[2], r.StartAttrs[3],
+		beforeStr := fmt.Sprintf("%2d,%2d,%2d,%2d",
+			r.StartAttrs[0], r.StartAttrs[1], r.StartAttrs[2], r.StartAttrs[3])
+		afterStr := fmt.Sprintf("%2d,%2d,%2d,%2d",
 			r.EndAttrs[0], r.EndAttrs[1], r.EndAttrs[2], r.EndAttrs[3])
+		attrLine := m.i18n.T("ui.offline_settlement.attr_line", "before", beforeStr, "after", afterStr)
 		lines = append(lines, "    "+mutedStyle.Render(attrLine))
 
 		// Add blank line between rounds (except last)
