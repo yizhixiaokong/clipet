@@ -457,8 +457,12 @@ func (h HomeModel) executeAction(action string) HomeModel {
 			}
 			chH := res.Changes["health"]
 			chE := res.Changes["energy"]
-			return h.applyActionResult(res, fmt.Sprintf("%s  健康 %d→%d  精力 %d→%d",
-				res.Message, chH[0], chH[1], chE[0], chE[1]))
+			// Format: "{message}  Health X→Y  Energy A→B"
+			detailMsg := fmt.Sprintf("%s  %s %d→%d  %s %d→%d",
+				res.Message,
+				h.i18n.T("game.stats.health"), chH[0], chH[1],
+				h.i18n.T("game.stats.energy"), chE[0], chE[1])
+			return h.applyActionResult(res, detailMsg)
 		}
 		return h
 	}
