@@ -136,8 +136,8 @@ func runTUI() error {
 		// Multi-stage settlement
 		offlineResults = pet.ApplyMultiStageDecay(dur)
 
-		// Update cooldown timestamps
-		pet.UpdateCooldowns(dur)
+		// Trigger time hooks (lifecycle, death check, etc.)
+		pet.AdvanceTime(dur)
 
 		// Clear cache
 		pet.AccumulatedOfflineDuration = 0
