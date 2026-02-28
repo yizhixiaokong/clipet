@@ -423,6 +423,6 @@ health = 25
 # 对话动作
 [[actions]]
 id = "talk"
-cooldown = "2m"
+cooldown = "10s"
 [actions.effects]
-happiness = 5
+happiness = 1

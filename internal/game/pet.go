@@ -47,7 +47,7 @@ const (
 	CooldownPlay = 5 * time.Minute
 	CooldownRest = 15 * time.Minute
 	CooldownHeal = 20 * time.Minute
-	CooldownTalk = 5 * time.Second
+	CooldownTalk = 10 * time.Second
 )
 
 // ActionResult holds the outcome of a pet action.

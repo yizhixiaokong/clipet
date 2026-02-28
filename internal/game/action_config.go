@@ -46,8 +46,8 @@ func DefaultActionConfigs() map[string]struct {
 			Health:    25,
 		},
 		"talk": {
-			Cooldown: CooldownTalk,
-			Happiness: 5,
+			Cooldown:  CooldownTalk,
+			Happiness: 1,
 		},
 	}
 }
