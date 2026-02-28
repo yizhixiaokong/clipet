@@ -134,7 +134,7 @@ const (
 type tickMsg time.Time
 
 func doTick() tea.Cmd {
-	return tea.Tick(time.Millisecond*500, func(t time.Time) tea.Msg {
+	return tea.Tick(time.Millisecond*150, func(t time.Time) tea.Msg {
 		return tickMsg(t)
 	})
 }
