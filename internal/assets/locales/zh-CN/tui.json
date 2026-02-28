@@ -1,5 +1,23 @@
 {
   "ui": {
+    "keys": {
+      "left": "左移",
+      "right": "右移",
+      "up": "上移",
+      "down": "下移",
+      "enter": "确认",
+      "back": "返回",
+      "quit": "退出",
+      "toggle_help": "帮助",
+      "feed": "喂食",
+      "play": "玩耍",
+      "rest": "休息",
+      "heal": "治疗",
+      "talk": "对话",
+      "mark": "标记",
+      "top": "顶部",
+      "bottom": "底部"
+    },
     "home": {
       "categories": {
         "care": "照顾",

@@ -1,5 +1,23 @@
 {
   "ui": {
+    "keys": {
+      "left": "Left",
+      "right": "Right",
+      "up": "Up",
+      "down": "Down",
+      "enter": "Enter",
+      "back": "Back",
+      "quit": "Quit",
+      "toggle_help": "Help",
+      "feed": "Feed",
+      "play": "Play",
+      "rest": "Rest",
+      "heal": "Heal",
+      "talk": "Talk",
+      "mark": "Mark",
+      "top": "Top",
+      "bottom": "Bottom"
+    },
     "home": {
       "categories": {
         "care": "Care",
