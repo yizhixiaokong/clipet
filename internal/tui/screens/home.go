@@ -913,7 +913,7 @@ func (h HomeModel) renderMessageArea(width int) string {
 		return h.theme.MessageBox.Width(innerW).
 			BorderForeground(lipgloss.Color("#AA5555")).
 			Foreground(lipgloss.Color("#FF8888")).
-			Render("⚠ 你的宠物已步入暮年，珍惜与它在一起的时光...")
+			Render(h.i18n.T("ui.home.lifecycle_warning"))
 	}
 
 	// Empty placeholder
@@ -923,7 +923,7 @@ func (h HomeModel) renderMessageArea(width int) string {
 		Foreground(styles.DimColor()).
 		Width(innerW).
 		Padding(0, 2).
-		Render("  等待指令...")
+		Render(h.i18n.T("ui.home.waiting"))
 }
 
 // renderActionMenu renders the two-level category tabs + sub-action menu.

@@ -36,7 +36,9 @@
       "help_game": "Esc to quit game",
       "game_won": "🎉 Victory! {{.message}} Happiness +{{.happiness}}",
       "game_lost": "💔 Defeat... {{.message}} Happiness {{.happiness}}",
-      "save_failed": "⚠Save failed"
+      "save_failed": "⚠Save failed",
+      "waiting": "  Waiting for command...",
+      "lifecycle_warning": "⚠ Your pet has entered old age, cherish your time together..."
     },
     "cooldown": {
       "action_cooldown": "{{.action}} needs rest, wait {{.time}}"

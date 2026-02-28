@@ -36,7 +36,9 @@
       "help_game": "Esc 退出游戏",
       "game_won": "🎉 胜利！{{.message}} 快乐度 +{{.happiness}}",
       "game_lost": "💔 失败... {{.message}} 快乐度 {{.happiness}}",
-      "save_failed": "⚠保存失败"
+      "save_failed": "⚠保存失败",
+      "waiting": "  等待指令...",
+      "lifecycle_warning": "⚠ 你的宠物已步入暮年，珍惜与它在一起的时光..."
     },
     "cooldown": {
       "action_cooldown": "{{.action}}需要休整，还需等待 {{.time}}"
