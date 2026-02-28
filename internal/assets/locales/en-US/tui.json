@@ -66,15 +66,27 @@
   "game": {
     "pet": {
       "age_format": "{{.days}} days",
+      "age_hours": "{{.hours}} hours",
       "stage_format": "{{.stage}}"
     },
     "stats": {
       "hunger": "Hunger",
-      "happiness": "Happiness",
+      "happiness": "Happy",
       "health": "Health",
       "energy": "Energy",
       "age": "Age",
-      "stage": "Stage"
+      "stage": "Stage",
+      "mood": "Mood",
+      "dialogue": "Talk",
+      "adventure": "Adventure"
+    },
+    "mood": {
+      "happy": "😊 Happy",
+      "normal": "😐 Normal",
+      "unhappy": "😕 Not Great",
+      "sad": "😢 Sad",
+      "miserable": "😭 Terrible",
+      "unknown": "❓ Unknown"
     },
     "evolution": {
       "evolving": "Evolving...",

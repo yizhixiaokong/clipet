@@ -66,15 +66,27 @@
   "game": {
     "pet": {
       "age_format": "{{.days}} 天",
+      "age_hours": "{{.hours}} 小时",
       "stage_format": "{{.stage}}"
     },
     "stats": {
-      "hunger": "饱腹度",
-      "happiness": "快乐度",
-      "health": "健康值",
-      "energy": "精力值",
+      "hunger": "饱食",
+      "happiness": "快乐",
+      "health": "健康",
+      "energy": "精力",
       "age": "年龄",
-      "stage": "阶段"
+      "stage": "阶段",
+      "mood": "心情",
+      "dialogue": "对话",
+      "adventure": "冒险"
+    },
+    "mood": {
+      "happy": "😊 开心",
+      "normal": "😐 普通",
+      "unhappy": "😕 不太好",
+      "sad": "😢 难过",
+      "miserable": "😭 非常差",
+      "unknown": "❓ 未知"
     },
     "evolution": {
       "evolving": "正在进化...",

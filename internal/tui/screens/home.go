@@ -687,14 +687,14 @@ func (h HomeModel) renderStatusPanel(width int) string {
 	if stage := h.registry.GetStage(p.Species, p.StageID); stage != nil {
 		stageName = stage.Name
 	}
-	stageLine := h.theme.StatusLabel.Render("阶段") + " " +
+	stageLine := h.theme.StatusLabel.Render(h.i18n.T("game.stats.stage")) + " " +
 		h.theme.StatusValue.Render(fmt.Sprintf("%s (%s)", stageName, p.Stage))
 
 	moodStr, moodStyle := h.moodDisplay()
-	moodLine := h.theme.StatusLabel.Render("心情") + " " + moodStyle.Render(moodStr)
+	moodLine := h.theme.StatusLabel.Render(h.i18n.T("game.stats.mood")) + " " + moodStyle.Render(moodStr)
 
-	ageLine := h.theme.StatusLabel.Render("年龄") + " " +
-		h.theme.StatusValue.Render(fmt.Sprintf("%.1f 小时", p.AgeHours()))
+	ageLine := h.theme.StatusLabel.Render(h.i18n.T("game.stats.age")) + " " +
+		h.theme.StatusValue.Render(h.i18n.T("game.pet.age_hours", "hours", fmt.Sprintf("%.1f", p.AgeHours())))
 
 	const contentW = 20
 	sep := lipgloss.NewStyle().
@@ -702,16 +702,17 @@ func (h HomeModel) renderStatusPanel(width int) string {
 		Render(strings.Repeat("-", contentW))
 
 	bars := []string{
-		h.statBar("🍖", "饱食", p.Hunger),
-		h.statBar("😺", "快乐", p.Happiness),
-		h.statBar("💊", "健康", p.Health),
-		h.statBar("💤", "精力", p.Energy),
+		h.statBar("🍖", h.i18n.T("game.stats.hunger"), p.Hunger),
+		h.statBar("😺", h.i18n.T("game.stats.happiness"), p.Happiness),
+		h.statBar("💊", h.i18n.T("game.stats.health"), p.Health),
+		h.statBar("💤", h.i18n.T("game.stats.energy"), p.Energy),
 	}
 	statsBlock := strings.Join(bars, "\n")
 
 	// Add more statistics
-	stats := fmt.Sprintf("🗣 对话 %d  🗺 冒险 %d",
-		p.DialogueCount, p.AdventuresCompleted)
+	stats := fmt.Sprintf("🗣 %s %d  🗺 %s %d",
+		h.i18n.T("game.stats.dialogue"), p.DialogueCount,
+		h.i18n.T("game.stats.adventure"), p.AdventuresCompleted)
 
 	content := lipgloss.JoinVertical(lipgloss.Left,
 		name,
@@ -739,17 +740,17 @@ func (h HomeModel) moodDisplay() (string, lipgloss.Style) {
 	mood := h.pet.MoodName()
 	switch mood {
 	case "happy":
-		return "😊 开心", h.theme.MoodHappy
+		return h.i18n.T("game.mood.happy"), h.theme.MoodHappy
 	case "normal":
-		return "😐 普通", h.theme.MoodNormal
+		return h.i18n.T("game.mood.normal"), h.theme.MoodNormal
 	case "unhappy":
-		return "😕 不太好", h.theme.MoodSad
+		return h.i18n.T("game.mood.unhappy"), h.theme.MoodSad
 	case "sad":
-		return "😢 难过", h.theme.MoodSad
+		return h.i18n.T("game.mood.sad"), h.theme.MoodSad
 	case "miserable":
-		return "😭 非常差", h.theme.MoodMiserable
+		return h.i18n.T("game.mood.miserable"), h.theme.MoodMiserable
 	default:
-		return "❓ 未知", h.theme.MoodNormal
+		return h.i18n.T("game.mood.unknown"), h.theme.MoodNormal
 	}
 }
 
