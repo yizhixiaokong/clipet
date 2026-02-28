@@ -3,8 +3,10 @@ package cli
 
 import (
 	"clipet/internal/assets"
+	"clipet/internal/config"
 	"clipet/internal/game"
 	"clipet/internal/game/capabilities"
+	"clipet/internal/i18n"
 	"clipet/internal/plugin"
 	"clipet/internal/store"
 	"fmt"
@@ -19,6 +21,8 @@ var (
 	registry         *plugin.Registry
 	capabilitiesReg  *capabilities.Registry
 	petStore         *store.JSONStore
+	i18nMgr         *i18n.Manager
+	cfg             *config.Config
 )
 
 // NewRootCmd creates the root cobra command.
@@ -47,6 +51,28 @@ func NewRootCmd() *cobra.Command {
 
 // setup initializes the plugin registry and store.
 func setup() error {
+	// Load user configuration
+	var err error
+	cfg, err = config.Load()
+	if err != nil {
+		// Log warning but continue with defaults
+		fmt.Fprintf(os.Stderr, "Warning: failed to load config: %v\n", err)
+		cfg = &config.Config{
+			Language:         config.DefaultLanguage,
+			FallbackLanguage: config.DefaultFallbackLanguage,
+			Version:          config.DefaultVersion,
+		}
+	}
+
+	// Initialize i18n
+	bundle := i18n.NewBundle()
+	loader := i18n.NewLoader(assets.LocalesFS, "locales")
+	if err := loader.LoadAll(bundle); err != nil {
+		fmt.Fprintf(os.Stderr, "Warning: failed to load translations: %v\n", err)
+	}
+
+	i18nMgr = i18n.NewManager(cfg.Language, cfg.FallbackLanguage, bundle)
+
 	// Initialize plugin registry
 	registry = plugin.NewRegistry()
 

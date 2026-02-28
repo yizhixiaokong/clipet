@@ -1,0 +1,109 @@
+{
+  "ui": {
+    "home": {
+      "categories": {
+        "care": "Care",
+        "interact": "Interact",
+        "games": "Games",
+        "view": "View"
+      },
+      "actions": {
+        "feed": "Feed",
+        "rest": "Rest",
+        "heal": "Heal",
+        "play": "Play",
+        "talk": "Talk",
+        "adventure": "Adventure",
+        "game_reaction": "Reaction Speed",
+        "game_guess": "Guess Number",
+        "info": "Info",
+        "extra_attrs": "Extra Attributes"
+      },
+      "feed_success": "Feeding successful! Hunger {{.oldHunger}} → {{.newHunger}}",
+      "play_success": "Playtime! Happiness {{.oldHappiness}} → {{.newHappiness}}",
+      "rest_success": "Taking a rest~ Energy {{.oldEnergy}}→{{.newEnergy}}  Health {{.oldHealth}}→{{.newHealth}}",
+      "heal_success": "Healing complete! Health {{.oldHealth}}→{{.newHealth}}  Energy {{.oldEnergy}}→{{.newEnergy}}",
+      "stats_interactions": "Interact {{.interact}}  Feed {{.feed}}  Play {{.play}}  Talk {{.talk}}  Adventure {{.adventure}}",
+      "no_extra_attrs": "No extra attributes",
+      "extra_attrs_title": "Extra Attributes:",
+      "adventure_cooldown": "Adventure needs rest, wait {{.minutes}} more minutes",
+      "no_adventures": "No available adventures for current stage",
+      "game_unavailable": "Game unavailable",
+      "game_cancelled": "Game cancelled",
+      "dialogue_stats": "🗣 Talk {{.talk}}  🗺 Adventure {{.adventure}}",
+      "help_submenu": "←→ Select  Enter Confirm  ↑/Esc Back  f=feed p=play r=rest c=heal t=talk  q=quit",
+      "help_main": "←→ Switch Category  ↓/Enter Enter  f=feed p=play r=rest c=heal t=talk  q=quit",
+      "help_game": "Esc to quit game"
+    },
+    "cooldown": {
+      "action_cooldown": "{{.action}} needs rest, wait {{.time}}"
+    },
+    "dialogue": {
+      "mood_happy": "Happy",
+      "mood_normal": "Normal",
+      "mood_sad": "Sad",
+      "mood_hungry": "Hungry",
+      "mood_tired": "Tired"
+    },
+    "adventure": {
+      "title": "🗺 Adventure",
+      "result_title": "Adventure Result",
+      "close_hint": "Press Enter to close"
+    },
+    "common": {
+      "loading": "Loading...",
+      "save_success": "Saved successfully",
+      "save_failed": "Save failed",
+      "confirm": "Confirm",
+      "cancel": "Cancel",
+      "yes": "Yes",
+      "no": "No",
+      "back": "Back",
+      "continue": "Continue",
+      "quit": "Goodbye!"
+    }
+  },
+  "game": {
+    "pet": {
+      "age_format": "{{.days}} days",
+      "stage_format": "{{.stage}}"
+    },
+    "stats": {
+      "hunger": "Hunger",
+      "happiness": "Happiness",
+      "health": "Health",
+      "energy": "Energy",
+      "age": "Age",
+      "stage": "Stage"
+    },
+    "evolution": {
+      "evolving": "Evolving...",
+      "evolution_complete": "Evolution complete! {{.oldStage}} → {{.newStage}}",
+      "evolution_conditions": "Evolution Conditions"
+    },
+    "errors": {
+      "action_failed": "Action failed",
+      "invalid_action": "Invalid action",
+      "not_enough_energy": "Not enough energy",
+      "not_enough_health": "Health too low"
+    }
+  },
+  "cli": {
+    "init": {
+      "welcome": "Welcome to Clipet!",
+      "choose_species": "Choose your pet species",
+      "pet_name_prompt": "Name your pet",
+      "setup_complete": "Setup complete!",
+      "loading": "Loading..."
+    },
+    "status": {
+      "title": "Pet Status",
+      "no_pet": "No pet save found"
+    },
+    "errors": {
+      "save_not_found": "Save not found",
+      "save_corrupted": "Save corrupted",
+      "invalid_command": "Invalid command"
+    }
+  }
+}

@@ -2,6 +2,7 @@ package tui
 
 import (
 	"clipet/internal/game"
+	"clipet/internal/i18n"
 	"clipet/internal/plugin"
 	"clipet/internal/store"
 	"clipet/internal/tui/components"
@@ -36,6 +37,7 @@ type App struct {
 	pet      *game.Pet
 	registry *plugin.Registry
 	store    store.Store
+	i18n     *i18n.Manager
 	petView  *components.PetView
 	theme    styles.Theme
 
@@ -52,10 +54,10 @@ type App struct {
 }
 
 // NewApp creates the top-level TUI application model.
-func NewApp(pet *game.Pet, reg *plugin.Registry, st store.Store, offlineResults []game.DecayRoundResult) App {
+func NewApp(pet *game.Pet, reg *plugin.Registry, st store.Store, i18nMgr *i18n.Manager, offlineResults []game.DecayRoundResult) App {
 	pv := components.NewPetView(pet, reg)
 	theme := styles.DefaultTheme()
-	home := screens.NewHomeModel(pet, reg, st, pv, theme)
+	home := screens.NewHomeModel(pet, reg, st, pv, theme, i18nMgr)
 
 	// Create offline settlement screen if there are results
 	var offlineSettlement screens.OfflineSettlementModel
@@ -69,6 +71,7 @@ func NewApp(pet *game.Pet, reg *plugin.Registry, st store.Store, offlineResults 
 		pet:               pet,
 		registry:          reg,
 		store:             st,
+		i18n:              i18nMgr,
 		petView:           pv,
 		theme:             theme,
 		offlineSettlement: offlineSettlement,
@@ -219,7 +222,7 @@ func (a *App) checkEvolution() {
 // View implements tea.Model.
 func (a App) View() tea.View {
 	if a.quitting {
-		return tea.NewView("再见！\n")
+		return tea.NewView(a.i18n.T("ui.common.quit") + "\n")
 	}
 
 	var content string

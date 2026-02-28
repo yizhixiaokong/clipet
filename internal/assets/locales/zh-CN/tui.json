@@ -1,0 +1,109 @@
+{
+  "ui": {
+    "home": {
+      "categories": {
+        "care": "照顾",
+        "interact": "互动",
+        "games": "游戏",
+        "view": "查看"
+      },
+      "actions": {
+        "feed": "喂食",
+        "rest": "休息",
+        "heal": "治疗",
+        "play": "玩耍",
+        "talk": "对话",
+        "adventure": "冒险",
+        "game_reaction": "反应速度",
+        "game_guess": "猜数字",
+        "info": "信息",
+        "extra_attrs": "额外属性"
+      },
+      "feed_success": "喂食成功！饱腹度 {{.oldHunger}} → {{.newHunger}}",
+      "play_success": "玩耍愉快！快乐度 {{.oldHappiness}} → {{.newHappiness}}",
+      "rest_success": "休息一下～精力 {{.oldEnergy}}→{{.newEnergy}}  健康 {{.oldHealth}}→{{.newHealth}}",
+      "heal_success": "治疗完成！健康 {{.oldHealth}}→{{.newHealth}}  精力 {{.oldEnergy}}→{{.newEnergy}}",
+      "stats_interactions": "互动 {{.interact}}  喂食 {{.feed}}  玩耍 {{.play}}  对话 {{.talk}}  冒险 {{.adventure}}",
+      "no_extra_attrs": "暂无额外属性",
+      "extra_attrs_title": "额外属性:",
+      "adventure_cooldown": "冒险需要休整，还需等待 {{.minutes}} 分钟",
+      "no_adventures": "当前阶段没有可用的冒险事件",
+      "game_unavailable": "游戏不可用",
+      "game_cancelled": "游戏已取消",
+      "dialogue_stats": "🗣 对话 {{.talk}}  🗺 冒险 {{.adventure}}",
+      "help_submenu": "←→ 选择  Enter 确认  ↑/Esc 返回  f喂食 p玩耍 r休息 c治疗 t对话  q退出",
+      "help_main": "←→ 切换分类  ↓/Enter 进入  f喂食 p玩耍 r休息 c治疗 t对话  q退出",
+      "help_game": "Esc 退出游戏"
+    },
+    "cooldown": {
+      "action_cooldown": "{{.action}}需要休整，还需等待 {{.time}}"
+    },
+    "dialogue": {
+      "mood_happy": "开心",
+      "mood_normal": "普通",
+      "mood_sad": "低落",
+      "mood_hungry": "饥饿",
+      "mood_tired": "疲惫"
+    },
+    "adventure": {
+      "title": "🗺 冒险",
+      "result_title": "冒险结果",
+      "close_hint": "按 Enter 关闭"
+    },
+    "common": {
+      "loading": "加载中...",
+      "save_success": "保存成功",
+      "save_failed": "保存失败",
+      "confirm": "确认",
+      "cancel": "取消",
+      "yes": "是",
+      "no": "否",
+      "back": "返回",
+      "continue": "继续",
+      "quit": "再见！"
+    }
+  },
+  "game": {
+    "pet": {
+      "age_format": "{{.days}} 天",
+      "stage_format": "{{.stage}}"
+    },
+    "stats": {
+      "hunger": "饱腹度",
+      "happiness": "快乐度",
+      "health": "健康值",
+      "energy": "精力值",
+      "age": "年龄",
+      "stage": "阶段"
+    },
+    "evolution": {
+      "evolving": "正在进化...",
+      "evolution_complete": "进化完成！{{.oldStage}} → {{.newStage}}",
+      "evolution_conditions": "进化条件"
+    },
+    "errors": {
+      "action_failed": "操作失败",
+      "invalid_action": "无效操作",
+      "not_enough_energy": "精力不足",
+      "not_enough_health": "健康值过低"
+    }
+  },
+  "cli": {
+    "init": {
+      "welcome": "欢迎来到 Clipet！",
+      "choose_species": "选择你的宠物物种",
+      "pet_name_prompt": "给你的宠物起个名字",
+      "setup_complete": "设置完成！",
+      "loading": "加载中..."
+    },
+    "status": {
+      "title": "宠物状态",
+      "no_pet": "未找到宠物存档"
+    },
+    "errors": {
+      "save_not_found": "未找到存档",
+      "save_corrupted": "存档已损坏",
+      "invalid_command": "无效命令"
+    }
+  }
+}

@@ -3,6 +3,7 @@ package screens
 import (
 	"clipet/internal/game"
 	"clipet/internal/game/games"
+	"clipet/internal/i18n"
 	"clipet/internal/plugin"
 	"clipet/internal/store"
 	"clipet/internal/tui/components"
@@ -30,26 +31,47 @@ type menuCategory struct {
 	actions []actionItem
 }
 
-// categories defines the two-level menu structure.
+// categories defines the two-level menu structure (untranslated keys).
 var categories = []menuCategory{
-	{"🐾", "照顾", []actionItem{
-		{"🍖", "喂食", "feed"},
-		{"💤", "休息", "rest"},
-		{"💊", "治疗", "heal"},
+	{"🐾", "care", []actionItem{
+		{"🍖", "feed", "feed"},
+		{"💤", "rest", "rest"},
+		{"💊", "heal", "heal"},
 	}},
-	{"🎮", "互动", []actionItem{
-		{"🎮", "玩耍", "play"},
-		{"💬", "对话", "talk"},
-		{"🗺️", "冒险", "adventure"},
+	{"🎮", "interact", []actionItem{
+		{"🎮", "play", "play"},
+		{"💬", "talk", "talk"},
+		{"🗺️", "adventure", "adventure"},
 	}},
-	{"🎯", "游戏", []actionItem{
-		{"⚡", "反应速度", "game_reaction"},
-		{"🎲", "猜数字", "game_guess"},
+	{"🎯", "games", []actionItem{
+		{"⚡", "game_reaction", "game_reaction"},
+		{"🎲", "game_guess", "game_guess"},
 	}},
-	{"📋", "查看", []actionItem{
-		{"📋", "信息", "info"},
-		{"✨", "额外属性", "extra_attrs"},
+	{"📋", "view", []actionItem{
+		{"📋", "info", "info"},
+		{"✨", "extra_attrs", "extra_attrs"},
 	}},
+}
+
+// getTranslatedCategories returns categories with translated labels.
+func (h HomeModel) getTranslatedCategories() []menuCategory {
+	result := make([]menuCategory, len(categories))
+	for i, cat := range categories {
+		translatedCat := menuCategory{
+			icon:  cat.icon,
+			label: h.i18n.T("ui.home.categories." + cat.label),
+		}
+		translatedCat.actions = make([]actionItem, len(cat.actions))
+		for j, action := range cat.actions {
+			translatedCat.actions[j] = actionItem{
+				icon:   action.icon,
+				label:  h.i18n.T("ui.home.actions." + action.action),
+				action: action.action,
+			}
+		}
+		result[i] = translatedCat
+	}
+	return result
 }
 
 // HomeModel is the home screen model.
@@ -57,6 +79,7 @@ type HomeModel struct {
 	pet      *game.Pet
 	registry *plugin.Registry
 	store    store.Store
+	i18n     *i18n.Manager
 	petView  *components.PetView
 	theme    styles.Theme
 	bubble   components.DialogueBubble
@@ -88,11 +111,13 @@ func NewHomeModel(
 	st store.Store,
 	pv *components.PetView,
 	theme styles.Theme,
+	i18nMgr *i18n.Manager,
 ) HomeModel {
 	return HomeModel{
 		pet:        pet,
 		registry:   reg,
 		store:      st,
+		i18n:       i18nMgr,
 		petView:    pv,
 		bubble:     components.NewDialogueBubble(),
 		gameMgr:    games.NewGameManager(),
@@ -175,10 +200,11 @@ func (h HomeModel) ClearPendingAdventure() HomeModel {
 
 // getCurrentActions returns the current category's actions, including dynamically added skills.
 func (h HomeModel) getCurrentActions() []actionItem {
-	cat := categories[h.catIdx]
+	translatedCats := h.getTranslatedCategories()
+	cat := translatedCats[h.catIdx]
 	actions := cat.actions
 
-	// Dynamically add skill actions to the "互动" category (index 1)
+	// Dynamically add skill actions to the "interact" category (index 1)
 	if h.catIdx == 1 && h.pet.CapabilitiesRegistry() != nil {
 		skills := h.pet.CapabilitiesRegistry().GetActiveTraits(h.pet.Species)
 		for _, skill := range skills {
@@ -218,7 +244,8 @@ func (h HomeModel) Update(msg tea.Msg) (HomeModel, tea.Cmd) {
 			return h.executeAction("talk"), nil
 		case "g":
 			if h.inSubmenu && h.catIdx == 2 { // Games category
-				act := categories[h.catIdx].actions[h.actIdx]
+				translatedCats := h.getTranslatedCategories()
+				act := translatedCats[h.catIdx].actions[h.actIdx]
 				return h.executeAction(act.action), nil
 			}
 			return h, nil
@@ -336,7 +363,7 @@ func (h HomeModel) executeAction(action string) HomeModel {
 			return h.failMsg(res.Message)
 		}
 		ch := res.Changes["hunger"]
-		return h.applyActionResult(res, fmt.Sprintf("喂食成功！饱腹度 %d → %d", ch[0], ch[1]))
+		return h.applyActionResult(res, h.i18n.T("ui.home.feed_success", "oldHunger", ch[0], "newHunger", ch[1]))
 
 	case "play":
 		res := h.pet.Play()
@@ -344,7 +371,7 @@ func (h HomeModel) executeAction(action string) HomeModel {
 			return h.failMsg(res.Message)
 		}
 		ch := res.Changes["happiness"]
-		return h.applyActionResult(res, fmt.Sprintf("玩耍愉快！快乐度 %d → %d", ch[0], ch[1]))
+		return h.applyActionResult(res, h.i18n.T("ui.home.play_success", "oldHappiness", ch[0], "newHappiness", ch[1]))
 
 	case "talk":
 		res := h.pet.Talk()
@@ -366,8 +393,7 @@ func (h HomeModel) executeAction(action string) HomeModel {
 		}
 		chE := res.Changes["energy"]
 		chH := res.Changes["health"]
-		return h.applyActionResult(res, fmt.Sprintf("休息一下～精力 %d→%d  健康 %d→%d",
-			chE[0], chE[1], chH[0], chH[1]))
+		return h.applyActionResult(res, h.i18n.T("ui.home.rest_success", "oldEnergy", chE[0], "newEnergy", chE[1], "oldHealth", chH[0], "newHealth", chH[1]))
 
 	case "heal":
 		res := h.pet.Heal()
@@ -376,8 +402,7 @@ func (h HomeModel) executeAction(action string) HomeModel {
 		}
 		chH := res.Changes["health"]
 		chE := res.Changes["energy"]
-		return h.okMsg(fmt.Sprintf("治疗完成！健康 %d→%d  精力 %d→%d",
-			chH[0], chH[1], chE[0], chE[1]))
+		return h.okMsg(h.i18n.T("ui.home.heal_success", "oldHealth", chH[0], "newHealth", chH[1], "oldEnergy", chE[0], "newEnergy", chE[1]))
 
 	case "info":
 		return h.infoMsg(fmt.Sprintf(
@@ -486,7 +511,7 @@ func (h HomeModel) processGameResult() HomeModel {
 
 func (h HomeModel) View() string {
 	if h.width == 0 {
-		return "正在加载..."
+		return h.i18n.T("ui.common.loading")
 	}
 
 	// If playing a game, render game overlay
@@ -544,11 +569,11 @@ func (h HomeModel) View() string {
 	// 5) Help bar
 	var helpText string
 	if !h.pet.Alive && h.pet.EndingMessage != "" {
-		helpText = "q 退出"
+		helpText = "q " + h.i18n.T("ui.common.quit")
 	} else if h.inSubmenu {
-		helpText = "←→ 选择  Enter 确认  ↑/Esc 返回  f喂食 p玩耍 r休息 c治疗 t对话  q退出"
+		helpText = h.i18n.T("ui.home.help_submenu")
 	} else {
-		helpText = "←→ 切换分类  ↓/Enter 进入  f喂食 p玩耍 r休息 c治疗 t对话  q退出"
+		helpText = h.i18n.T("ui.home.help_main")
 	}
 	help := h.theme.HelpBar.Width(totalInner).Render(helpText)
 
@@ -898,12 +923,13 @@ func (h HomeModel) renderMessageArea(width int) string {
 
 // renderActionMenu renders the two-level category tabs + sub-action menu.
 func (h HomeModel) renderActionMenu(totalWidth int) string {
-	tabW := (totalWidth - 4) / len(categories)
+	translatedCats := h.getTranslatedCategories()
+	tabW := (totalWidth - 4) / len(translatedCats)
 	if tabW < 8 {
 		tabW = 8
 	}
 	var tabs []string
-	for i, cat := range categories {
+	for i, cat := range translatedCats {
 		label := cat.icon + " " + cat.label
 		if i == h.catIdx && !h.inSubmenu {
 			tabs = append(tabs, h.theme.CategoryTabActive.Width(tabW).Render("▸ "+label))
