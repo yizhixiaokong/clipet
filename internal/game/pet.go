@@ -901,8 +901,9 @@ func (p *Pet) DevOnlySimulateDecay(elapsed time.Duration) {
 	p.LastAdventureAt = p.LastAdventureAt.Add(-elapsed)
 	p.LastSkillUsedAt = p.LastSkillUsedAt.Add(-elapsed)
 
-	// Update last checked time
-	p.LastCheckedAt = time.Now()
+	// Update last checked time to prevent double decay when TUI starts
+	// Move it forward by elapsed time to simulate time passage
+	p.LastCheckedAt = p.LastCheckedAt.Add(-elapsed)
 }
 
 // GetCustomAcc returns a custom accumulator value.
