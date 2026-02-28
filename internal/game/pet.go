@@ -888,6 +888,16 @@ func (p *Pet) DevOnlySimulateDecay(elapsed time.Duration) {
 		p.Health = clamp(p.Health-int(decayConfig.Health*hours), 0, 100)
 	}
 
+	// Update all cooldown timestamps to simulate time passage
+	// This ensures cooldown checks work correctly after timeskip
+	p.LastFedAt = p.LastFedAt.Add(-elapsed)
+	p.LastPlayedAt = p.LastPlayedAt.Add(-elapsed)
+	p.LastRestedAt = p.LastRestedAt.Add(-elapsed)
+	p.LastHealedAt = p.LastHealedAt.Add(-elapsed)
+	p.LastTalkedAt = p.LastTalkedAt.Add(-elapsed)
+	p.LastAdventureAt = p.LastAdventureAt.Add(-elapsed)
+	p.LastSkillUsedAt = p.LastSkillUsedAt.Add(-elapsed)
+
 	// Update last checked time
 	p.LastCheckedAt = time.Now()
 }
