@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	tea "charm.land/bubbletea/v2"
 	"charm.land/bubbles/v2/help"
@@ -115,6 +116,9 @@ type TimeskipModel struct {
 	NewStats     [4]int
 	WouldDie     bool
 
+	// Animation
+	AnimFrame int // animation frame counter (0-7, toggles every ~500ms)
+
 	Quitting bool
 	Done     bool
 }
@@ -125,6 +129,15 @@ const (
 	timeskipPhaseInput   timeskipPhase = iota // typing hours
 	timeskipPhasePreview                      // showing preview, confirm or cancel
 )
+
+// tickMsg is sent periodically to update animation
+type tickMsg time.Time
+
+func doTick() tea.Cmd {
+	return tea.Tick(time.Millisecond*500, func(t time.Time) tea.Msg {
+		return tickMsg(t)
+	})
+}
 
 // NewTimeskipModel creates a new timeskip TUI model
 func NewTimeskipModel(pet *game.Pet, registry *plugin.Registry) *TimeskipModel {
@@ -146,7 +159,7 @@ func NewTimeskipModel(pet *game.Pet, registry *plugin.Registry) *TimeskipModel {
 
 // Init implements tea.Model
 func (m *TimeskipModel) Init() tea.Cmd {
-	return nil
+	return doTick()
 }
 
 // Update implements tea.Model
@@ -156,6 +169,10 @@ func (m *TimeskipModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.Width = msg.Width
 		m.Height = msg.Height
 		m.Help.SetWidth(m.Width)
+	case tickMsg:
+		// Update animation frame
+		m.AnimFrame = (m.AnimFrame + 1) % 8
+		return m, doTick()
 	case tea.KeyPressMsg:
 		if m.Phase == timeskipPhaseInput {
 			return m.updateInput(msg)
@@ -278,19 +295,74 @@ func (m *TimeskipModel) viewInput() string {
 	// Show accumulated offline time if any
 	if m.Pet.AccumulatedOfflineDuration > 0 {
 		lines = append(lines, tsInfoStyle.Render(fmt.Sprintf("离线时间: %.1f 小时 (将在 TUI 启动时结算)", m.Pet.AccumulatedOfflineDuration.Hours())))
+
+		// Compute preview for accumulated offline time (for animation)
+		offlineHours := m.Pet.AccumulatedOfflineDuration.Hours()
+		var decayConfig capabilities.DecayConfig
+		if m.Registry != nil {
+			decayConfig = m.Registry.GetDecayConfig(m.Pet.Species)
+		} else {
+			decayConfig = capabilities.DecayConfig{}.Defaults()
+		}
+
+		offlineHunger := clamp(m.Pet.Hunger-int(decayConfig.Hunger*offlineHours), 0, 100)
+		offlineHappiness := clamp(m.Pet.Happiness-int(decayConfig.Happiness*offlineHours), 0, 100)
+		offlineEnergy := clamp(m.Pet.Energy-int(decayConfig.Energy*offlineHours), 0, 100)
+		offlineHealth := m.Pet.Health
+		if offlineHunger < 20 {
+			offlineHealth = clamp(offlineHealth-int(decayConfig.Health*offlineHours), 0, 100)
+		}
+
+		// Blink animation: show current (frames 0-3) vs after offline decay (frames 4-7)
+		lines = append(lines, "")
+		if m.AnimFrame < 4 {
+			// Show current stats
+			lines = append(lines, tsInfoStyle.Render("▶ 当前属性:"))
+			for i, name := range statNames {
+				bar := components.NewProgressBar().
+					SetValue(stats[i]).
+					SetMax(100).
+					SetWidth(20).
+					SetFilledStyle(styles.DevCommandStyles.BarFilled).
+					SetEmptyStyle(styles.DevCommandStyles.BarEmpty).
+					Render()
+				lines = append(lines, fmt.Sprintf("  %-6s %3d %s", name, stats[i], bar))
+			}
+		} else {
+			// Show stats after offline decay
+			lines = append(lines, tsWarnStyle.Render("▼ 结算后属性:"))
+			offlineStats := []int{offlineHunger, offlineHappiness, offlineHealth, offlineEnergy}
+			for i, name := range statNames {
+				bar := components.NewProgressBar().
+					SetValue(offlineStats[i]).
+					SetMax(100).
+					SetWidth(20).
+					SetFilledStyle(styles.DevCommandStyles.BarFilled).
+					SetEmptyStyle(styles.DevCommandStyles.BarEmpty).
+					Render()
+				delta := offlineStats[i] - stats[i]
+				deltaStr := fmt.Sprintf("%+d", delta)
+				if delta < 0 {
+					deltaStr = tsErrStyle.Render(deltaStr)
+				}
+				lines = append(lines, fmt.Sprintf("  %-6s %3d %s %s", name, offlineStats[i], bar, deltaStr))
+			}
+		}
+	} else {
+		// No offline time accumulated, just show current stats
+		lines = append(lines, "")
+		for i, name := range statNames {
+			bar := components.NewProgressBar().
+				SetValue(stats[i]).
+				SetMax(100).
+				SetWidth(20).
+				SetFilledStyle(styles.DevCommandStyles.BarFilled).
+				SetEmptyStyle(styles.DevCommandStyles.BarEmpty).
+				Render()
+			lines = append(lines, fmt.Sprintf("  %-6s %3d %s", name, stats[i], bar))
+		}
 	}
 
-	lines = append(lines, "")
-	for i, name := range statNames {
-		bar := components.NewProgressBar().
-			SetValue(stats[i]).
-			SetMax(100).
-			SetWidth(20).
-			SetFilledStyle(styles.DevCommandStyles.BarFilled).
-			SetEmptyStyle(styles.DevCommandStyles.BarEmpty).
-			Render()
-		lines = append(lines, fmt.Sprintf("  %-6s %3d %s", name, stats[i], bar))
-	}
 	lines = append(lines, "")
 	lines = append(lines, tsInputLabelStyle.Render("跳过小时数:"))
 	lines = append(lines, "> "+m.Input.View())
@@ -321,28 +393,39 @@ func (m *TimeskipModel) viewPreview() string {
 	lines = append(lines, fmt.Sprintf("  年龄   %.1fh → %.1fh", m.OldAge, m.NewAge))
 	lines = append(lines, "")
 
-	for i, name := range statNames {
-		oldBar := components.NewProgressBar().
-			SetValue(m.OldStats[i]).
-			SetMax(100).
-			SetWidth(15).
-			SetFilledStyle(styles.DevCommandStyles.BarFilled).
-			SetEmptyStyle(styles.DevCommandStyles.BarEmpty).
-			Render()
-		newBar := components.NewProgressBar().
-			SetValue(m.NewStats[i]).
-			SetMax(100).
-			SetWidth(15).
-			SetFilledStyle(styles.DevCommandStyles.BarFilled).
-			SetEmptyStyle(styles.DevCommandStyles.BarEmpty).
-			Render()
-		delta := m.NewStats[i] - m.OldStats[i]
-		deltaStr := fmt.Sprintf("%+d", delta)
-		if delta < 0 {
-			deltaStr = tsErrStyle.Render(deltaStr)
+	// Blink animation: show current (frames 0-3) vs after total offline (frames 4-7)
+	if m.AnimFrame < 4 {
+		// Show current stats
+		lines = append(lines, tsInfoStyle.Render("▶ 当前属性:"))
+		for i, name := range statNames {
+			bar := components.NewProgressBar().
+				SetValue(m.OldStats[i]).
+				SetMax(100).
+				SetWidth(15).
+				SetFilledStyle(styles.DevCommandStyles.BarFilled).
+				SetEmptyStyle(styles.DevCommandStyles.BarEmpty).
+				Render()
+			lines = append(lines, fmt.Sprintf("  %-6s %3d %s", name, m.OldStats[i], bar))
 		}
-		lines = append(lines, fmt.Sprintf("  %-6s %3d %s → %3d %s  %s",
-			name, m.OldStats[i], oldBar, m.NewStats[i], newBar, deltaStr))
+	} else {
+		// Show stats after total offline decay
+		lines = append(lines, tsWarnStyle.Render("▼ 总结算后属性:"))
+		for i, name := range statNames {
+			bar := components.NewProgressBar().
+				SetValue(m.NewStats[i]).
+				SetMax(100).
+				SetWidth(15).
+				SetFilledStyle(styles.DevCommandStyles.BarFilled).
+				SetEmptyStyle(styles.DevCommandStyles.BarEmpty).
+				Render()
+			delta := m.NewStats[i] - m.OldStats[i]
+			deltaStr := fmt.Sprintf("%+d", delta)
+			if delta < 0 {
+				deltaStr = tsErrStyle.Render(deltaStr)
+			}
+			lines = append(lines, fmt.Sprintf("  %-6s %3d %s  %s",
+				name, m.NewStats[i], bar, deltaStr))
+		}
 	}
 
 	if m.WouldDie {
@@ -374,4 +457,5 @@ var (
 	tsInfoStyle       = styles.DevCommandStyles.Info
 	tsInputLabelStyle = styles.DevCommandStyles.InputLabel
 	tsErrStyle        = styles.DevCommandStyles.Error
+	tsWarnStyle       = lipgloss.NewStyle().Foreground(lipgloss.Color("#FFAA00")).Bold(true)
 )
