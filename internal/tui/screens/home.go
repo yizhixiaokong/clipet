@@ -172,6 +172,26 @@ func (h HomeModel) ClearPendingAdventure() HomeModel {
 	return h
 }
 
+// getCurrentActions returns the current category's actions, including dynamically added skills.
+func (h HomeModel) getCurrentActions() []actionItem {
+	cat := categories[h.catIdx]
+	actions := cat.actions
+
+	// Dynamically add skill actions to the "互动" category (index 1)
+	if h.catIdx == 1 && h.pet.CapabilitiesRegistry() != nil {
+		skills := h.pet.CapabilitiesRegistry().GetActiveTraits(h.pet.Species)
+		for _, skill := range skills {
+			actions = append(actions, actionItem{
+				icon:   "✨",
+				label:  skill.Name,
+				action: "skill:" + skill.ID,
+			})
+		}
+	}
+
+	return actions
+}
+
 // Update handles input for the home screen.
 func (h HomeModel) Update(msg tea.Msg) (HomeModel, tea.Cmd) {
 	// If a game is active, delegate all input to the game
@@ -220,20 +240,20 @@ func (h HomeModel) Update(msg tea.Msg) (HomeModel, tea.Cmd) {
 			}
 		} else {
 			// Level 1: sub-actions
-			cat := categories[h.catIdx]
+			actions := h.getCurrentActions()
 			switch key {
 			case "left", "h":
 				if h.actIdx > 0 {
 					h.actIdx--
 				}
 			case "right", "l":
-				if h.actIdx < len(cat.actions)-1 {
+				if h.actIdx < len(actions)-1 {
 					h.actIdx++
 				}
 			case "up", "k", "escape":
 				h.inSubmenu = false
 			case "enter", " ":
-				return h.executeAction(cat.actions[h.actIdx].action), nil
+				return h.executeAction(actions[h.actIdx].action), nil
 			}
 		}
 	}
@@ -896,20 +916,7 @@ func (h HomeModel) renderActionMenu(totalWidth int) string {
 	}
 	tabBar := lipgloss.JoinHorizontal(lipgloss.Center, tabs...)
 
-	cat := categories[h.catIdx]
-	actions := cat.actions
-
-	// Dynamically add skill actions to the "互动" category (index 1)
-	if h.catIdx == 1 && h.pet.CapabilitiesRegistry() != nil {
-		skills := h.pet.CapabilitiesRegistry().GetActiveTraits(h.pet.Species)
-		for _, skill := range skills {
-			actions = append(actions, actionItem{
-				icon:   "✨",
-				label:  skill.Name,
-				action: "skill:" + skill.ID,
-			})
-		}
-	}
+	actions := h.getCurrentActions()
 
 	actW := (totalWidth - 4) / len(actions)
 	if actW < 8 {
