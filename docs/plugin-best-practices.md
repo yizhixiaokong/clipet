@@ -367,6 +367,120 @@ lines = [
 ]
 ```
 
+## 多语言支持 (i18n)
+
+### 何时创建 locale 文件
+
+**推荐**：如果你想支持多语言，或计划未来支持多语言
+
+**不必要**：仅用于单语言社区（如仅中文用户）
+
+### locale 文件最佳实践
+
+#### 1. **完整覆盖所有文本**
+
+```json
+{
+  "species": {
+    "dragon": {
+      "name": "龙",
+      "description": "远古巨龙"
+    }
+  },
+  "stages": {
+    "egg": "神秘之蛋",
+    "baby": "幼龙",
+    "child_fire": "火焰幼龙",
+    "adult_fire": "火焰巨龙"
+  },
+  "dialogues": {
+    "baby": {
+      "happy": ["嗷呜~", "吼~"],
+      "sad": ["呜...", "嗷..."]
+    }
+  },
+  "adventures": {
+    "fire_shrine": {
+      "name": "火焰神殿",
+      "description": "一座燃烧着永恒之火的古老神殿...",
+      "choices": {
+        "enter": "进入神殿",
+        "wait": "在外面等待"
+      }
+    }
+  }
+}
+```
+
+#### 2. **保留内联 TOML 文本作为回退**
+
+即使创建 locale 文件，也要在 TOML 中保留默认语言的文本：
+
+```toml
+# species.toml
+[species]
+name = "龙"  # 保留中文作为回退
+description = "远古巨龙"
+
+[[stages]]
+id = "egg"
+name = "神秘之蛋"  # 保留中文作为回退
+```
+
+**原因**：
+- 向后兼容旧版本
+- 回退链：`en-US` → `zh-CN` → TOML 内联文本
+- 避免缺失翻译时显示空白
+
+#### 3. **渐进式翻译策略**
+
+不必一次性翻译所有内容，可以渐进式添加：
+
+**Phase 1**：先翻译核心内容
+- 物种名称和描述
+- 阶段名称
+
+**Phase 2**：再翻译常见内容
+- 常用对话（happy、normal 心情）
+- 主要冒险事件
+
+**Phase 3**：最后翻译详细内容
+- 所有心情的对话
+- 所有冒险文本
+
+#### 4. **locale 文件命名规范**
+
+```
+locales/
+├── zh-CN.json     # 中文（简体）
+├── en-US.json     # 英文（美国）
+├── ja-JP.json     # 日文
+└── ko-KR.json     # 韩文
+```
+
+使用标准的语言代码：`{language}-{region}`（如 `zh-CN`、`en-US`）
+
+#### 5. **测试 locale 文件**
+
+使用 `jq` 验证 JSON 格式：
+```bash
+jq . locales/zh-CN.json
+jq . locales/en-US.json
+```
+
+测试不同语言：
+```bash
+CLIPET_LANG=en-US ./clipet
+CLIPET_LANG=zh-CN ./clipet
+```
+
+### 多语言插件发布建议
+
+1. **默认包含主语言**：在 locale 文件中至少包含一种完整语言
+2. **标注支持语言**：在插件 README 或 species.toml 中说明支持的语言
+3. **社区贡献**：欢迎社区贡献新语言翻译
+4. **版本控制**：locale 文件变更时更新插件版本号
+
 ## 生命周期设计
 
 ### 寿命与进化匹配

@@ -186,6 +186,56 @@
 - 所有现有测试通过
 - 手动测试验证（timeskip、evolve、adventure）
 
+### M8: 国际化系统 (i18n) ✅
+
+> 目标：支持多语言界面，插件可提供独立翻译文件
+
+#### Phase 1: 核心 i18n 基础设施 ✅
+
+| 任务 | 状态 |
+|------|------|
+| 创建 i18n 包（Manager、Bundle、Loader、Plural） | ✅ |
+| 创建 config 包（配置加载、语言检测） | ✅ |
+| 创建初始 locale 文件（zh-CN、en-US） | ✅ |
+| 集成到 TUI 应用初始化 | ✅ |
+| 替换 50 个核心 UI 字符串 | ✅ |
+
+#### Phase 2: 游戏逻辑和 CLI 国际化 ✅
+
+| 任务 | 状态 |
+|------|------|
+| 游戏逻辑字符串国际化（game/pet.go, adventure.go） | ✅ |
+| CLI 字符串国际化（init, status, action 命令） | ✅ |
+| 迷你游戏国际化（games/*.go） | ✅ |
+| 离线结算界面国际化 | ✅ |
+
+#### Phase 3: 插件系统多语言 ✅
+
+| 任务 | 状态 |
+|------|------|
+| 扩展 SpeciesPack 支持 Locale 字段 | ✅ |
+| 修改 parser.go 加载插件 locale 文件 | ✅ |
+| 修改 registry.go 添加语言感知方法 | ✅ |
+| 迁移 cat-pack 到独立 locale 文件 | ✅ |
+| 实现回退链（请求语言 → 回退语言 → 内联 TOML） | ✅ |
+
+#### Phase 4: 完善和文档 ✅
+
+| 任务 | 状态 |
+|------|------|
+| 完成所有剩余 TUI 界面国际化 | ✅ |
+| 创建 ErrorType 系统（10 种标准化错误类型） | ✅ |
+| 创建 i18n-guide.md 用户文档 | ✅ |
+| 更新 plugin-guide.md 添加 locale 说明 | ✅ |
+| 更新 README.md 说明 i18n 功能 | ✅ |
+| 测试所有界面（2 种语言） | ✅ |
+
+**统计数据**：
+- 240+ 翻译键（120 键 × 2 语言）
+- 100% i18n 覆盖率
+- 零外部依赖（自研轻量级 i18n 框架）
+- 插件 locale 支持（cat-pack: 750 行/语言）
+
 ---
 
 ## 技术栈
@@ -196,7 +246,8 @@
 | TUI 框架 | Bubble Tea v2 (`charm.land/bubbletea/v2`) |
 | 样式 | Lipgloss v2 (`charm.land/lipgloss/v2`) |
 | CLI | Cobra |
-| 配置 | TOML (物种/对话) + JSON (存档) |
+| 配置 | TOML (物种/对话) + JSON (存档/配置) |
+| 国际化 | 自研轻量级 i18n 框架 (零外部依赖) |
 | 资源嵌入 | go:embed |
 
 ## 架构原则

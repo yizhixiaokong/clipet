@@ -1,4 +1,4 @@
-<!-- Generated: 2026-02-27 | Dependencies: 12 | Token estimate: ~400 -->
+<!-- Generated: 2026-02-28 | Dependencies: 12 | Token estimate: ~450 -->
 
 # Dependencies
 
@@ -23,11 +23,23 @@
 - `help` - Keybinding help display
 - `key` - Keybinding management
 
+### i18n System (v3.1)
+
+**External dependencies**: None ✅
+
+**Built-in packages used**:
+- `encoding/json` - Parse locale files
+- `text/template` - String interpolation
+- `sync` - Thread-safe access (RWMutex)
+
 ### Configuration
 
 | Package | Version | Purpose |
 |---------|---------|---------|
-| github.com/spf13/viper | v1.19.0 | Config management |
+| encoding/json | stdlib | Config file parsing |
+| os | stdlib | Environment variables |
+
+**Note**: Removed spf13/viper dependency in v3.1 - now uses lightweight custom config
 
 ### TOML Parsing
 
@@ -96,6 +108,9 @@ cmd/clipet
         ├── species.toml
         ├── dialogues.toml
         ├── adventures.toml
+        ├── locales/            (v3.1)
+        │   ├── zh-CN.json
+        │   └── en-US.json
         └── frames/
 ```
 
@@ -103,7 +118,48 @@ cmd/clipet
 
 **Default**: `~/.config/clipet/`
 
-**Planned use**: Custom config files (not yet implemented)
+**Current use** (v3.1):
+```
+~/.config/clipet/
+└── config.json       (Language preferences)
+    {
+      "language": "en-US",
+      "fallback_language": "zh-CN",
+      "version": "3.1.0"
+    }
+```
+
+### Embedded Assets (v3.1)
+
+**Location**: `internal/assets/`
+
+**Structure**:
+```
+internal/assets/
+├── locales/              (TUI translations)
+│   ├── zh-CN/
+│   │   ├── tui.json      (120+ keys)
+│   │   └── game.json
+│   └── en-US/
+│       ├── tui.json
+│       └── game.json
+└── builtins/
+    └── cat-pack/
+        ├── locales/      (Plugin translations)
+        │   ├── zh-CN.json  (~750 lines)
+        │   └── en-US.json  (~750 lines)
+        ├── species.toml
+        ├── dialogues.toml
+        ├── adventures.toml
+        └── frames/
+```
+
+**Embed mechanism**: `go:embed` → `embed.FS`
+
+**Override chain**:
+1. External plugin locale files (if present)
+2. Embedded plugin locale files
+3. Inline TOML text (fallback)
 
 ## Build Dependencies
 

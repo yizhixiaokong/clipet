@@ -10,6 +10,7 @@ Clipet 是一个运行在终端中的虚拟宠物养成游戏，使用 Go 和 [B
 - **迷你游戏** — 反应速度测试、猜数字，胜负影响宠物属性
 - **对话系统** — 阶段/心情对应的对话内容，自动闲聊气泡
 - **插件化物种** — 通过 TOML 配置自定义物种、进化条件、对话
+- **国际化支持** — 支持中文和英文界面，可配置语言切换
 - **离线衰减** — 关闭后属性自动衰减，重新打开时补偿计算
 - **冷却 & 收益递减** — 操作有冷却时间，属性越高收益越低
 
@@ -22,8 +23,11 @@ make build
 # 初始化宠物
 ./clipet init
 
-# 启动 TUI
+# 启动 TUI（默认中文）
 ./clipet
+
+# 使用英文界面
+CLIPET_LANG=en-US ./clipet
 
 # CLI 命令
 ./clipet status
@@ -150,7 +154,42 @@ custom_acc = { arcane_affinity = 50 }  # 需要奥术亲和达到 50
 - **Lipgloss v2** — 终端样式
 - **Cobra** — CLI 框架
 - **TOML** — 物种/对话配置
-- **JSON** — 存档持久化
+- **JSON** — 存档持久化 + 配置文件
+- **i18n** — 轻量级国际化框架 (自研，零外部依赖)
+
+## 国际化 (i18n)
+
+Clipet 支持多语言界面，当前支持中文和英文。
+
+### 切换语言
+
+**临时切换**（推荐）：
+```bash
+# 使用英文
+CLIPET_LANG=en-US ./clipet
+
+# 使用中文
+CLIPET_LANG=zh-CN ./clipet
+```
+
+**永久切换**：
+编辑配置文件 `~/.config/clipet/config.json`：
+```json
+{
+  "language": "en-US",
+  "fallback_language": "zh-CN"
+}
+```
+
+### 语言检测优先级
+
+1. `CLIPET_LANG` 环境变量
+2. `LANG` 环境变量
+3. `LC_ALL` 环境变量
+4. 配置文件 `~/.config/clipet/config.json`
+5. 默认值 `zh-CN`
+
+详细的 i18n 使用和开发指南，请参考 [docs/i18n-guide.md](docs/i18n-guide.md)。
 
 ## 许可证
 

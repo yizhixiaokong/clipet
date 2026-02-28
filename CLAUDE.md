@@ -8,10 +8,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 # Build both main and dev tools
 make build
 
-# Build only dev tool
-make dev
+# Build individual tools
+make clipet    # Only main binary
+make dev       # Only dev tool
+
+# Run the application
+make run       # Launch TUI
+make init      # Create new pet
+make status    # View pet status
+make reset     # Delete save file
 
 # Run all tests
+make test
+# or
 go test ./...
 
 # Run single test
@@ -70,8 +79,9 @@ Clipet supports multiple languages through a lightweight, self-built i18n system
 **Language Priority** (highest to lowest):
 1. `CLIPET_LANG` environment variable
 2. `LANG` environment variable
-3. Configuration file (`~/.config/clipet/config.json`)
-4. Default (`zh-CN`)
+3. `LC_ALL` environment variable
+4. Configuration file (`~/.config/clipet/config.json`)
+5. Default (`zh-CN`)
 
 **Switching Languages**:
 ```bash
@@ -136,6 +146,59 @@ vim ~/.config/clipet/config.json
 - Adventure system automatically records custom attribute changes in `ApplyAdventureOutcome()`
 - TUI displays custom attributes in the status panel when they exist
 - Dev tools (`set`, `evo info`) support custom attributes
+
+### ErrorType System (v3.1+)
+
+**Purpose**: Standardize error types for game logic, enabling UI-agnostic error handling and i18n support.
+
+**Architecture**:
+- 10 standardized error types defined as constants in `internal/game/pet.go`
+- `ActionResult` struct includes `ErrorType` field for structured error reporting
+- `AdventureCheckResult` struct mirrors this pattern for adventure-specific errors
+
+**Error Types**:
+```go
+const (
+    ErrEnergyLow      = "energy_low"
+    ErrHealthLow      = "health_low"
+    ErrCooldown       = "cooldown"
+    ErrDead           = "dead"
+    ErrInvalidAction  = "invalid_action"
+    ErrFullHunger     = "full_hunger"
+    ErrFullEnergy     = "full_energy"
+    ErrSkillSystem    = "skill_system"
+    ErrSkillUnknown   = "skill_unknown"
+    ErrSkillNotActive = "skill_not_active"
+)
+```
+
+**Usage Pattern**:
+```go
+// Game layer returns structured error
+func (p *Pet) Feed() ActionResult {
+    if !p.Alive {
+        return failResultWithType(ErrDead, "宠物已经不在了...")
+    }
+    // ...
+}
+
+// UI layer localizes the error
+func (h HomeModel) localizeGameError(res game.ActionResult) string {
+    switch res.ErrorType {
+    case game.ErrDead:
+        return h.i18n.T("game.errors.dead")
+    case game.ErrEnergyLow:
+        return h.i18n.T("game.errors.energy_low")
+    // ...
+    }
+}
+```
+
+**Benefits**:
+- Game logic remains UI-agnostic (no i18n dependency)
+- TUI can provide localized error messages
+- CLI can use different error formatting
+- Easy to add new error types without changing signatures
 
 ### TUI Architecture
 
@@ -217,6 +280,35 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 - Core attributes: `hunger`, `happiness`, `health`, `energy`
 - Custom attributes: `custom:attr_name` (prefix required)
 - Metadata: `name`, `stage_id`, `species_id`
+
+### Testing
+
+**Current Coverage**: Limited test coverage, primarily focused on custom attributes system.
+
+**Test Files**:
+- `internal/game/custom_attrs_test.go` - Unit tests for custom attribute operations
+- `internal/game/custom_attrs_integration_test.go` - Integration tests
+- `internal/game/pet_multistage_test.go` - Multi-stage evolution tests
+
+**Testing Pattern**: Standard Go testing with table-driven tests:
+```go
+func TestPhase1_SetFieldCustomAttributes(t *testing.T) {
+    pet := &Pet{
+        Name:             "TestPet",
+        CustomAttributes: make(map[string]int),
+    }
+
+    old, err := pet.SetField("custom:fire_points", "25")
+    if err != nil {
+        t.Errorf("SetField failed: %v", err)
+    }
+    if pet.GetAttr("fire_points") != 25 {
+        t.Errorf("Expected fire_points=25, got %d", pet.GetAttr("fire_points"))
+    }
+}
+```
+
+**Note**: Core game mechanics (evolution, adventure, decay) currently rely on manual testing via dev tools (`clipet-dev timeskip`, `clipet-dev evo info`).
 
 ### Documentation
 
