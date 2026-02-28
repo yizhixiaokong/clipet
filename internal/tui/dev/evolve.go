@@ -3,8 +3,10 @@ package dev
 
 import (
 	"clipet/internal/game"
+	"clipet/internal/i18n"
 	"clipet/internal/plugin"
 	"clipet/internal/tui/components"
+	"clipet/internal/tui/keys"
 	"clipet/internal/tui/styles"
 	"fmt"
 
@@ -13,62 +15,6 @@ import (
 	"charm.land/bubbles/v2/key"
 	"charm.land/lipgloss/v2"
 )
-
-// EvolveKeyMap defines keybindings for evolve command
-type EvolveKeyMap struct {
-	Up         key.Binding
-	Down       key.Binding
-	Left       key.Binding
-	Right      key.Binding
-	Enter      key.Binding
-	Quit       key.Binding
-	ToggleHelp key.Binding
-}
-
-// DefaultEvolveKeyMap returns default keybindings for evolve command
-var DefaultEvolveKeyMap = EvolveKeyMap{
-	Up: key.NewBinding(
-		key.WithKeys("up", "k"),
-		key.WithHelp("↑/k", "上移"),
-	),
-	Down: key.NewBinding(
-		key.WithKeys("down", "j"),
-		key.WithHelp("↓/j", "下移"),
-	),
-	Left: key.NewBinding(
-		key.WithKeys("left", "h"),
-		key.WithHelp("←/h", "折叠"),
-	),
-	Right: key.NewBinding(
-		key.WithKeys("right", "l"),
-		key.WithHelp("→/l", "展开"),
-	),
-	Enter: key.NewBinding(
-		key.WithKeys("enter"),
-		key.WithHelp("Enter", "确认进化"),
-	),
-	Quit: key.NewBinding(
-		key.WithKeys("q", "ctrl+c", "esc"),
-		key.WithHelp("q/Ctrl+C/Esc", "退出"),
-	),
-	ToggleHelp: key.NewBinding(
-		key.WithKeys("?"),
-		key.WithHelp("?", "帮助"),
-	),
-}
-
-// ShortHelp returns keybindings to be shown in the mini help view
-func (k EvolveKeyMap) ShortHelp() []key.Binding {
-	return []key.Binding{k.Enter, k.Quit, k.ToggleHelp}
-}
-
-// FullHelp returns keybindings for the expanded help view
-func (k EvolveKeyMap) FullHelp() [][]key.Binding {
-	return [][]key.Binding{
-		{k.Up, k.Down, k.Left, k.Right},
-		{k.Enter, k.Quit, k.ToggleHelp},
-	}
-}
 
 // EvolveModel is the TUI model for evolve command
 type EvolveModel struct {
@@ -79,8 +25,9 @@ type EvolveModel struct {
 	Width     int
 	Height    int
 	Quitting  bool
-	KeyMap    EvolveKeyMap
+	KeyMap    keys.TreeKeyMap
 	Help      help.Model
+	i18n      *i18n.Manager
 
 	// Callback when user selects a stage to evolve to
 	OnEvolve func(toStageID string) error
@@ -90,13 +37,13 @@ type EvolveModel struct {
 }
 
 // NewEvolveModel creates a new evolve TUI model
-func NewEvolveModel(pet *game.Pet, species string, registry *plugin.Registry) *EvolveModel {
+func NewEvolveModel(pet *game.Pet, species string, registry *plugin.Registry, i18nMgr *i18n.Manager) *EvolveModel {
 	h := help.New()
 	h.ShowAll = false
 
 	pack := registry.GetSpecies(species)
 	if pack == nil {
-		return &EvolveModel{Pet: pet, Species: species, Registry: registry, KeyMap: DefaultEvolveKeyMap, Help: h}
+		return &EvolveModel{Pet: pet, Species: species, Registry: registry, KeyMap: keys.NewTreeKeyMap(i18nMgr), Help: h, i18n: i18nMgr}
 	}
 
 	roots := buildEvoTreeFromPack(pack)
@@ -108,12 +55,13 @@ func NewEvolveModel(pet *game.Pet, species string, registry *plugin.Registry) *E
 	tree.SetCursor(pet.StageID)
 
 	return &EvolveModel{
-		Pet:      pet,
-		Species:  species,
+		Pet:     pet,
+		Species: species,
 		Registry: registry,
-		Tree:     tree,
-		KeyMap:   DefaultEvolveKeyMap,
-		Help:     h,
+		Tree:    tree,
+		KeyMap:  keys.NewTreeKeyMap(i18nMgr),
+		Help:    h,
+		i18n:    i18nMgr,
 	}
 }
 
@@ -142,10 +90,10 @@ func (m *EvolveModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyPressMsg:
 		// Handle global keys
 		switch {
-		case key.Matches(msg, m.KeyMap.Quit):
+		case key.Matches(msg, m.KeyMap.Global.Quit):
 			m.Quitting = true
 			return m, tea.Quit
-		case key.Matches(msg, m.KeyMap.ToggleHelp):
+		case key.Matches(msg, m.KeyMap.Global.ToggleHelp):
 			m.Help.ShowAll = !m.Help.ShowAll
 			return m, nil
 		}
