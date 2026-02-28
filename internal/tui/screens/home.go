@@ -120,12 +120,12 @@ func (h HomeModel) TickAutoDialogue() HomeModel {
 	if h.activeGame != nil {
 		return h
 	}
-	if time.Since(h.lastTalkAt) < 3*time.Minute {
+	if time.Since(h.lastTalkAt) < 1*time.Minute {
 		return h
 	}
 	if rand.Float32() >= 0.3 {
-		// 失败，1分钟后重试
-		h.lastTalkAt = h.lastTalkAt.Add(time.Minute)
+		// 失败，30秒后重试
+		h.lastTalkAt = h.lastTalkAt.Add(30 * time.Second)
 		return h
 	}
 	line := h.registry.GetDialogue(h.pet.Species, h.pet.StageID, h.pet.MoodName())
