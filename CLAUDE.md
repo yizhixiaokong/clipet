@@ -60,8 +60,59 @@ Both builtin (embedded via `go:embed`) and external (filesystem) packs use the s
 
 **Key Files:**
 - `internal/plugin/types.go` - Core data structures (SpeciesPack, Stage, Evolution, Frame, etc.)
-- `internal/plugin/parser.go` - TOML parsing + frame file scanning
+- `internal/plugin/parser.go` - TOML parsing + frame file scanning + locale loading
 - `internal/plugin/registry.go` - Thread-safe central registry with lookup methods
+
+### Internationalization (i18n)
+
+Clipet supports multiple languages through a lightweight, self-built i18n system.
+
+**Language Priority** (highest to lowest):
+1. `CLIPET_LANG` environment variable
+2. `LANG` environment variable
+3. Configuration file (`~/.config/clipet/config.json`)
+4. Default (`zh-CN`)
+
+**Switching Languages**:
+```bash
+# Temporary switch (environment variable)
+CLIPET_LANG=en-US clipet
+
+# Permanent switch (edit config file)
+vim ~/.config/clipet/config.json
+# Change "language" field to "en-US" or "zh-CN"
+```
+
+**Implementation**:
+- `internal/i18n/` - i18n framework (Manager, Bundle, Loader, Plural rules)
+- `internal/config/` - Configuration and language detection
+- `internal/assets/locales/` - Translation files embedded in binary
+- Plugin locale support: `locales/{lang}.json` in species pack directory
+
+**Translation File Format**:
+```json
+{
+  "ui": {
+    "home": {
+      "feed_success": "Feeding successful! Hunger {{.oldHunger}} → {{.newHunger}}"
+    }
+  }
+}
+```
+
+**Adding New Strings**:
+1. Add translation keys to `internal/assets/locales/zh-CN/tui.json` and `en-US/tui.json`
+2. Use `i18n.T("key", "var1", value1, "var2", value2)` in code
+
+**Plugin Locale Support** (Phase 3):
+- Species packs can include `locales/zh-CN.json` and `locales/en-US.json`
+- Locale files can translate species names, stage names, dialogues, and adventures
+- Fallback chain: requested language → fallback language → inline TOML text
+
+**Key Files:**
+- `internal/i18n/i18n.go` - Manager with T() and TN() functions
+- `internal/i18n/bundle.go` - Translation bundle with fallback chain
+- `internal/assets/locales/` - Translation JSON files (embedded)
 
 ### Custom Attributes System (v3.0+)
 

@@ -11,6 +11,9 @@ my-species-pack/
 ├── species.toml        # 必须 — 物种定义 + 进化树
 ├── dialogues.toml      # 可选 — 对话库
 ├── adventures.toml     # 可选 — 冒险事件
+├── locales/            # 可选 — 多语言翻译（Phase 3+）
+│   ├── zh-CN.json      # 中文翻译
+│   └── en-US.json      # 英文翻译
 └── frames/             # 可选 — ASCII 动画帧
     ├── egg/              # 按阶段分级目录
     │   └── idle.txt
@@ -589,6 +592,77 @@ egg (神秘之蛋)
            └── adult_mech_chrome (合金猎豹)  ← 冒险数
                 └── legend_mech_chrome (星际掠夺者)
 ```
+
+## 多语言支持（Locale）
+
+### locale 文件结构
+
+插件可以提供多语言翻译文件，让物种名称、阶段、对话等内容支持不同语言：
+
+```
+my-species-pack/
+└── locales/
+    ├── zh-CN.json     # 中文翻译
+    └── en-US.json     # 英文翻译
+```
+
+### locale.json 格式
+
+```json
+{
+  "species": {
+    "dragon": {
+      "name": "龙",
+      "description": "远古巨龙，掌控天地元素"
+    }
+  },
+  "stages": {
+    "egg": "神秘之蛋",
+    "baby": "幼龙",
+    "adult_fire": "火焰巨龙",
+    "adult_ice": "冰霜巨龙"
+  },
+  "dialogues": {
+    "baby": {
+      "happy": ["嗷呜~", "吼~"],
+      "sad": ["呜...", "嗷..."]
+    },
+    "adult_fire": {
+      "happy": ["吼！！", "火焰在我心中燃烧！"]
+    }
+  },
+  "adventures": {
+    "explore_cave": {
+      "name": "探索龙穴",
+      "description": "幼龙想去探索古老的龙穴...",
+      "choices": {
+        "enter": "进入洞穴",
+        "wait": "在外面等待"
+      }
+    }
+  }
+}
+```
+
+### 回退机制
+
+当请求的语言不可用时，系统会按顺序回退：
+
+1. **请求语言** (e.g., `en-US`)
+2. **回退语言** (e.g., `zh-CN`)
+3. **内联 TOML 文本** (from species.toml, dialogues.toml)
+
+这意味着即使没有 locale 文件，插件也能正常工作（使用 TOML 中的文本）。
+
+### 使用建议
+
+- **创建 locale 文件**：如果你想支持多语言
+- **保留内联文本**：在 TOML 文件中保留默认语言文本，作为回退
+- **渐进式翻译**：可以先翻译部分内容，未翻译的部分会回退到内联文本
+
+### 示例：cat-pack locale
+
+查看 `internal/assets/builtins/cat-pack/locales/` 获取完整示例。
 
 ## 扩展阅读
 
