@@ -7,6 +7,7 @@ import (
 	"clipet/internal/plugin"
 	"clipet/internal/store"
 	"clipet/internal/tui/components"
+	"clipet/internal/tui/keys"
 	"clipet/internal/tui/styles"
 	"fmt"
 	"math/rand"
@@ -14,6 +15,8 @@ import (
 	"time"
 
 	tea "charm.land/bubbletea/v2"
+	"charm.land/bubbles/v2/help"
+	"charm.land/bubbles/v2/key"
 	"charm.land/lipgloss/v2"
 )
 
@@ -84,6 +87,8 @@ type HomeModel struct {
 	theme    styles.Theme
 	bubble   components.DialogueBubble
 	gameMgr  *games.GameManager
+	keyMap   keys.HomeKeyMap
+	help     help.Model
 
 	catIdx    int  // selected category tab
 	actIdx    int  // selected action within category
@@ -123,6 +128,8 @@ func NewHomeModel(
 		gameMgr:    games.NewGameManager(),
 		theme:      theme,
 		lastTalkAt: time.Now(),
+		keyMap:     keys.NewHomeKeyMap(i18nMgr),
+		help:       help.New(),
 	}
 }
 
@@ -230,21 +237,22 @@ func (h HomeModel) Update(msg tea.Msg) (HomeModel, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
-		key := msg.String()
-
 		// Global shortcut keys always work
-		switch key {
-		case "f":
+		switch {
+		case key.Matches(msg, h.keyMap.Actions.Feed):
 			return h.executeAction("feed"), nil
-		case "p":
+		case key.Matches(msg, h.keyMap.Actions.Play):
 			return h.executeAction("play"), nil
-		case "r":
+		case key.Matches(msg, h.keyMap.Actions.Rest):
 			return h.executeAction("rest"), nil
-		case "c":
+		case key.Matches(msg, h.keyMap.Actions.Heal):
 			return h.executeAction("heal"), nil
-		case "t":
+		case key.Matches(msg, h.keyMap.Actions.Talk):
 			return h.executeAction("talk"), nil
-		case "g":
+		}
+
+		// "g" key for games (special case)
+		if msg.String() == "g" {
 			if h.inSubmenu && h.catIdx == 2 { // Games category
 				translatedCats := h.getTranslatedCategories()
 				act := translatedCats[h.catIdx].actions[h.actIdx]
@@ -255,34 +263,34 @@ func (h HomeModel) Update(msg tea.Msg) (HomeModel, tea.Cmd) {
 
 		if !h.inSubmenu {
 			// Level 0: category tabs
-			switch key {
-			case "left", "h":
+			switch {
+			case key.Matches(msg, h.keyMap.Navigation.Left):
 				if h.catIdx > 0 {
 					h.catIdx--
 				}
-			case "right", "l":
+			case key.Matches(msg, h.keyMap.Navigation.Right):
 				if h.catIdx < len(categories)-1 {
 					h.catIdx++
 				}
-			case "down", "j", "enter", " ":
+			case key.Matches(msg, h.keyMap.Navigation.Down), key.Matches(msg, h.keyMap.Navigation.Enter):
 				h.inSubmenu = true
 				h.actIdx = 0
 			}
 		} else {
 			// Level 1: sub-actions
 			actions := h.getCurrentActions()
-			switch key {
-			case "left", "h":
+			switch {
+			case key.Matches(msg, h.keyMap.Navigation.Left):
 				if h.actIdx > 0 {
 					h.actIdx--
 				}
-			case "right", "l":
+			case key.Matches(msg, h.keyMap.Navigation.Right):
 				if h.actIdx < len(actions)-1 {
 					h.actIdx++
 				}
-			case "up", "k", "esc":
+			case key.Matches(msg, h.keyMap.Navigation.Back):
 				h.inSubmenu = false
-			case "enter", " ":
+			case key.Matches(msg, h.keyMap.Navigation.Enter):
 				return h.executeAction(actions[h.actIdx].action), nil
 			}
 		}
@@ -294,10 +302,8 @@ func (h HomeModel) Update(msg tea.Msg) (HomeModel, tea.Cmd) {
 func (h HomeModel) updateGame(msg tea.Msg) (HomeModel, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
-		key := msg.String()
-
 		// Esc cancels an unfinished game
-		if key == "esc" && !h.activeGame.IsFinished() {
+		if key.Matches(msg, h.keyMap.Navigation.Back) && !h.activeGame.IsFinished() {
 			h.activeGame = nil
 			h.message = h.i18n.T("ui.home.game_cancelled")
 			h.msgIsWarn = false
@@ -305,7 +311,7 @@ func (h HomeModel) updateGame(msg tea.Msg) (HomeModel, tea.Cmd) {
 			return h, nil
 		}
 
-		h.activeGame.HandleKey(key)
+		h.activeGame.HandleKey(msg.String())
 
 		// If game is finished and confirmed, process result
 		if h.activeGame.IsConfirmed() {
@@ -634,18 +640,18 @@ func (h HomeModel) View() string {
 	if h.hasEnding() {
 		helpText = "q " + h.i18n.T("ui.common.quit")
 	} else if h.inSubmenu {
-		helpText = h.i18n.T("ui.home.help_submenu")
+		helpText = h.help.View(h.keyMap)
 	} else {
-		helpText = h.i18n.T("ui.home.help_main")
+		helpText = h.help.View(h.keyMap)
 	}
-	help := h.theme.HelpBar.Width(totalInner).Render(helpText)
+	helpBar := h.theme.HelpBar.Width(totalInner).Render(helpText)
 
 	return lipgloss.JoinVertical(lipgloss.Left,
 		title,
 		mainArea,
 		msgArea,
 		actionMenu,
-		help,
+		helpBar,
 	)
 }
 
@@ -696,14 +702,14 @@ func (h HomeModel) renderGameView() string {
 	} else {
 		helpText = h.i18n.T("ui.home.help_game")
 	}
-	help := h.theme.HelpBar.Width(rightPanelW).Render(helpText)
+	helpBar := h.theme.HelpBar.Width(rightPanelW).Render(helpText)
 
 	rightPanel := lipgloss.JoinVertical(lipgloss.Left,
 		title,
 		"",
 		gameBox,
 		"",
-		help,
+		helpBar,
 	)
 
 	// Join horizontally
