@@ -96,6 +96,9 @@ type Pet struct {
 
 	Birthday time.Time `json:"birthday"`
 
+	// Dev tools: accumulated skip duration (applied when TUI starts)
+	AccumulatedSkipDuration time.Duration `json:"accumulated_skip_duration,omitempty"`
+
 	// Attributes (0-100)
 	Hunger    int `json:"hunger"` // fullness, higher = less hungry
 	Happiness int `json:"happiness"`

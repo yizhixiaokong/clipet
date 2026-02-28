@@ -45,30 +45,22 @@ func newTimeskipCmd() *cobra.Command {
 }
 
 func doTimeskip(pet *game.Pet, dur time.Duration) error {
-	oldAge := pet.AgeHours()
-	oldHunger := pet.Hunger
-	oldHappiness := pet.Happiness
-	oldHealth := pet.Health
-	oldEnergy := pet.Energy
-
-	pet.Birthday = pet.Birthday.Add(-dur)
-	// Use dev-only decay that doesn't trigger death/evolution hooks
-	pet.DevOnlySimulateDecay(dur)
+	// Accumulate skip duration instead of applying immediately
+	// This prevents multiple small skips from not triggering decay
+	pet.AccumulatedSkipDuration += dur
 
 	if err := petStore.Save(pet); err != nil {
 		return fmt.Errorf("save: %w", err)
 	}
 
-	fmt.Println("timeskip done")
-	fmt.Printf("  elapsed: %.1f hours\n", dur.Hours())
-	fmt.Printf("  age:     %.1fh -> %.1fh\n", oldAge, pet.AgeHours())
-	fmt.Printf("  hunger:  %d -> %d\n", oldHunger, pet.Hunger)
-	fmt.Printf("  happy:   %d -> %d\n", oldHappiness, pet.Happiness)
-	fmt.Printf("  health:  %d -> %d\n", oldHealth, pet.Health)
-	fmt.Printf("  energy:  %d -> %d\n", oldEnergy, pet.Energy)
-	// Note: No death check in dev mode
+	fmt.Println("timeskip cached")
+	fmt.Printf("  added:    %.1f hours\n", dur.Hours())
+	fmt.Printf("  total:    %.1f hours\n", pet.AccumulatedSkipDuration.Hours())
+	fmt.Printf("  age:      %.1f hours (current)\n", pet.AgeHours())
+	fmt.Printf("  will be:  %.1f hours (when TUI starts)\n", pet.AgeHours()+pet.AccumulatedSkipDuration.Hours())
+	fmt.Println()
+	fmt.Println("Note: Accumulated time will be applied when you start the TUI.")
 
-	// Note: dev commands do not trigger evolution checks
 	return nil
 }
 

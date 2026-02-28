@@ -97,6 +97,19 @@ func runTUI() error {
 		return err
 	}
 
+	// Apply accumulated skip duration before starting TUI
+	if pet.AccumulatedSkipDuration > 0 {
+		dur := pet.AccumulatedSkipDuration
+		pet.Birthday = pet.Birthday.Add(-dur)
+		pet.DevOnlySimulateDecay(dur)
+		pet.AccumulatedSkipDuration = 0 // Clear cache
+
+		// Save the updated pet state
+		if err := petStore.Save(pet); err != nil {
+			return fmt.Errorf("save after applying skip duration: %w", err)
+		}
+	}
+
 	// Import TUI package here to avoid circular dependency in the future
 	return startTUI(pet, registry, petStore)
 }
