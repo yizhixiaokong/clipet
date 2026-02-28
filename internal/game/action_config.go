@@ -25,29 +25,29 @@ func DefaultActionConfigs() map[string]struct {
 		Energy     int
 	}{
 		"feed": {
-			Cooldown:  CooldownFeed,
-			Hunger:    25,
-			Happiness: 5,
+			Cooldown:  DefaultCooldownFeed,
+			Hunger:    DefaultFeedHunger,
+			Happiness: DefaultFeedHappiness,
 		},
 		"play": {
-			Cooldown:  CooldownPlay,
-			Energy:    -10,
-			Happiness: 20,
+			Cooldown:  DefaultCooldownPlay,
+			Energy:    DefaultPlayEnergy,
+			Happiness: DefaultPlayHappiness,
 		},
 		"rest": {
-			Cooldown: CooldownRest,
-			Energy:   30,
-			Health:   5,
-			Happiness: -5,
+			Cooldown:  DefaultCooldownRest,
+			Energy:    DefaultRestEnergy,
+			Health:    DefaultRestHealth,
+			Happiness: DefaultRestHappiness,
 		},
 		"heal": {
-			Cooldown:  CooldownHeal,
-			EnergyCost: 15,
-			Health:    25,
+			Cooldown:   DefaultCooldownHeal,
+			EnergyCost: DefaultHealEnergyCost,
+			Health:     DefaultHealHealth,
 		},
 		"talk": {
-			Cooldown:  CooldownTalk,
-			Happiness: 1,
+			Cooldown:  DefaultCooldownTalk,
+			Happiness: DefaultTalkHappiness,
 		},
 	}
 }

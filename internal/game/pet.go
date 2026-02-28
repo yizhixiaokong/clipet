@@ -41,13 +41,34 @@ const (
 	AnimHappy    AnimState = "happy"
 )
 
-// Action cooldown durations.
+// Default action configuration constants.
 const (
-	CooldownFeed = 10 * time.Minute
-	CooldownPlay = 5 * time.Minute
-	CooldownRest = 15 * time.Minute
-	CooldownHeal = 20 * time.Minute
-	CooldownTalk = 10 * time.Second
+	// Cooldown durations
+	DefaultCooldownFeed = 10 * time.Minute
+	DefaultCooldownPlay = 5 * time.Minute
+	DefaultCooldownRest = 10 * time.Minute
+	DefaultCooldownHeal = 20 * time.Minute
+	DefaultCooldownTalk = 10 * time.Second
+
+	// Feed action
+	DefaultFeedHunger    = 35
+	DefaultFeedHappiness = 5
+
+	// Play action
+	DefaultPlayHappiness = 20
+	DefaultPlayEnergy    = -8
+
+	// Rest action
+	DefaultRestEnergy    = 40
+	DefaultRestHealth    = 5
+	DefaultRestHappiness = -5
+
+	// Heal action
+	DefaultHealHealth    = 25
+	DefaultHealEnergyCost = 15
+
+	// Talk action
+	DefaultTalkHappiness = 1
 )
 
 // ActionResult holds the outcome of a pet action.

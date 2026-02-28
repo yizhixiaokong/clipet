@@ -391,7 +391,7 @@ message = "平静地度过了这一生，它已经离开了..."
 id = "feed"
 cooldown = "10m"
 [actions.effects]
-hunger = 25
+hunger = 35
 happiness = 5
 
 # 玩耍动作
@@ -401,14 +401,14 @@ cooldown = "5m"
 energy_cost = 10
 [actions.effects]
 happiness = 20
-energy = -10
+energy = -8
 
 # 休息动作
 [[actions]]
 id = "rest"
-cooldown = "15m"
+cooldown = "10m"
 [actions.effects]
-energy = 30
+energy = 40
 health = 5
 happiness = -5
 
