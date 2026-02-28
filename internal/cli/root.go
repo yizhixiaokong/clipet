@@ -73,8 +73,9 @@ func setup() error {
 
 	i18nMgr = i18n.NewManager(cfg.Language, cfg.FallbackLanguage, bundle)
 
-	// Initialize plugin registry
+	// Initialize plugin registry with language
 	registry = plugin.NewRegistry()
+	registry.SetLanguage(cfg.Language, cfg.FallbackLanguage)
 
 	// Initialize capabilities registry
 	capabilitiesReg = capabilities.NewRegistry()

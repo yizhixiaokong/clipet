@@ -15,19 +15,37 @@ type Registry struct {
 	mu     sync.RWMutex
 	packs  map[string]*SpeciesPack // keyed by species ID
 	loader *Loader
+	lang   string // current language for locale loading
+	fallbackLang string // fallback language
 }
 
 // NewRegistry creates a new empty Registry.
 func NewRegistry() *Registry {
 	return &Registry{
-		packs:  make(map[string]*SpeciesPack),
-		loader: NewLoader(),
+		packs:        make(map[string]*SpeciesPack),
+		loader:       NewLoader(),
+		lang:         "zh-CN", // default language
+		fallbackLang: "en-US",
 	}
+}
+
+// SetLanguage sets the active language for locale loading.
+// Must be called before LoadFromFS to take effect.
+func (r *Registry) SetLanguage(lang, fallback string) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.lang = lang
+	r.fallbackLang = fallback
 }
 
 // LoadFromFS loads all species packs from a filesystem and registers them.
 // Packs with the same ID will be overwritten (external overrides builtin).
+// Uses the language set by SetLanguage for locale loading.
 func (r *Registry) LoadFromFS(fsys fs.FS, root string, source PluginSource) error {
+	r.mu.RLock()
+	r.loader.SetLanguage(r.lang, r.fallbackLang)
+	r.mu.RUnlock()
+
 	packs, err := r.loader.LoadAll(fsys, root, source)
 	if err != nil {
 		return err

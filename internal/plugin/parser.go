@@ -2,6 +2,7 @@ package plugin
 
 import (
 	"clipet/internal/game/capabilities"
+	"encoding/json"
 	"fmt"
 	"io/fs"
 	"log"
@@ -76,6 +77,27 @@ func ParseAdventures(fsys fs.FS, dir string) ([]Adventure, error) {
 	}
 
 	return af.Adventures, nil
+}
+
+// ParseLocale reads and decodes a locale JSON file from the given filesystem.
+// Returns nil (no error) if the file does not exist.
+func ParseLocale(fsys fs.FS, dir, lang string) (*Locale, error) {
+	filePath := path.Join(dir, "locales", lang+".json")
+	data, err := fs.ReadFile(fsys, filePath)
+	if err != nil {
+		// locale file is optional
+		return nil, nil
+	}
+
+	var localeData map[string]interface{}
+	if err := json.Unmarshal(data, &localeData); err != nil {
+		return nil, fmt.Errorf("parse locale %s: %w", lang, err)
+	}
+
+	return &Locale{
+		Language: lang,
+		Data:     localeData,
+	}, nil
 }
 
 // ParseFrames scans the frames/ subdirectory for ASCII art frame files.
@@ -451,6 +473,13 @@ func splitFrameName(name string) []string {
 
 // ParsePack loads a complete species pack from a directory in the given filesystem.
 func ParsePack(fsys fs.FS, dir string) (*SpeciesPack, error) {
+	return ParsePackWithLocale(fsys, dir, "", "")
+}
+
+// ParsePackWithLocale loads a complete species pack with locale support.
+// If lang is empty, no locale is loaded.
+// If lang fails to load, fallbackLang is tried.
+func ParsePackWithLocale(fsys fs.FS, dir, lang, fallbackLang string) (*SpeciesPack, error) {
 	pack, err := ParseSpecies(fsys, dir)
 	if err != nil {
 		return nil, err
@@ -473,6 +502,24 @@ func ParsePack(fsys fs.FS, dir string) (*SpeciesPack, error) {
 		return nil, err
 	}
 	pack.Frames = frames
+
+	// Load locale if language is specified
+	if lang != "" {
+		locale, err := ParseLocale(fsys, dir, lang)
+		if err != nil {
+			log.Printf("[Plugin] Warning: failed to load locale %s for %s: %v", lang, dir, err)
+		} else if locale != nil {
+			pack.Locale = locale
+		} else if fallbackLang != "" && fallbackLang != lang {
+			// Try fallback language
+			locale, err := ParseLocale(fsys, dir, fallbackLang)
+			if err != nil {
+				log.Printf("[Plugin] Warning: failed to load fallback locale %s for %s: %v", fallbackLang, dir, err)
+			} else {
+				pack.Locale = locale
+			}
+		}
+	}
 
 	return pack, nil
 }

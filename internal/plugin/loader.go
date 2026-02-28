@@ -6,11 +6,23 @@ import (
 )
 
 // Loader handles discovering and loading species packs from a filesystem.
-type Loader struct{}
+type Loader struct {
+	lang         string
+	fallbackLang string
+}
 
 // NewLoader creates a new Loader.
 func NewLoader() *Loader {
-	return &Loader{}
+	return &Loader{
+		lang:         "zh-CN",
+		fallbackLang: "en-US",
+	}
+}
+
+// SetLanguage sets the language for locale loading.
+func (l *Loader) SetLanguage(lang, fallback string) {
+	l.lang = lang
+	l.fallbackLang = fallback
 }
 
 // LoadAll discovers and loads all species packs from the given filesystem root.
@@ -38,7 +50,7 @@ func (l *Loader) LoadAll(fsys fs.FS, root string, source PluginSource) ([]*Speci
 			continue // not a species pack directory, skip
 		}
 
-		pack, err := ParsePack(fsys, dir)
+		pack, err := ParsePackWithLocale(fsys, dir, l.lang, l.fallbackLang)
 		if err != nil {
 			return nil, fmt.Errorf("load pack %q: %w", entry.Name(), err)
 		}
@@ -61,7 +73,7 @@ func (l *Loader) LoadAll(fsys fs.FS, root string, source PluginSource) ([]*Speci
 
 // LoadOne loads a single species pack from the given directory.
 func (l *Loader) LoadOne(fsys fs.FS, dir string, source PluginSource) (*SpeciesPack, error) {
-	pack, err := ParsePack(fsys, dir)
+	pack, err := ParsePackWithLocale(fsys, dir, l.lang, l.fallbackLang)
 	if err != nil {
 		return nil, err
 	}

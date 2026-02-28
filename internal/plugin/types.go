@@ -34,7 +34,14 @@ type SpeciesPack struct {
 	Adventures    []Adventure        `toml:"-"` // loaded from adventures.toml
 	Frames        map[string]Frame   `toml:"-"` // loaded from frames/ directory
 	Scripts       ScriptsConfig      `toml:"scripts"`
+	Locale        *Locale            `toml:"-"` // loaded from locales/{lang}.json
 	Source        PluginSource       `toml:"-"`
+}
+
+// Locale holds translations for a species pack.
+type Locale struct {
+	Language string                 `json:"-"`  // Language code (e.g., "zh-CN")
+	Data     map[string]interface{} `json:"-"`  // Raw translation data
 }
 
 // SpeciesConfig holds the species metadata and base stats.
