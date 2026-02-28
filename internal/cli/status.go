@@ -11,10 +11,10 @@ import (
 func newStatusCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "status",
-		Short: i18nMgr.T("cli.status.short_desc"),
+		Short: "View pet status",
 		RunE:  runStatus,
 	}
-	cmd.Flags().BoolP("json", "j", false, i18nMgr.T("cli.status.json_flag_desc"))
+	cmd.Flags().BoolP("json", "j", false, "Output in JSON format")
 	return cmd
 }
 

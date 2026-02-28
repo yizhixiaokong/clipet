@@ -11,7 +11,7 @@ import (
 func newInitCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "init",
-		Short: i18nMgr.T("cli.init.short_desc"),
+		Short: "Create a new pet",
 		RunE:  runInit,
 	}
 }
