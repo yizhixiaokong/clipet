@@ -5,12 +5,15 @@ import (
 	"clipet/internal/i18n"
 	"clipet/internal/plugin"
 	"clipet/internal/tui/components"
+	"clipet/internal/tui/keys"
 	"clipet/internal/tui/styles"
 	"fmt"
 	"strings"
 	"time"
 
 	tea "charm.land/bubbletea/v2"
+	"charm.land/bubbles/v2/help"
+	"charm.land/bubbles/v2/key"
 	"charm.land/lipgloss/v2"
 )
 
@@ -32,6 +35,8 @@ type AdventureModel struct {
 	i18n      *i18n.Manager
 	petView   *components.PetView // 新增：宠物视图组件
 	registry  *plugin.Registry    // 新增：用于获取帧数据
+	keyMap    keys.AdventureKeyMap
+	help      help.Model
 
 	phase     AdventurePhase
 	choiceIdx int
@@ -52,6 +57,8 @@ func NewAdventureModel(pet *game.Pet, adv plugin.Adventure, theme styles.Theme, 
 		i18n:      i18nMgr,
 		petView:   petView,
 		registry:  registry,
+		keyMap:    keys.NewAdventureKeyMap(i18nMgr),
+		help:      help.New(),
 		phase:     AdventureIntro,
 	}
 }
@@ -91,32 +98,32 @@ func (a AdventureModel) Update(msg tea.Msg) (AdventureModel, tea.Cmd) {
 	case tea.KeyPressMsg:
 		switch a.phase {
 		case AdventureIntro:
-			switch msg.String() {
-			case "enter", " ":
+			switch {
+			case key.Matches(msg, a.keyMap.Navigation.Enter):
 				a.phase = AdventureChoosing
-			case "esc":
+			case key.Matches(msg, a.keyMap.Navigation.Back):
 				a.done = true
 			}
 
 		case AdventureChoosing:
-			switch msg.String() {
-			case "up", "k":
+			switch {
+			case key.Matches(msg, a.keyMap.Navigation.Up):
 				if a.choiceIdx > 0 {
 					a.choiceIdx--
 				}
-			case "down", "j":
+			case key.Matches(msg, a.keyMap.Navigation.Down):
 				if a.choiceIdx < len(a.adventure.Choices)-1 {
 					a.choiceIdx++
 				}
-			case "enter":
+			case key.Matches(msg, a.keyMap.Navigation.Enter):
 				a.phase = AdventureResolving
 				a.animTick = 0
-			case "esc":
+			case key.Matches(msg, a.keyMap.Navigation.Back):
 				a.phase = AdventureIntro
 			}
 
 		case AdventureResult:
-			if msg.String() == "enter" || msg.String() == " " {
+			if key.Matches(msg, a.keyMap.Navigation.Enter) {
 				a.done = true
 			}
 		}

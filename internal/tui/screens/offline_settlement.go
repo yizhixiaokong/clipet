@@ -3,11 +3,14 @@ package screens
 import (
 	"clipet/internal/game"
 	"clipet/internal/i18n"
+	"clipet/internal/tui/keys"
 	"clipet/internal/tui/styles"
 	"fmt"
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
+	"charm.land/bubbles/v2/help"
+	"charm.land/bubbles/v2/key"
 	"charm.land/lipgloss/v2"
 )
 
@@ -16,6 +19,8 @@ type OfflineSettlementModel struct {
 	results []game.DecayRoundResult
 	theme   styles.Theme
 	i18n    *i18n.Manager
+	keyMap keys.OfflineSettlementKeyMap
+	help   help.Model
 
 	scrollOffset int // Current scroll position
 	maxVisible   int // Max visible lines (calculated from height)
@@ -55,6 +60,8 @@ func NewOfflineSettlementModel(results []game.DecayRoundResult, theme styles.The
 		results: results,
 		theme:   theme,
 		i18n:    i18nMgr,
+		keyMap:  keys.NewOfflineSettlementKeyMap(i18nMgr),
+		help:    help.New(),
 	}
 }
 
@@ -81,16 +88,16 @@ func (m OfflineSettlementModel) IsDone() bool {
 func (m OfflineSettlementModel) Update(msg tea.Msg) (OfflineSettlementModel, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyPressMsg:
-		switch msg.String() {
-		case "enter", " ", "q", "esc":
+		switch {
+		case key.Matches(msg, m.keyMap.Quit):
 			m.done = true
-		case "up", "k":
+		case key.Matches(msg, m.keyMap.Up):
 			m.scrollOffset = clamp(m.scrollOffset-1, 0, m.maxScroll())
-		case "down", "j":
+		case key.Matches(msg, m.keyMap.Down):
 			m.scrollOffset = clamp(m.scrollOffset+1, 0, m.maxScroll())
-		case "home", "g":
+		case key.Matches(msg, m.keyMap.Top):
 			m.scrollOffset = 0
-		case "end", "G":
+		case key.Matches(msg, m.keyMap.Bottom):
 			m.scrollOffset = m.maxScroll()
 		}
 	}

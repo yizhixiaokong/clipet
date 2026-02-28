@@ -6,11 +6,13 @@ import (
 	"clipet/internal/plugin"
 	"clipet/internal/store"
 	"clipet/internal/tui/components"
+	"clipet/internal/tui/keys"
 	"clipet/internal/tui/screens"
 	"clipet/internal/tui/styles"
 	"time"
 
 	tea "charm.land/bubbletea/v2"
+	"charm.land/bubbles/v2/key"
 )
 
 // screen identifies which TUI screen is active.
@@ -34,12 +36,13 @@ func doTick() tea.Cmd {
 
 // App is the top-level Bubble Tea model.
 type App struct {
-	pet      *game.Pet
-	registry *plugin.Registry
-	store    store.Store
-	i18n     *i18n.Manager
-	petView  *components.PetView
-	theme    styles.Theme
+	pet          *game.Pet
+	registry     *plugin.Registry
+	store        store.Store
+	i18n         *i18n.Manager
+	petView      *components.PetView
+	theme        styles.Theme
+	globalKeyMap keys.GlobalKeyMap
 
 	offlineSettlement screens.OfflineSettlementModel
 	home              screens.HomeModel
@@ -74,6 +77,7 @@ func NewApp(pet *game.Pet, reg *plugin.Registry, st store.Store, i18nMgr *i18n.M
 		i18n:              i18nMgr,
 		petView:           pv,
 		theme:             theme,
+		globalKeyMap:      keys.NewGlobalKeyMap(i18nMgr),
 		offlineSettlement: offlineSettlement,
 		home:              home,
 		active:            activeScreen,
@@ -99,14 +103,9 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyPressMsg:
 		// Global quit: ctrl+c always works, q only on home screen
-		switch msg.String() {
-		case "ctrl+c":
-			a.quitting = true
-			a.pet.MarkAsChecked() // Mark as checked before saving
-			_ = a.store.Save(a.pet)
-			return a, tea.Quit
-		case "q":
-			if a.active == screenHome {
+		if key.Matches(msg, a.globalKeyMap.Quit) {
+			// Check if it's ctrl+c (always quit) or q (only on home screen)
+			if msg.String() == "ctrl+c" || a.active == screenHome {
 				a.quitting = true
 				a.pet.MarkAsChecked() // Mark as checked before saving
 				_ = a.store.Save(a.pet)

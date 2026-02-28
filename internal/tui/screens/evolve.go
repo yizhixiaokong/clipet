@@ -3,11 +3,14 @@ package screens
 import (
 	"clipet/internal/game"
 	"clipet/internal/i18n"
+	"clipet/internal/tui/keys"
 	"clipet/internal/tui/styles"
 	"fmt"
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
+	"charm.land/bubbles/v2/help"
+	"charm.land/bubbles/v2/key"
 	"charm.land/lipgloss/v2"
 )
 
@@ -26,6 +29,8 @@ type EvolveModel struct {
 	candidates []game.EvolveCandidate
 	theme      styles.Theme
 	i18n       *i18n.Manager
+	keyMap     keys.EvolveKeyMap
+	help       help.Model
 
 	phase      EvolvePhase
 	choiceIdx  int
@@ -48,6 +53,8 @@ func NewEvolveModel(pet *game.Pet, candidates []game.EvolveCandidate, theme styl
 		candidates: candidates,
 		theme:      theme,
 		i18n:       i18nMgr,
+		keyMap:     keys.NewEvolveKeyMap(i18nMgr),
+		help:       help.New(),
 		phase:      phase,
 		oldStageID: pet.StageID,
 	}
@@ -93,25 +100,25 @@ func (e EvolveModel) Update(msg tea.Msg) (EvolveModel, tea.Cmd) {
 	case tea.KeyPressMsg:
 		switch e.phase {
 		case EvolveChoosing:
-			switch msg.String() {
-			case "up", "k":
+			switch {
+			case key.Matches(msg, e.keyMap.Navigation.Up):
 				if e.choiceIdx > 0 {
 					e.choiceIdx--
 				}
-			case "down", "j":
+			case key.Matches(msg, e.keyMap.Navigation.Down):
 				if e.choiceIdx < len(e.candidates)-1 {
 					e.choiceIdx++
 				}
-			case "enter":
+			case key.Matches(msg, e.keyMap.Navigation.Enter):
 				e.result = &e.candidates[e.choiceIdx]
 				e.phase = EvolveAnimating
 				e.animTick = 0
-			case "esc":
+			case key.Matches(msg, e.keyMap.Navigation.Back):
 				e.done = true // 取消进化，返回主屏幕
 			}
 
 		case EvolveDone:
-			if msg.String() == "enter" || msg.String() == " " {
+			if key.Matches(msg, e.keyMap.Navigation.Enter) {
 				e.done = true
 			}
 		}
@@ -154,7 +161,7 @@ func (e EvolveModel) viewChoosing() string {
 		}
 	}
 
-	help := e.theme.HelpBar.Render(e.i18n.T("ui.evolve.help"))
+	helpBar := e.theme.HelpBar.Render(e.help.View(e.keyMap))
 
 	return lipgloss.JoinVertical(lipgloss.Left,
 		title,
@@ -163,7 +170,7 @@ func (e EvolveModel) viewChoosing() string {
 		"",
 		lipgloss.JoinVertical(lipgloss.Left, choices...),
 		"",
-		help,
+		helpBar,
 	)
 }
 
