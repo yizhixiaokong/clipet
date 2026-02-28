@@ -16,7 +16,8 @@ import (
 type screen int
 
 const (
-	screenHome screen = iota
+	screenOfflineSettlement screen = iota
+	screenHome
 	screenEvolve
 	screenAdventure
 )
@@ -38,10 +39,11 @@ type App struct {
 	petView  *components.PetView
 	theme    styles.Theme
 
-	home      screens.HomeModel
-	evolve    screens.EvolveModel
-	adventure screens.AdventureModel
-	active    screen
+	offlineSettlement screens.OfflineSettlementModel
+	home              screens.HomeModel
+	evolve            screens.EvolveModel
+	adventure         screens.AdventureModel
+	active            screen
 
 	width        int
 	height       int
@@ -50,19 +52,28 @@ type App struct {
 }
 
 // NewApp creates the top-level TUI application model.
-func NewApp(pet *game.Pet, reg *plugin.Registry, st store.Store) App {
+func NewApp(pet *game.Pet, reg *plugin.Registry, st store.Store, offlineResults []game.DecayRoundResult) App {
 	pv := components.NewPetView(pet, reg)
 	theme := styles.DefaultTheme()
 	home := screens.NewHomeModel(pet, reg, st, pv, theme)
 
+	// Create offline settlement screen if there are results
+	var offlineSettlement screens.OfflineSettlementModel
+	activeScreen := screenHome
+	if len(offlineResults) > 0 {
+		offlineSettlement = screens.NewOfflineSettlementModel(offlineResults, theme)
+		activeScreen = screenOfflineSettlement
+	}
+
 	return App{
-		pet:      pet,
-		registry: reg,
-		store:    st,
-		petView:  pv,
-		theme:    theme,
-		home:     home,
-		active:   screenHome,
+		pet:               pet,
+		registry:          reg,
+		store:             st,
+		petView:           pv,
+		theme:             theme,
+		offlineSettlement: offlineSettlement,
+		home:              home,
+		active:            activeScreen,
 	}
 }
 
@@ -77,6 +88,7 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		a.width = msg.Width
 		a.height = msg.Height
+		a.offlineSettlement = a.offlineSettlement.SetSize(msg.Width, msg.Height)
 		a.home = a.home.SetSize(msg.Width, msg.Height)
 		a.evolve = a.evolve.SetSize(msg.Width, msg.Height)
 		a.adventure = a.adventure.SetSize(msg.Width, msg.Height)
@@ -87,11 +99,13 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "ctrl+c":
 			a.quitting = true
+			a.pet.MarkAsChecked() // Mark as checked before saving
 			_ = a.store.Save(a.pet)
 			return a, tea.Quit
 		case "q":
 			if a.active == screenHome {
 				a.quitting = true
+				a.pet.MarkAsChecked() // Mark as checked before saving
 				_ = a.store.Save(a.pet)
 				return a, tea.Quit
 			}
@@ -110,6 +124,7 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if a.active == screenEvolve {
 			a.evolve = a.evolve.Tick()
 			if a.evolve.IsDone() {
+				a.pet.MarkAsChecked() // Mark as checked before saving
 				_ = a.store.Save(a.pet)
 				a.active = screenHome
 				a.home = a.home.UpdatePet(a.pet)
@@ -120,6 +135,7 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if a.active == screenAdventure {
 			a.adventure = a.adventure.Tick()
 			if a.adventure.IsDone() {
+				a.pet.MarkAsChecked() // Mark as checked before saving
 				_ = a.store.Save(a.pet)
 				a.active = screenHome
 				a.home = a.home.UpdatePet(a.pet)
@@ -137,6 +153,15 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	// Delegate input to active screen
 	switch a.active {
+	case screenOfflineSettlement:
+		var cmd tea.Cmd
+		a.offlineSettlement, cmd = a.offlineSettlement.Update(msg)
+		if a.offlineSettlement.IsDone() {
+			a.active = screenHome
+			a.home = a.home.UpdatePet(a.pet)
+		}
+		return a, cmd
+
 	case screenHome:
 		var cmd tea.Cmd
 		a.home, cmd = a.home.Update(msg)
@@ -158,6 +183,7 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		var cmd tea.Cmd
 		a.evolve, cmd = a.evolve.Update(msg)
 		if a.evolve.IsDone() {
+			a.pet.MarkAsChecked() // Mark as checked before saving
 			_ = a.store.Save(a.pet)
 			a.active = screenHome
 			a.home = a.home.UpdatePet(a.pet)
@@ -168,6 +194,7 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		var cmd tea.Cmd
 		a.adventure, cmd = a.adventure.Update(msg)
 		if a.adventure.IsDone() {
+			a.pet.MarkAsChecked() // Mark as checked before saving
 			_ = a.store.Save(a.pet)
 			a.active = screenHome
 			a.home = a.home.UpdatePet(a.pet)
@@ -197,6 +224,8 @@ func (a App) View() tea.View {
 
 	var content string
 	switch a.active {
+	case screenOfflineSettlement:
+		content = a.offlineSettlement.View()
 	case screenHome:
 		content = a.home.View()
 	case screenEvolve:

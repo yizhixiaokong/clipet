@@ -24,6 +24,7 @@ type SpeciesPack struct {
 	Lifecycle     capabilities.LifecycleConfig     `toml:"lifecycle"`     // Phase 2: lifecycle configuration
 	Decay         capabilities.DecayConfig         `toml:"decay"`         // Phase 7: attribute decay rates
 	DynamicCooldown capabilities.DynamicCooldownConfig `toml:"dynamic_cooldown"` // Phase 7: dynamic cooldown config
+	Interactions  capabilities.AttributeInteractionConfig `toml:"interactions"` // Multi-stage decay: attribute interactions
 	Stages        []Stage            `toml:"stages"`
 	Evolutions    []Evolution        `toml:"evolutions"`
 	Traits        []capabilities.PersonalityTrait `toml:"traits"` // Phase 1: personality traits

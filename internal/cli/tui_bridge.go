@@ -10,8 +10,8 @@ import (
 )
 
 // startTUI launches the Bubble Tea TUI application.
-func startTUI(pet *game.Pet, reg *plugin.Registry, st *store.JSONStore) error {
-	app := tui.NewApp(pet, reg, st)
+func startTUI(pet *game.Pet, reg *plugin.Registry, st *store.JSONStore, offlineResults []game.DecayRoundResult) error {
+	app := tui.NewApp(pet, reg, st, offlineResults)
 	p := tea.NewProgram(app)
 	_, err := p.Run()
 	return err

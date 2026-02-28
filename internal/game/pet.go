@@ -764,6 +764,13 @@ func (p *Pet) AccumulateOfflineTime() {
 	p.LastCheckedAt = time.Now()
 }
 
+// MarkAsChecked updates LastCheckedAt to current time.
+// This should be called before saving the pet during online play
+// to prevent counting online time as offline time.
+func (p *Pet) MarkAsChecked() {
+	p.LastCheckedAt = time.Now()
+}
+
 // UseSkill uses an active skill/ability.
 // The skill must be defined in the species traits with type="active".
 // Returns an ActionResult indicating success or failure.
@@ -871,32 +878,145 @@ func (p *Pet) addEvolutionPoints(basePoints int, interactionType string) int {
 	return int(points)
 }
 
-// DevOnlySimulateDecay applies time-based attribute decay WITHOUT triggering hooks.
-// This is for dev tools (timeskip) to test decay without triggering death/evolution.
-// Only applies attribute decay, does NOT check death or trigger lifecycle events.
-func (p *Pet) DevOnlySimulateDecay(elapsed time.Duration) {
+// DecayRoundResult records the result of one round of decay settlement
+type DecayRoundResult struct {
+	Round         int           // Round number
+	Duration      time.Duration // Duration of this round
+	StartAttrs    [4]int        // Attributes at start [Hunger, Happiness, Health, Energy]
+	EndAttrs      [4]int        // Attributes at end
+	Effects       []string      // Effects triggered in this round
+	CriticalState bool          // Whether critical state was triggered
+}
+
+// ApplyMultiStageDecay applies multi-stage offline time decay
+// Each round is 6 hours, checking attribute states and applying dynamic effects
+func (p *Pet) ApplyMultiStageDecay(totalDuration time.Duration) []DecayRoundResult {
 	if p.registry == nil {
-		return
+		return nil
 	}
 
-	// Get decay config from plugin
-	var decayConfig capabilities.DecayConfig
-	decayConfig = p.registry.GetDecayConfig(p.Species)
+	// Get configurations
+	decayConfig := p.registry.GetDecayConfig(p.Species)
+	interactionConfig := p.registry.GetAttributeInteractionConfig(p.Species)
 
-	hours := elapsed.Hours()
+	// Settle in rounds (6 hours each)
+	const roundDuration = 6 * time.Hour
+	rounds := int(totalDuration / roundDuration)
+	remainder := totalDuration % roundDuration
 
-	// Apply decay directly
-	p.Hunger = clamp(p.Hunger-int(decayConfig.Hunger*hours), 0, 100)
-	p.Happiness = clamp(p.Happiness-int(decayConfig.Happiness*hours), 0, 100)
-	p.Energy = clamp(p.Energy-int(decayConfig.Energy*hours), 0, 100)
+	results := make([]DecayRoundResult, 0, rounds+1)
 
-	// Health decay due to hunger
-	if p.Hunger < 20 {
-		p.Health = clamp(p.Health-int(decayConfig.Health*hours), 0, 100)
+	// Settle round by round
+	for i := 0; i < rounds; i++ {
+		result := p.applyOneDecayRound(roundDuration, decayConfig, interactionConfig, i+1)
+		results = append(results, result)
 	}
 
-	// Update all cooldown timestamps to simulate time passage
-	// This ensures cooldown checks work correctly after timeskip
+	// Handle remaining time (less than 6 hours)
+	if remainder > 0 {
+		result := p.applyOneDecayRound(remainder, decayConfig, interactionConfig, rounds+1)
+		results = append(results, result)
+	}
+
+	return results
+}
+
+// applyOneDecayRound applies one round of decay
+func (p *Pet) applyOneDecayRound(dur time.Duration, decayConfig capabilities.DecayConfig,
+	interactionConfig capabilities.AttributeInteractionConfig, roundNum int) DecayRoundResult {
+
+	result := DecayRoundResult{
+		Round:      roundNum,
+		Duration:   dur,
+		StartAttrs: [4]int{p.Hunger, p.Happiness, p.Health, p.Energy},
+	}
+
+	hours := dur.Hours()
+
+	// 1. Apply base decay
+	baseHunger := int(decayConfig.Hunger * hours)
+	baseHappiness := int(decayConfig.Happiness * hours)
+	baseEnergy := int(decayConfig.Energy * hours)
+
+	p.Hunger = clamp(p.Hunger-baseHunger, 0, 100)
+	p.Happiness = clamp(p.Happiness-baseHappiness, 0, 100)
+	p.Energy = clamp(p.Energy-baseEnergy, 0, 100)
+
+	// 2. Apply attribute interactions
+	p.applyAttributeInteractions(hours, decayConfig, interactionConfig, &result)
+
+	// 3. Record results
+	result.EndAttrs = [4]int{p.Hunger, p.Happiness, p.Health, p.Energy}
+
+	return result
+}
+
+// applyAttributeInteractions applies attribute interaction effects
+func (p *Pet) applyAttributeInteractions(hours float64, decayConfig capabilities.DecayConfig,
+	interactionConfig capabilities.AttributeInteractionConfig, result *DecayRoundResult) {
+
+	var healthDecay float64
+	var happinessDecay float64
+
+	// Rule 1: Hunger → Health
+	if p.Hunger < interactionConfig.HungerHealthThreshold {
+		baseRate := decayConfig.Health * hours
+
+		// Bonus when hunger=0
+		if p.Hunger == 0 {
+			healthDecay += baseRate * interactionConfig.HungerZeroHealthMultiplier
+			result.Effects = append(result.Effects, "⚠️ 饥饿致死：健康大量衰减")
+			result.CriticalState = true
+		} else {
+			healthDecay += baseRate
+			result.Effects = append(result.Effects, "饿了：健康轻微衰减")
+		}
+	}
+
+	// Rule 2: Energy → Health/Happiness
+	if p.Energy < interactionConfig.EnergyCritThreshold {
+		// Critical energy
+		healthDecay += decayConfig.Health * hours * interactionConfig.EnergyCritHealthMultiplier
+		happinessDecay += decayConfig.Happiness * hours * interactionConfig.EnergyCritHappinessMultiplier
+		result.Effects = append(result.Effects, "🚨 精力耗尽：健康和快乐加速衰减")
+		result.CriticalState = true
+	} else if p.Energy < interactionConfig.EnergyLowThreshold {
+		// Low energy
+		healthDecay += interactionConfig.EnergyLowHealthRate * hours
+		result.Effects = append(result.Effects, "疲惫：健康轻微衰减")
+	}
+
+	// Rule 3: Happiness → Health
+	if p.Happiness < interactionConfig.HappinessLowThreshold {
+		if p.Happiness == 0 {
+			healthDecay += decayConfig.Health * hours * interactionConfig.HappinessZeroHealthMultiplier
+			result.Effects = append(result.Effects, "💔 抑郁症：健康大量衰减")
+			result.CriticalState = true
+		} else {
+			healthDecay += 0.15 * hours
+			result.Effects = append(result.Effects, "不开心：健康轻微衰减")
+		}
+	}
+
+	// Apply decay (with death protection)
+	if healthDecay > 0 {
+		// Rule 4: Death protection (health stops at 1)
+		potentialHealth := p.Health - int(healthDecay)
+		if potentialHealth <= 0 && p.Health > 1 {
+			p.Health = 1 // Keep 1 HP
+			result.Effects = append(result.Effects, "🛡️ 濒死保护：健康保持1点")
+		} else {
+			p.Health = clamp(p.Health-int(healthDecay), 0, 100)
+		}
+	}
+
+	if happinessDecay > 0 {
+		p.Happiness = clamp(p.Happiness-int(happinessDecay), 0, 100)
+	}
+}
+
+// UpdateCooldowns updates all cooldown timestamps
+func (p *Pet) UpdateCooldowns(elapsed time.Duration) {
 	p.LastFedAt = p.LastFedAt.Add(-elapsed)
 	p.LastPlayedAt = p.LastPlayedAt.Add(-elapsed)
 	p.LastRestedAt = p.LastRestedAt.Add(-elapsed)
@@ -904,9 +1024,24 @@ func (p *Pet) DevOnlySimulateDecay(elapsed time.Duration) {
 	p.LastTalkedAt = p.LastTalkedAt.Add(-elapsed)
 	p.LastAdventureAt = p.LastAdventureAt.Add(-elapsed)
 	p.LastSkillUsedAt = p.LastSkillUsedAt.Add(-elapsed)
+}
 
-	// Update last checked time to prevent double decay when TUI starts
-	// Move it forward by elapsed time to simulate time passage
+// DevOnlySimulateDecay applies time-based attribute decay WITHOUT triggering hooks.
+// This is for dev tools (timeskip) to test decay without triggering death/evolution.
+// Only applies attribute decay, does NOT check death or trigger lifecycle events.
+// Uses multi-stage settlement algorithm for realistic decay simulation.
+func (p *Pet) DevOnlySimulateDecay(elapsed time.Duration) {
+	if p.registry == nil {
+		return
+	}
+
+	// Use multi-stage settlement
+	p.ApplyMultiStageDecay(elapsed)
+
+	// Update cooldown timestamps
+	p.UpdateCooldowns(elapsed)
+
+	// Update last checked time (prevent double decay)
 	p.LastCheckedAt = p.LastCheckedAt.Add(-elapsed)
 }
 

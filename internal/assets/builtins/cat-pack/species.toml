@@ -31,6 +31,31 @@ energy = 0.3        # 精力每小时衰减 0.3 点
 health = 0.2        # 饥饿时健康每小时衰减 0.2 点
 
 # ============================================================
+# 属性影响配置 (Multi-stage decay) - 属性间相互影响规则
+# ============================================================
+
+[interactions]
+# 饥饿 → 健康
+hunger_health_threshold = 20
+hunger_health_rate = 0.2
+hunger_zero_health_multiplier = 3.0  # 饥饿=0时，健康衰减3倍
+
+# 精力 → 健康/快乐
+energy_low_threshold = 20
+energy_crit_threshold = 10
+energy_low_health_rate = 0.1
+energy_crit_health_multiplier = 2.0     # 精力<10时，健康衰减2倍
+energy_crit_happiness_multiplier = 1.5  # 精力<10时，快乐衰减1.5倍
+
+# 快乐 → 健康
+happiness_low_threshold = 20
+happiness_zero_health_multiplier = 4.0  # 快乐=0时，健康衰减4倍
+
+# 健康 → 全局恢复
+health_crit_threshold = 20
+health_recovery_penalty = 0.5  # 健康<20时，所有恢复效率减半
+
+# ============================================================
 # 动态冷却配置 (Phase 7) - 根据属性紧急度调整冷却
 # ============================================================
 

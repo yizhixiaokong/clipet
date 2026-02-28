@@ -147,6 +147,70 @@ type DynamicCooldownConfig struct {
 	HighThreshold int `toml:"high_threshold"` // default: 70
 }
 
+// AttributeInteractionConfig defines attribute interaction rules
+type AttributeInteractionConfig struct {
+	// Hunger → Health
+	HungerHealthThreshold         int     `toml:"hunger_health_threshold"`          // Trigger threshold (default: 20)
+	HungerHealthRate              float64 `toml:"hunger_health_rate"`               // Decay rate (default: 0.2)
+	HungerZeroHealthMultiplier    float64 `toml:"hunger_zero_health_multiplier"`    // Multiplier when hunger=0 (default: 3.0)
+
+	// Energy → Health/Happiness
+	EnergyLowThreshold              int     `toml:"energy_low_threshold"`               // Low energy threshold (default: 20)
+	EnergyCritThreshold             int     `toml:"energy_crit_threshold"`               // Critical energy threshold (default: 10)
+	EnergyLowHealthRate             float64 `toml:"energy_low_health_rate"`               // Low energy health decay (default: 0.1)
+	EnergyCritHealthMultiplier      float64 `toml:"energy_crit_health_multiplier"`        // Critical multiplier (default: 2.0)
+	EnergyCritHappinessMultiplier   float64 `toml:"energy_crit_happiness_multiplier"`     // Critical multiplier (default: 1.5)
+
+	// Happiness → Health
+	HappinessLowThreshold           int     `toml:"happiness_low_threshold"`           // Depression threshold (default: 20)
+	HappinessZeroHealthMultiplier   float64 `toml:"happiness_zero_health_multiplier"`  // Multiplier when happiness=0 (default: 4.0)
+
+	// Health → Global recovery
+	HealthCritThreshold    int     `toml:"health_crit_threshold"`    // Critical health threshold (default: 20)
+	HealthRecoveryPenalty  float64 `toml:"health_recovery_penalty"`  // Recovery penalty coefficient (default: 0.5)
+}
+
+// Defaults returns attribute interaction config with sensible defaults
+func (aic AttributeInteractionConfig) Defaults() AttributeInteractionConfig {
+	if aic.HungerHealthThreshold == 0 {
+		aic.HungerHealthThreshold = 20
+	}
+	if aic.HungerHealthRate == 0 {
+		aic.HungerHealthRate = 0.2
+	}
+	if aic.HungerZeroHealthMultiplier == 0 {
+		aic.HungerZeroHealthMultiplier = 3.0
+	}
+	if aic.EnergyLowThreshold == 0 {
+		aic.EnergyLowThreshold = 20
+	}
+	if aic.EnergyCritThreshold == 0 {
+		aic.EnergyCritThreshold = 10
+	}
+	if aic.EnergyLowHealthRate == 0 {
+		aic.EnergyLowHealthRate = 0.1
+	}
+	if aic.EnergyCritHealthMultiplier == 0 {
+		aic.EnergyCritHealthMultiplier = 2.0
+	}
+	if aic.EnergyCritHappinessMultiplier == 0 {
+		aic.EnergyCritHappinessMultiplier = 1.5
+	}
+	if aic.HappinessLowThreshold == 0 {
+		aic.HappinessLowThreshold = 20
+	}
+	if aic.HappinessZeroHealthMultiplier == 0 {
+		aic.HappinessZeroHealthMultiplier = 4.0
+	}
+	if aic.HealthCritThreshold == 0 {
+		aic.HealthCritThreshold = 20
+	}
+	if aic.HealthRecoveryPenalty == 0 {
+		aic.HealthRecoveryPenalty = 0.5
+	}
+	return aic
+}
+
 // Defaults returns dynamic cooldown config with sensible defaults
 func (dcc DynamicCooldownConfig) Defaults() DynamicCooldownConfig {
 	if dcc.LowUrgencyMultiplier == 0 {

@@ -98,22 +98,32 @@ func runTUI() error {
 		return err
 	}
 
-	// Apply accumulated offline duration (natural offline + dev timeskip)
+	// Apply accumulated offline duration and collect results
+	var offlineResults []game.DecayRoundResult
 	if pet.AccumulatedOfflineDuration > 0 {
 		dur := pet.AccumulatedOfflineDuration
-		pet.Birthday = pet.Birthday.Add(-dur)
-		pet.DevOnlySimulateDecay(dur)
-		pet.AccumulatedOfflineDuration = 0 // Clear cache
-		pet.LastCheckedAt = time.Now()     // Reset check time
 
-		// Save the updated pet state
+		// Adjust age
+		pet.Birthday = pet.Birthday.Add(-dur)
+
+		// Multi-stage settlement
+		offlineResults = pet.ApplyMultiStageDecay(dur)
+
+		// Update cooldown timestamps
+		pet.UpdateCooldowns(dur)
+
+		// Clear cache
+		pet.AccumulatedOfflineDuration = 0
+		pet.LastCheckedAt = time.Now()
+
+		// Save state
 		if err := petStore.Save(pet); err != nil {
 			return fmt.Errorf("save after applying offline duration: %w", err)
 		}
 	}
 
-	// Import TUI package here to avoid circular dependency in the future
-	return startTUI(pet, registry, petStore)
+	// Import TUI package and start with offline results (if any)
+	return startTUI(pet, registry, petStore, offlineResults)
 }
 
 // loadPet loads the pet from store and sets its registry reference.

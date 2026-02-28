@@ -234,6 +234,16 @@ func (r *Registry) GetDynamicCooldownConfig(speciesID string) capabilities.Dynam
 	return pack.DynamicCooldown.Defaults()
 }
 
+// GetAttributeInteractionConfig returns the attribute interaction configuration for a species.
+// Returns defaults if not configured.
+func (r *Registry) GetAttributeInteractionConfig(speciesID string) capabilities.AttributeInteractionConfig {
+	pack := r.GetSpecies(speciesID)
+	if pack == nil {
+		return capabilities.AttributeInteractionConfig{}.Defaults()
+	}
+	return pack.Interactions.Defaults()
+}
+
 // Count returns the number of registered species.
 func (r *Registry) Count() int {
 	r.mu.RLock()
