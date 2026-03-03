@@ -1,5 +1,7 @@
 # Clipet 插件开发指南
 
+**[中文](plugin-guide.md) | [English](plugin-guide.en-US.md)**
+
 ## 概览
 
 Clipet 的物种系统完全基于插件包。每个物种是一个独立的目录，包含 TOML 配置文件和 ASCII 动画帧文件。内置物种和外部插件使用完全相同的格式和加载路径。

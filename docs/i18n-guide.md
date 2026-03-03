@@ -1,4 +1,6 @@
-# Internationalization (i18n) Guide
+# Clipet i18n 开发指南
+
+**[中文](i18n-guide.md) | [English](i18n-guide.en-US.md)**
 
 Clipet 支持多语言国际化，允许用户在不同语言环境下使用应用。
 

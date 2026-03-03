@@ -1,5 +1,7 @@
 # Clipet — 终端宠物伴侣 设计文档
 
+**[中文](design.md) | [English](design.en-US.md)**
+
 ## 项目概述
 
 Clipet 是一个运行在终端中的宠物养成程序（TUI），以 ASCII 像素风动画为核心视觉表现，

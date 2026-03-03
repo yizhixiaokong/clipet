@@ -1,5 +1,7 @@
 # 🐾 Clipet — 终端宠物伴侣
 
+**中文 | [English](README.en-US.md)**
+
 Clipet 是一个运行在终端中的虚拟宠物养成游戏，使用 Go 和 [Bubble Tea](https://charm.sh/) 构建。
 
 ## 功能
