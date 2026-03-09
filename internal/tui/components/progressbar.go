@@ -88,3 +88,15 @@ func (pb *ProgressBar) SetEmptyStyle(style lipgloss.Style) *ProgressBar {
 	pb.emptyStyle = style
 	return pb
 }
+
+// SetFilledChar sets the filled character
+func (pb *ProgressBar) SetFilledChar(char string) *ProgressBar {
+	pb.filledChar = char
+	return pb
+}
+
+// SetEmptyChar sets the empty character
+func (pb *ProgressBar) SetEmptyChar(char string) *ProgressBar {
+	pb.emptyChar = char
+	return pb
+}

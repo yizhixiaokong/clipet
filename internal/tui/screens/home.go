@@ -770,16 +770,37 @@ func (h HomeModel) renderStatusPanel(width int) string {
 	ageLine := h.theme.StatusLabel.Render(h.i18n.T("game.stats.age")) + " " +
 		h.theme.StatusValue.Render(h.i18n.T("game.pet.age_hours", "hours", fmt.Sprintf("%.1f", p.AgeHours())))
 
-	const contentW = 20
+	// Calculate dynamic content width based on panel width
+	const minContentW = 20
+	innerW := width - 6 // Account for borders/padding
+	if innerW < minContentW {
+		innerW = minContentW
+	}
+	contentW := innerW - 4 // Leave margins
+	if contentW < minContentW {
+		contentW = minContentW
+	}
+
+	// Calculate dynamic progress bar length
+	// Format: "ICON LABEL BAR VALUE" = 1(icon) + 1(space) + 6(label) + 1(space) + barLen + 1(space) + 3(value)
+	const labelWidth = 6 // From theme.StatLabel
+	barLen := contentW - labelWidth - 8 // 8 = icon + spaces + value + margins
+	if barLen < 8 {
+		barLen = 8
+	}
+	if barLen > 30 {
+		barLen = 30 // Limit maximum bar length for readability
+	}
+
 	sep := lipgloss.NewStyle().
 		Foreground(styles.DimColor()).
 		Render(strings.Repeat("-", contentW))
 
 	bars := []string{
-		h.statBar("🍖", h.i18n.T("game.stats.hunger"), p.Hunger),
-		h.statBar("😺", h.i18n.T("game.stats.happiness"), p.Happiness),
-		h.statBar("💊", h.i18n.T("game.stats.health"), p.Health),
-		h.statBar("💤", h.i18n.T("game.stats.energy"), p.Energy),
+		h.statBar("🍖", h.i18n.T("game.stats.hunger"), p.Hunger, barLen),
+		h.statBar("😺", h.i18n.T("game.stats.happiness"), p.Happiness, barLen),
+		h.statBar("💊", h.i18n.T("game.stats.health"), p.Health, barLen),
+		h.statBar("💤", h.i18n.T("game.stats.energy"), p.Energy, barLen),
 	}
 	statsBlock := strings.Join(bars, "\n")
 
@@ -800,10 +821,6 @@ func (h HomeModel) renderStatusPanel(width int) string {
 	)
 
 	const minHeight = 10
-	innerW := width - 6
-	if innerW < contentW {
-		innerW = contentW
-	}
 	return h.theme.StatusPanel.
 		Width(innerW).
 		Height(minHeight).
@@ -915,19 +932,21 @@ func (h HomeModel) getSkillCooldown(skillID string) string {
 	return cooldownLeft(h.pet.LastSkillUsedAt, cooldown)
 }
 
-func (h HomeModel) statBar(icon, label string, value int) string {
-	const barLen = 10
-	filled := value / 10
-	if filled > barLen {
-		filled = barLen
-	}
-	empty := barLen - filled
+func (h HomeModel) statBar(icon, label string, value int, barWidth int) string {
+	// Use ProgressBar component for rendering
+	pb := components.NewProgressBar().
+		SetWidth(barWidth).
+		SetValue(value).
+		SetMax(100).
+		SetFilledStyle(h.theme.StatFilled).
+		SetEmptyStyle(h.theme.StatEmpty).
+		SetFilledChar(" ").
+		SetEmptyChar(" ")
 
 	lab := h.theme.StatLabel.Render(icon + " " + label)
-	fStr := h.theme.StatFilled.Render(strings.Repeat(" ", filled))
-	eStr := h.theme.StatEmpty.Render(strings.Repeat(" ", empty))
+	bar := pb.Render()
 
-	return fmt.Sprintf("%s%s%s %3d", lab, fStr, eStr, value)
+	return fmt.Sprintf("%s%s%s %3d", lab, bar, " ", value)
 }
 
 // getLocalizedEndingMessage returns the localized ending message.
