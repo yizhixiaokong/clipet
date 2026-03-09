@@ -148,7 +148,7 @@ custom_acc = { arcane_affinity = 50 }  # Requires arcane affinity of 50
 
 This design allows plugins to create unique evolution paths without modifying the core framework code.
 
-Refer to the [Plugin Development Guide](docs/plugin-guide.en-US.md) and [Plugin Design Best Practices](docs/plugin-best-practices.md) to create custom species packs.
+Refer to the [Plugin Development Guide](docs/plugin-guide.en-US.md) and [Plugin Design Best Practices](docs/plugin-best-practices.en-US.md) to create custom species packs.
 
 ## Tech Stack
 
