@@ -16,6 +16,38 @@ Clipet 是一个运行在终端中的虚拟宠物养成游戏，使用 Go 和 [B
 - **离线衰减** — 关闭后属性自动衰减，重新打开时补偿计算
 - **冷却 & 收益递减** — 操作有冷却时间，属性越高收益越低
 
+## 预览
+
+![主界面](screenshots/home/main-interface.png)
+*主界面展示 - 包含 ASCII 艺术宠物、状态面板和动作菜单*
+
+### 细节展示
+
+![对话气泡](screenshots/home/dialogue-bubble.png)
+*宠物心情对话气泡*
+
+![动作菜单](screenshots/home/action-menu.png)
+*分类动作菜单 - 显示可用操作及冷却时间*
+
+### 进化系统展示
+
+![进化动画](screenshots/evolution/evolution-animating.png)
+*进化时的闪光动画效果*
+
+![进化路线](screenshots/evolution/evolution-paths.png)
+*三条进化路线 - 野性（红）、奥术（紫）、机械（蓝）*
+
+### 冒险与游戏
+
+![冒险选择](screenshots/gameplay/adventure-choice.png)
+*冒险事件选择界面*
+
+![反应速度测试](screenshots/gameplay/reaction-game.png)
+*反应速度迷你游戏*
+
+![猜数字游戏](screenshots/gameplay/guess-game.png)
+*猜数字迷你游戏*
+
 ## 快速开始
 
 ```bash
@@ -34,6 +66,11 @@ CLIPET_LANG=en-US ./clipet
 # CLI 命令
 ./clipet status
 ```
+
+## 宠物生命周期
+
+![生命周期](screenshots/stages/lifecycle.png)
+*从蛋到传说的五个生命阶段*
 
 ## 操作指南
 

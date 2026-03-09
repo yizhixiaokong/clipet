@@ -16,6 +16,38 @@ Clipet is a virtual pet game running in the terminal, built with Go and [Bubble 
 - **Offline Decay** — Attributes automatically decay when closed, compensated on reopening
 - **Cooldowns & Diminishing Returns** — Actions have cooldowns, higher attributes yield lower gains
 
+## Preview
+
+![Main Interface](screenshots/home/main-interface.png)
+*Main interface showing ASCII art pet, status panel, and action menu*
+
+### Detail Showcase
+
+![Dialogue Bubble](screenshots/home/dialogue-bubble.png)
+*Pet mood dialogue bubble*
+
+![Action Menu](screenshots/home/action-menu.png)
+*Categorized action menu - showing available actions and cooldowns*
+
+### Evolution System Showcase
+
+![Evolution Animation](screenshots/evolution/evolution-animating.png)
+*Flash animation effect during evolution*
+
+![Evolution Paths](screenshots/evolution/evolution-paths.png)
+*Three evolution paths - Feral (red), Arcane (purple), Mech (blue)*
+
+### Adventures & Games
+
+![Adventure Selection](screenshots/gameplay/adventure-choice.png)
+*Adventure event selection interface*
+
+![Reaction Speed Test](screenshots/gameplay/reaction-game.png)
+*Reaction speed mini game*
+
+![Number Guessing Game](screenshots/gameplay/guess-game.png)
+*Number guessing mini game*
+
 ## Quick Start
 
 ```bash
@@ -34,6 +66,11 @@ CLIPET_LANG=en-US ./clipet
 # CLI commands
 ./clipet status
 ```
+
+## Pet Lifecycle
+
+![Lifecycle](screenshots/stages/lifecycle.png)
+*Five life stages from egg to legend*
 
 ## Controls
 
